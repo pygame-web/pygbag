@@ -3,56 +3,59 @@ import zipfile
 counter = 0
 prelist = []
 
-with zipfile.ZipFile("test.apk", mode="x", compression=zipfile.ZIP_DEFLATED) as zf:
+def archive(apkname):
+    with zipfile.ZipFile(apkname, mode="x", compression=zipfile.ZIP_DEFLATED) as zf:
 
-    def explore(pushpopd, newpath):
-        global prelist, preloadedWasm, preloadedImages, preloadedAudios, counter
+        def explore(pushpopd, newpath):
+            global prelist, preloadedWasm, preloadedImages, preloadedAudios, counter
 
-        import shutil
+            import shutil
 
-        if newpath.find("/.git")>=0:
-            return
+            if newpath.find("/.git")>=0:
+                return
 
-        for dirname, dirnames, filenames in os.walk(newpath):
-            if dirname.find("/.git")>=0:
-                continue
-
-            try:
-                os.chdir(dirname)
-                # print(f"\nNow in {os.getcwd()[LSRC:] or '.'}")
-
-            except:
-                print("Invalid Folder :", pushpopd, newpath)
-
-            for f in filenames:
-                if f.endswith('.gitignore'):
+            for dirname, dirnames, filenames in os.walk(newpath):
+                if dirname.find("/.git")>=0:
+                    continue
+                if dirname.find("/static/")>=0:
                     continue
 
-                if not os.path.isfile(f):
-                    continue
+                try:
+                    os.chdir(dirname)
+                    # print(f"\nNow in {os.getcwd()[LSRC:] or '.'}")
 
-                ext = f.rsplit(".", 1)[-1].lower()
+                except:
+                    print("Invalid Folder :", pushpopd, newpath)
 
-                src = os.path.join(os.getcwd(), f)
-                src = f"assets{src[TRUNC:]}"
-                if not src in prelist:
-                    zf.write(f, src)
-                    print(src)
-                    prelist.append(src)
+                for f in filenames:
+                    if f.endswith('.gitignore'):
+                        continue
 
-                counter += 1
+                    if not os.path.isfile(f):
+                        continue
 
-            for subdir in dirnames:
-                if subdir != '.git':
-                    explore(os.getcwd(), subdir)
+                    ext = f.rsplit(".", 1)[-1].lower()
 
-        os.chdir(pushpopd)
+                    src = os.path.join(os.getcwd(), f)
+                    src = f"assets{src[TRUNC:]}"
+                    if not src in prelist:
+                        zf.write(f, src)
+                        print(src)
+                        prelist.append(src)
 
-    TRUNC=len(sys.argv[-1])
+                    counter += 1
 
-    explore(os.getcwd(), sys.argv[-1])
+                for subdir in dirnames:
+                    if subdir != '.git':
+                        explore(os.getcwd(), subdir)
 
-    print( counter )
+            os.chdir(pushpopd)
+
+        TRUNC=len(sys.argv[-1])
+
+        explore(os.getcwd(), sys.argv[-1])
+
+        print( counter )
 
 
 
