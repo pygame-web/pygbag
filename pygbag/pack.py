@@ -9,8 +9,6 @@ def archive(apkname):
         def explore(pushpopd, newpath):
             global prelist, preloadedWasm, preloadedImages, preloadedAudios, counter
 
-            import shutil
-
             if newpath.find("/.git")>=0:
                 return
 
@@ -22,8 +20,6 @@ def archive(apkname):
 
                 try:
                     os.chdir(dirname)
-                    # print(f"\nNow in {os.getcwd()[LSRC:] or '.'}")
-
                 except:
                     print("Invalid Folder :", pushpopd, newpath)
 
