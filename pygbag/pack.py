@@ -1,13 +1,12 @@
 import sys, os
 import zipfile
 counter = 0
-prelist = []
+assets = []
 
 def archive(apkname):
     with zipfile.ZipFile(apkname, mode="x", compression=zipfile.ZIP_DEFLATED) as zf:
 
         def explore(pushpopd, newpath):
-            global prelist, preloadedWasm, preloadedImages, preloadedAudios, counter
 
             if newpath.find("/.git")>=0:
                 return
@@ -34,10 +33,10 @@ def archive(apkname):
 
                     src = os.path.join(os.getcwd(), f)
                     src = f"assets{src[TRUNC:]}"
-                    if not src in prelist:
+                    if not src in assets:
                         zf.write(f, src)
                         print(src)
-                        prelist.append(src)
+                        assets.append(src)
 
                     counter += 1
 
