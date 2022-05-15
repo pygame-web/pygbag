@@ -1,0 +1,43 @@
+name: emsdk_build
+on: [workflow_dispatch]
+
+jobs:
+  # Build job. Builds app for web with emsdk
+  build-emsdk:
+    name: Build for Emscripten
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Checkout
+      run: |
+            WD=$(pwd)
+            python3 -V
+            echo $WD
+            clang --version | head -n 1
+            echo
+            grep "^Pkg.Revision =" ${ANDROID_HOME}/ndk-bundle/source.properties
+            cd $GITHUB_WORKSPACE/..
+            export PROJECT=$(basename $(find $GITHUB_WORKSPACE/static|grep py$) .py)
+            git clone https://github.com/pmp-p/python-wasm-plus.git
+            ln -s $GITHUB_WORKSPACE python-wasm-plus/demos/$PROJECT
+            cd python-wasm-plus
+            bash ./python-wasm-plus.sh
+            bash ./buildapp.sh templates/no-worker-fs demos/$PROJECT demo
+            cd $GITHUB_WORKSPACE/../python-wasm-plus/demos/$PROJECT
+            echo "==================="
+            pwd
+            echo "==================="
+            cd $GITHUB_WORKSPACE/../python-wasm-plus/build
+            mv demo $GITHUB_WORKSPACE/
+            cd $GITHUB_WORKSPACE/
+            pwd
+            ls -al demo
+            du -hs demo/*
+
+
+    - name : "Upload to GitHub pages"
+      uses: JamesIves/github-pages-deploy-action@4.1.7
+      with:
+        branch: gh-pages
+        folder: demo
