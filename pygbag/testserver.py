@@ -87,20 +87,21 @@ class CodeHandler(SimpleHTTPRequestHandler):
 
         f = None
 
-        if not os.path.isfile(path):
+        if not os.path.isfile(path) and not path.endswith('.map'):
             cache = hashlib.md5(self.path.encode()).hexdigest()
             d_cache = CACHE.joinpath( cache + ".data" )
             h_cache = CACHE.joinpath( cache + ".head" )
             if not h_cache.is_file():
                 remote = SITE+self.path
-                print("FIXME:", SITE+self.path,'->', d_cache )
+                print("CACHING:", SITE+self.path,'->', d_cache )
                 try:
                     lf, headers = urllib.request.urlretrieve(remote , d_cache )
                     h_cache.write_text( str(headers) )
                 except:
-                    print(remote,"404")
+                    print("ERROR 404:",remote)
 
             if d_cache.is_file():
+                print("CACHED:", SITE+self.path,'from', d_cache )
                 self.send_response(HTTPStatus.OK)
                 f =  d_cache.open("rb")
                 with h_cache.open() as fh:
@@ -108,8 +109,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
                         l = fh.readline()
                         if l.find(': ')>0:
                             k,v = l.strip().split(': ',1)
-                            if path.endswith('.js'):
-                                print(f"{k}: {v}")
+                            #if path.endswith('.js'):
+                            #    print(f"{k}: {v}")
                             if k in ["Content-Length","Access-Control-Allow-Origin"]:
                                 continue
                             self.send_header(k,v)
