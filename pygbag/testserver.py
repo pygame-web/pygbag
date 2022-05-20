@@ -23,6 +23,13 @@ import argparse
 import io
 
 
+import urllib.request
+import hashlib
+from pathlib import Path
+
+VERB=True
+
+
 try:
     from future_fstrings import fstring_decode
 except:
@@ -50,6 +57,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
             f.close()
 
     def send_head(self):
+        global VERB
         path = self.translate_path(self.path)
         f = None
         if os.path.isdir(path):
@@ -77,46 +85,86 @@ class CodeHandler(SimpleHTTPRequestHandler):
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None
 
-        try:
-            f = open(path, 'rb')
-        except OSError:
+        f = None
+
+        if not os.path.isfile(path):
+            cache = hashlib.md5(self.path.encode()).hexdigest()
+            d_cache = CACHE.joinpath( cache + ".data" )
+            h_cache = CACHE.joinpath( cache + ".head" )
+            if not h_cache.is_file():
+                remote = SITE+self.path
+                print("FIXME:", SITE+self.path,'->', d_cache )
+                try:
+                    lf, headers = urllib.request.urlretrieve(remote , d_cache )
+                    h_cache.write_text( str(headers) )
+                except:
+                    print(remote,"404")
+
+            if d_cache.is_file():
+                self.send_response(HTTPStatus.OK)
+                f =  d_cache.open("rb")
+                with h_cache.open() as fh:
+                    while True:
+                        l = fh.readline()
+                        if l.find(': ')>0:
+                            k,v = l.strip().split(': ',1)
+                            if path.endswith('.js'):
+                                print(f"{k}: {v}")
+                            if k in ["Content-Length","Access-Control-Allow-Origin"]:
+                                continue
+                            self.send_header(k,v)
+                        else:
+                            break
+                    VERB=False
+            cached = True
+        else:
+            cached = False
+            try:
+                f = open(path, 'rb')
+            except OSError:
+                pass
+
+        if f is None:
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None
 
         try:
             fs = os.fstat(f.fileno())
+
             # Use browser cache if possible
-            if ("If-Modified-Since" in self.headers
-                    and "If-None-Match" not in self.headers):
-                # compare If-Modified-Since and time of last file modification
-                try:
-                    ims = email.utils.parsedate_to_datetime(
-                        self.headers["If-Modified-Since"])
-                except (TypeError, IndexError, OverflowError, ValueError):
-                    # ignore ill-formed values
-                    pass
-                else:
-                    if ims.tzinfo is None:
-                        # obsolete format with no timezone, cf.
-                        # https://tools.ietf.org/html/rfc7231#section-7.1.1.1
-                        ims = ims.replace(tzinfo=datetime.timezone.utc)
-                    if ims.tzinfo is datetime.timezone.utc:
-                        # compare to UTC datetime of last modification
-                        last_modif = datetime.datetime.fromtimestamp(
-                            fs.st_mtime, datetime.timezone.utc)
-                        # remove microseconds, like in If-Modified-Since
-                        last_modif = last_modif.replace(microsecond=0)
+            if not cached:
+                if("If-Modified-Since" in self.headers and "If-None-Match" not in self.headers):
+                    # compare If-Modified-Since and time of last file modification
+                    try:
+                        ims = email.utils.parsedate_to_datetime(
+                            self.headers["If-Modified-Since"])
+                    except (TypeError, IndexError, OverflowError, ValueError):
+                        # ignore ill-formed values
+                        pass
+                    else:
+                        if ims.tzinfo is None:
+                            # obsolete format with no timezone, cf.
+                            # https://tools.ietf.org/html/rfc7231#section-7.1.1.1
+                            ims = ims.replace(tzinfo=datetime.timezone.utc)
+                        if ims.tzinfo is datetime.timezone.utc:
+                            # compare to UTC datetime of last modification
+                            last_modif = datetime.datetime.fromtimestamp(
+                                fs.st_mtime, datetime.timezone.utc)
+                            # remove microseconds, like in If-Modified-Since
+                            last_modif = last_modif.replace(microsecond=0)
 
-                        if last_modif <= ims:
-                            self.send_response(HTTPStatus.NOT_MODIFIED)
-                            self.end_headers()
-                            f.close()
-                            return None
+                            if last_modif <= ims:
+                                self.send_response(HTTPStatus.NOT_MODIFIED)
+                                self.end_headers()
+                                f.close()
+                                return None
 
-            self.send_response(HTTPStatus.OK)
-            self.send_header("Content-type", ctype)
+                self.send_response(HTTPStatus.OK)
+
+                self.send_header("Content-type", ctype)
+
             file_size = fs[6]
-            if path.endswith('.py'):
+            if self.path.endswith('.py'):
                 print(" --> do_GET(%s)" % path)
                 if fstring_decode:
                     content, _ = fstring_decode(f.read())
@@ -128,9 +176,15 @@ class CodeHandler(SimpleHTTPRequestHandler):
                 f = io.BytesIO(content)
 
             self.send_header("Content-Length", str(file_size))
-            self.send_header("Last-Modified",
+            self.send_header("Access-Control-Allow-Origin","*")
+
+
+            if not cached:
+                self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
+
             self.end_headers()
+
             return f
         except:
             f.close()
@@ -171,40 +225,25 @@ def code_server(HandlerClass, ServerClass=ThreadingHTTPServer, protocol="HTTP/1.
             sys.exit(0)
 
 
-parser = argparse.ArgumentParser()
-
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname((__file__))))
-
-
-print("\nServing python files from [%s]\n\nwith no security/performance in mind, i'm just a test tool : don't rely on me" % ROOT)
-
-parser.add_argument(
-    "--bind", "-b", default="", metavar="ADDRESS", help="Specify alternate bind address " "[default: all interfaces]"
-)
-parser.add_argument("--directory", "-d", default=ROOT, help="Specify alternative directory " "[default:%s]" % ROOT)
-
-parser.add_argument("--ssl",default=False,help="enable ssl with server.pem and key.pem")
-
-parser.add_argument("--port", action="store", default=8000, type=int, nargs="?", help="Specify alternate port [default: 8000]")
-
-args = parser.parse_args()
-
-ssl = args.ssl
-
-if ssl:
-    try:
-        import ssl as modssl
-        ssl = True
-    except:
-        print("Faulty ssl support")
-        ssl = False
-else:
-    print("Not using SSL")
-
-handler_class = partial(CodeHandler, directory=args.directory)
 
 if not ".wasm" in CodeHandler.extensions_map:
     print("WARNING: wasm mimetype unsupported on that system, trying to correct", file=sys.stderr)
     CodeHandler.extensions_map[".wasm"] = "application/wasm"
 
-code_server(HandlerClass=handler_class, port=args.port, bind=args.bind, ssl=ssl)
+def run_code_server(args):
+    global CACHE, SITE
+    CACHE = Path(args.cache)
+    SITE = args.site
+
+    ssl = args.ssl
+    if ssl:
+        try:
+            import ssl as modssl
+            ssl = True
+        except:
+            print("Faulty ssl support")
+            ssl = False
+    else:
+        print("Not using SSL")
+    handler_class = partial(CodeHandler, directory=args.directory)
+    code_server(HandlerClass=handler_class, port=args.port, bind=args.bind, ssl=ssl)
