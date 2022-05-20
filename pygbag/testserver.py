@@ -88,20 +88,20 @@ class CodeHandler(SimpleHTTPRequestHandler):
         f = None
 
         if not os.path.isfile(path) and not path.endswith('.map'):
-            cache = hashlib.md5(self.path.encode()).hexdigest()
+            remote_url = SITE+self.path
+            cache = hashlib.md5( remote_url.encode()).hexdigest()
             d_cache = CACHE.joinpath( cache + ".data" )
             h_cache = CACHE.joinpath( cache + ".head" )
             if not h_cache.is_file():
-                remote = SITE+self.path
-                print("CACHING:", SITE+self.path,'->', d_cache )
+                print("CACHING:", remote_url,'->', d_cache )
                 try:
-                    lf, headers = urllib.request.urlretrieve(remote , d_cache )
+                    lf, headers = urllib.request.urlretrieve(remote_url , d_cache )
                     h_cache.write_text( str(headers) )
                 except:
-                    print("ERROR 404:",remote)
+                    print("ERROR 404:",remote_url)
 
             if d_cache.is_file():
-                print("CACHED:", SITE+self.path,'from', d_cache )
+                print("CACHED:", remote_url,'from', d_cache )
                 self.send_response(HTTPStatus.OK)
                 f =  d_cache.open("rb")
                 with h_cache.open() as fh:
