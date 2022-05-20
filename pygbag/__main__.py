@@ -1,8 +1,6 @@
 print(" *pygbag*")
-import sys
-sys.stdout.reconfigure(encoding='utf-8')
-sys.stdin.reconfigure(encoding='utf-8')
 
+import sys
 import os
 import argparse
 
@@ -104,7 +102,7 @@ CC = {
 
 
 if Path(args.template).is_file():
-    with open(args.template) as source:
+    with open(args.template, "rU") as source:
         with open(build_dir.joinpath("index.html").resolve(), "w") as target:
             # while ( line := source.readline():
             while True:
