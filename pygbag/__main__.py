@@ -102,8 +102,8 @@ CC = {
 
 
 if Path(args.template).is_file():
-    with open(args.template, "rU") as source:
-        with open(build_dir.joinpath("index.html").resolve(), "w") as target:
+    with open(args.template, "r", encoding='utf-8') as source:
+        with open(build_dir.joinpath("index.html").resolve(), "w", encoding='utf-8') as target:
             # while ( line := source.readline():
             while True:
                 line = source.readline()
