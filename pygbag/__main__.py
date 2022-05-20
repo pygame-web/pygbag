@@ -73,7 +73,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--site", default="https://pmp-p.github.io/pygbag/", help="web site to shadow"
+    "--site", default="https://pmp-p.github.io/pygbag", help="web site to shadow"
 )
 
 parser.add_argument("--template", default="default.tmpl", help="index.html template")
@@ -98,6 +98,9 @@ from . import testserver
 
 CC = {
     "base": f"http://localhost:{args.port}/",
+    "xtermjs" : "1",
+    "archive" : archname,
+    "autorun" : "0",
 }
 
 
@@ -112,7 +115,7 @@ if Path(args.template).is_file():
                 for k, v in CC.items():
                     line = line.replace("{{cookiecutter." + k + "}}", v)
 
-                target.write(line + "\n")
+                target.write(line)
 
 
 testserver.run_code_server(args)
