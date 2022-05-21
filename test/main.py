@@ -10,20 +10,22 @@ async def main():
     count = 3
 
     while True:
-        print(f"""
-
+        print(
+            f"""
 
     Hello[{count}] from Pygame
 
+"""
+        )
 
-""")
-    	pygame.display.update()
+        pygame.display.update()
         await asyncio.sleep(0)
 
         if not count:
             pygame.quit()
             return
-    	count = count - 1
+
+        count = count - 1
 
 
-asyncio.run( main() )
+asyncio.run(main())
