@@ -7,20 +7,23 @@ pygame.display.set_caption("TEST")
 
 
 async def main():
+    count = 3
 
     while True:
-        print("""
+        print(f"""
 
 
-    Hello from Pygame
+    Hello[{count}] from Pygame
 
 
 """)
-        pygame.display.update()
+    	pygame.display.update()
         await asyncio.sleep(0)
 
-        if True:
+        if not count:
+            pygame.quit()
             return
+    	count = count - 1
 
 
 asyncio.run( main() )
