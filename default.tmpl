@@ -122,7 +122,7 @@ height="88%" width="470px"
 
 
     <script type="application/javascript">
-    config = { xtermjs : 1 }
+    config = { xtermjs : "{{cookiecutter.xtermjs}}" , _sdl2 : "canvas", archive : "{{cookiecutter.archive}}", autorun : {{cookiecutter.autorun}} }
 
     function custom_prerun(){
         // no python main and no (MEMFS + VFS) yet.
@@ -162,34 +162,10 @@ height="88%" width="470px"
     async function custom_site(vfs) {
         // python and all filesystems are ready.
         console.log(__FILE__, "custom_site Begin")
-/*
-        async function _rcp(url, store) {
-            var content
-            try {
-                content = await fetch(url)
-            } catch (x) { return false }
 
-            store = store || ( "/data/data/" + url )
-            console.info(__FILE__,`rcp ${url} => ${store}`)
-            if (content.ok) {
-                const text= await content.text()
-                await FS.writeFile( store, text);
-                return true;
-            } else {
-                console.error(__FILE__,`can't rcp ${url} to ${store}`)
-                return false;
-            }
-        }
-*/
-        python.readline.history = [
-    "os.listdir('/data/data')",
-    "cd site-packages/SimpleGUICS2Pygame/example",
-    "cd /data/data/org.sdl2.pysdl2/assets/examples-wasm",
-    "cd /data/data/org.python/assets;test.py",
-    "ls /usr/lib",
-    "test()"]
+        python.readline.history = []
 
-        _rcp("current.py", "/data/data/org.python/assets/test.py")
+        //_rcp("current.py", "/data/data/org.python/assets/test.py")
 
 
         frame_online(  Module.arguments[0]+".html" )
@@ -258,9 +234,12 @@ if os.path.isfile("/data/data/pythonrc.py"):
             // FIXME: sometimes runtime is called without overlayfs ready.
 
             if (python.APK != "org.python") {
-                if (await _rcp(`${python.APK}.py`, `/data/data/${python.APK}/assets/main.py`)) {
-                    console.log(__FILE__, "prepare to APK", python.APK)
+                if (config.autorun) {
+                    if (await _rcp(`${python.APK}.py`, `/data/data/${python.APK}/assets/main.py`)) {
+                        console.log(__FILE__, "prepare to APK", python.APK)
+                    }
                 }
+
                 // hide the top status bar (emscripten loader)
                 setTimeout(python.setStatus, 1000, "hide")
                 on_click("aiostop","shell.stop()")
@@ -297,44 +276,10 @@ if os.path.isfile("/data/data/pythonrc.py"):
 
         }
 
-        pythonvm("canvas", wasmterm )
+        pythonvm(wasmterm, config)
 
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     </script>
 </body>
