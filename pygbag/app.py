@@ -79,6 +79,10 @@ def main(cdn="https://pmp-p.github.io/pygbag/"):
     )
 
     parser.add_argument(
+        "--build", action='store_true', help="build only, do not run test server"
+    )
+
+    parser.add_argument(
         "--cdn",
         default=cdn,
         help="web site to cache locally [default:%s]" % cdn,
@@ -148,15 +152,17 @@ def main(cdn="https://pmp-p.github.io/pygbag/"):
 """
             )
 
-            template_file, headers = urllib.request.urlretrieve( tmpl_url, tmpl )
+            template_file, headers = urllib.request.urlretrieve(tmpl_url, tmpl)
             template_file = Path(template_file)
 
-    if assets_folder.joinpath('static').is_dir():
-        print(f"""
+    if assets_folder.joinpath("static").is_dir():
+        print(
+            f"""
         copying static files to webroot {build_dir}
-""")
+"""
+        )
         # dirs_exist_ok = 3.8
-        shutil.copytree( assets_folder.joinpath('static'), build_dir, dirs_exist_ok=True)
+        shutil.copytree(assets_folder.joinpath("static"), build_dir, dirs_exist_ok=True)
 
     if template_file.is_file():
         with template_file.open("r", encoding="utf-8") as source:
@@ -172,6 +178,16 @@ def main(cdn="https://pmp-p.github.io/pygbag/"):
                         line = line.replace("{{cookiecutter." + k + "}}", v)
 
                     target.write(line)
-        testserver.run_code_server(args, CC)
+        if not args.build:
+            testserver.run_code_server(args, CC)
+        else:
+            print(
+                f"""
+    build only requested, not running testserver, files ready here :
+
+build_dir = {build_dir}
+
+            """
+            )
     else:
         print(args.template, "is not a valid template")

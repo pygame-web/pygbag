@@ -229,7 +229,7 @@ if os.path.isfile("/data/data/pythonrc.py"):
             runsite = runsite+ `print("_"*80);print("${python.motd}");print("_"*80);`
 
 
-        if (await _rcp("pythonrc.py")) {
+        if (await _rcp("{{cookiecutter.cdn}}/pythonrc.py")) {
 
             // FIXME: sometimes runtime is called without overlayfs ready.
 

@@ -31,8 +31,12 @@ def pack_files(zf, pushpopd, newpath):
             continue
 
         try:
+            dispname = dirname[TRUNCATE:] or '/'
+            if dispname.startswith('/build'):
+                continue
             os.chdir(dirname)
-            print(f"now in .{dirname[TRUNCATE:] or '/'}")
+            print(f"now in .{dispname}")
+
         except:
             print("Invalid Folder :", pushpopd, newpath)
 

@@ -23,7 +23,7 @@ jobs:
             ln -s $GITHUB_WORKSPACE python-wasm-plus/demos/$PROJECT
             cd python-wasm-plus
             bash ./python-wasm-plus.sh
-            bash ./buildapp.sh templates/no-worker-fs demos/$PROJECT demo
+            bash ./buildapp.sh templates/no-worker demos/$PROJECT demo
             cd $GITHUB_WORKSPACE/../python-wasm-plus/demos/$PROJECT
             echo "==================="
             pwd
@@ -32,6 +32,7 @@ jobs:
             mv demo $GITHUB_WORKSPACE/
             cd $GITHUB_WORKSPACE/
             pwd
+            cp -vf $GITHUB_WORKSPACE/static/* demo/
             ls -al demo
             du -hs demo/*
 

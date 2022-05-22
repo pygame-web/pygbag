@@ -19,28 +19,29 @@ async def main():
     while True:
         print(f"""
 
-
-    Hello[{count}] from Pygame
-
+        Hello[{count}] from Pygame
 
 """)
         pygame.display.update()
-        await asyncio.sleep(0)
+        await asyncio.sleep(0)  # very important, and keep it 0
 
         if not count:
             pygame.quit()
             return
         count = count - 1
 
-
 asyncio.run( main() )
+
+# do not add anything from here
+# asyncio.run is non block on pygame-wasm
+
 ```
 
 
 
 usage:
 
-    pip3 install pygbag --upgrade
+    pip3 install pygbag --user --upgrade
     pygbag your_game_folder
 
 command help:
@@ -67,9 +68,11 @@ optional arguments:
 ```
 
 
-Now navigate to http://localhost:8000 with a modern Browser
-v8 based browser are preferred ( chromium/brave/chrome ... )
-because imposing some baseline restrictions on WebAssembly loading.
+Now navigate to http://localhost:8000 with a modern Browser.
+
+v8 based browsers are preferred ( chromium/brave/chrome ... )
+because they set baseline restrictions on WebAssembly loading.
+using them while testing ensure proper operation on all browsers.
 
 
 NOTES:
