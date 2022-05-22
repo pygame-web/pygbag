@@ -235,7 +235,7 @@ if os.path.isfile("/data/data/pythonrc.py"):
             runsite = runsite+ `print("_"*80);print("${python.motd}");print("_"*80);`
 
 
-        if (await _rcp("https://pmp-p.github.io/pygbag//pythonrc.py")) {
+        if (await _rcp("https://pmp-p.github.io/pygbag//pythonrc.py","/data/data/pythonrc.py")) {
 
             // FIXME: sometimes runtime is called without overlayfs ready.
 
