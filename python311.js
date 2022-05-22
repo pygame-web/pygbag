@@ -210,7 +210,7 @@ register(on_click)
 // READLINE ========================================================
 
 
-var readline = { last_cx : -1 , index : 0 }
+var readline = { last_cx : -1 , index : 0, history : ["help()"] }
 
 
 readline.complete = function (line) {
@@ -220,6 +220,8 @@ readline.complete = function (line) {
     python.PyRun_SimpleString(line + "\n")
 
 }
+
+window.readline = readline
 
 
 // Xterm Sixel ======================================================
@@ -582,7 +584,7 @@ const modularized = (typeof python311 != 'undefined')
 
 
 function pythonvm(vterm, config) {
-    var canvasid = "canvas";
+    var canvasid = "canvas"
     var autorun = null
 
     if (config){
@@ -836,7 +838,7 @@ function pythonvm(vterm, config) {
         window.Module = Module
         const jswasmloader=document.createElement('script')
         jswasmloader.setAttribute("type","text/javascript")
-        jswasmloader.setAttribute("src", "python311/main.js")
+        jswasmloader.setAttribute("src", (config.cdn || "")+ "python311/main.js")
         jswasmloader.setAttribute('async', true);
         document.getElementsByTagName("head")[0].appendChild(jswasmloader)
 
