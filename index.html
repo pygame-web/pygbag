@@ -122,7 +122,13 @@ height="88%" width="470px"
 
 
     <script type="application/javascript">
-    config = { xtermjs : "1" , _sdl2 : "canvas", archive : "test", autorun : 0 }
+    config = {
+        xtermjs : "1" ,
+        _sdl2 : "canvas",
+        archive : "test",
+        cdn : "https://pmp-p.github.io/pygbag/",
+        autorun : 0
+    }
 
     function custom_prerun(){
         // no python main and no (MEMFS + VFS) yet.
@@ -229,7 +235,7 @@ if os.path.isfile("/data/data/pythonrc.py"):
             runsite = runsite+ `print("_"*80);print("${python.motd}");print("_"*80);`
 
 
-        if (await _rcp("pythonrc.py")) {
+        if (await _rcp("https://pmp-p.github.io/pygbag//pythonrc.py")) {
 
             // FIXME: sometimes runtime is called without overlayfs ready.
 
