@@ -18,7 +18,6 @@
             display: none;
         }
 
-        /*
         #status {
             display: inline-block;
             vertical-align: top;
@@ -38,7 +37,7 @@
         div.thick_border { border: 4px solid black; }
 
         /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-        canvas.emscripten { border: 0px none; background-color: blue; } */
+        canvas.emscripten { border: 0px none; background-color: blue; }
 
         body {
             font-family: arial;
@@ -46,22 +45,17 @@
             padding: none;
         }
 
-        .middle {
-            display: flex;
-            justify-content: center;
-        }
-
         /* average size of droid screen 470dp x 320dp  */
         .topright{
            position:absolute;
-           top:10px;
-           right:10px;
+           top:5px;
+           right:5px;
         }
 
         .topleft {
             position:absolute;
-            top:10px;
-            left:10px;
+            top: 8px;
+            left: 8px;
         }
 
         .trinfo{
@@ -84,6 +78,8 @@
     <script src="{{cookiecutter.cdn}}/browserfs.min.js"></script>
 
     <script type="module" src="{{cookiecutter.cdn}}/python311.js" async defer></script>
+
+
 </head>
 
 <body>
@@ -99,6 +95,7 @@
         <div class="topleft" align="center">
             <canvas class="emscripten" id="canvas"
 width="800px" height="600px"
+style="width: 470px; height: 320px;"
             oncontextmenu="event.preventDefault()" tabindex=0>
             </canvas>
             <div class="hidden">
@@ -135,13 +132,19 @@ width="800px" height="600px"
                 webkitallowfullscreen="true"
                 allowtransparency="true">
             </iframe>
+        </div>
 
-        <!--    </div> -->
-    </div>
+    <!--    </div> -->
 
 
     <script type="application/javascript">
-    config = { xtermjs : "{{cookiecutter.xtermjs}}" , _sdl2 : "canvas", archive : "{{cookiecutter.archive}}", autorun : {{cookiecutter.autorun}} }
+    config = {
+        xtermjs : "{{cookiecutter.xtermjs}}" ,
+        _sdl2 : "canvas",
+        archive : "{{cookiecutter.archive}}",
+        cdn : "{{cookiecutter.cdn}}",
+        autorun : {{cookiecutter.autorun}}
+    }
 
     function custom_prerun(){
         // no python main and no (MEMFS + VFS) yet.
@@ -248,7 +251,7 @@ if os.path.isfile("/data/data/pythonrc.py"):
             runsite = runsite+ `print("_"*80);print("${python.motd}");print("_"*80);`
 
 
-        if (await _rcp("pythonrc.py")) {
+        if (await _rcp("{{cookiecutter.cdn}}/pythonrc.py","/data/data/pythonrc.py")) {
 
             // FIXME: sometimes runtime is called without overlayfs ready.
 
