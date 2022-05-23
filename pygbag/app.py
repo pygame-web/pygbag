@@ -10,8 +10,37 @@ import shutil
 
 from . import pack
 
+from .__init__ import __version__
 
-def main(cdn="https://pmp-p.github.io/pygbag/"):
+
+# FIXME: remove that when 0.1
+devmode = os.path.isfile("dev")
+if devmode:
+    DEFAULT_PORT = 8666
+    DEFAULT_CDN = f"http://localhost:8000/"
+    DEFAULT_TMPL = "static/default.tmpl"
+    print(
+        f"""
+
+*************************************
+    DEV MODE
+
+    {DEFAULT_CDN=}
+    {DEFAULT_PORT=}
+    {DEFAULT_TMPL=}
+*************************************
+"""
+    )
+
+else:
+    DEFAULT_CDN = "https://pygame-web.github.io/pygbag/"
+    DEFAULT_PORT = 8000
+    DEFAULT_TMPL = "default.tmpl"
+
+
+def main(cdn=DEFAULT_CDN):
+    global DEFAULT_PORT
+
     assets_folder = Path(sys.argv[-1]).resolve()
 
     reqs = []
@@ -40,6 +69,7 @@ def main(cdn="https://pmp-p.github.io/pygbag/"):
     archname = assets_folder.name
 
     archfile = build_dir.joinpath(f"{archname}.apk")
+
     if archfile.is_file():
         archfile.unlink()
 
@@ -88,9 +118,7 @@ def main(cdn="https://pmp-p.github.io/pygbag/"):
         help="web site to cache locally [default:%s]" % cdn,
     )
 
-    parser.add_argument(
-        "--template", default="default.tmpl", help="index.html template"
-    )
+    parser.add_argument("--template", default=DEFAULT_TMPL, help="index.html template")
 
     parser.add_argument(
         "--ssl", default=False, help="enable ssl with server.pem and key.pem"
@@ -99,7 +127,7 @@ def main(cdn="https://pmp-p.github.io/pygbag/"):
     parser.add_argument(
         "--port",
         action="store",
-        default=8000,
+        default=DEFAULT_PORT,
         type=int,
         nargs="?",
         help="Specify alternate port [default: 8000]",
@@ -115,6 +143,11 @@ def main(cdn="https://pmp-p.github.io/pygbag/"):
         "xtermjs": "1",
         "archive": archname,
         "autorun": "0",
+        "authors": "pgw",
+        "title": "cookiecutter.title",
+        "directory": archname,
+        "spdx": "cookiecutter.spdx",
+        "version": __version__,
     }
 
     def cache_file(remote_url, suffix):
