@@ -31,8 +31,8 @@ def pack_files(zf, pushpopd, newpath):
             continue
 
         try:
-            dispname = dirname[TRUNCATE:] or '/'
-            if dispname.startswith('/build'):
+            dispname = dirname[TRUNCATE:] or "/"
+            if dispname.startswith("/build"):
                 continue
             os.chdir(dirname)
             print(f"now in .{dispname}")

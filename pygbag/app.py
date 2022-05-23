@@ -79,7 +79,7 @@ def main(cdn="https://pmp-p.github.io/pygbag/"):
     )
 
     parser.add_argument(
-        "--build", action='store_true', help="build only, do not run test server"
+        "--build", action="store_true", help="build only, do not run test server"
     )
 
     parser.add_argument(
