@@ -18,20 +18,20 @@ def pack_files(zf, pushpopd, newpath):
     os.chdir(newpath)
 
     for dirname, dirnames, filenames in os.walk(newpath):
-
+        p_dirname = Path(dirname).as_posix()
         # do not put git subfolders
-        if dirname.find("/.git") >= 0:
+        if p_dirname.find("/.git") >= 0:
             continue
 
-        if dirname.endswith("/build"):
+        if p_dirname.endswith("/build"):
             continue
 
-        if dirname.endswith("/static"):
+        if p_dirname.endswith("/static"):
             HAS_STATIC = True
             continue
 
         try:
-            dispname = dirname[TRUNCATE:] or "/"
+            dispname = Path(dirname[TRUNCATE:] or "/").as_posix()
             if dispname.startswith("/build"):
                 continue
             os.chdir(dirname)
@@ -51,10 +51,12 @@ def pack_files(zf, pushpopd, newpath):
             if not os.path.isfile(f):
                 continue
 
-            if f.endswith("/main.py"):
+            if Path(f).as_posix().endswith("/main.py"):
                 HAS_MAIN = True
 
             # ext = f.rsplit(".", 1)[-1].lower()
+            # folders to skip __pycache__
+            # extensions to skip : pyc pyx pyd pyi
 
             src = os.path.join(os.getcwd(), f)
             src = f"assets{src[TRUNCATE:]}"
