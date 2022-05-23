@@ -32,7 +32,6 @@ jobs:
             mv demo $GITHUB_WORKSPACE/
             cd $GITHUB_WORKSPACE/
             pwd
-            cp -vf $GITHUB_WORKSPACE/static/* demo/
             ls -al demo
             du -hs demo/*
 
