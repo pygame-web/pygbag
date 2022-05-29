@@ -235,6 +235,7 @@ export class WasmTerminal {
 
         this.xterm = new Terminal(
             {
+                allowTransparency: true,
                 scrollback: 10000,
                 fontSize: 14,
                 theme: { background: '#1a1c1f' },

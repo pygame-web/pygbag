@@ -71,7 +71,15 @@
       <progress value="0" max="100" id="progress" hidden=1></progress>
     </div>
 
-    <!-- <div class="thick_border" align=center > -->
+
+    <div id="terminal" tabIndex=1><p></div>
+    <div class="button-container">
+      VT340
+      <button id="repl" disabled>Start REPL</button>
+      <button id="clearvt" disabled>Clear</button>
+      &nbsp;
+    </div>
+
         <div class="emscripten_border" align=center >
             <canvas class="emscripten" id="canvas"
 width="800px" height="600px"
@@ -86,16 +94,6 @@ style="width: 576px; height: 432px;"
                 &nbsp;
             </div>
 
-        </div>
-
-        <div class="emscripten_border">
-            <div id="terminal" tabIndex=1><p></div>
-            <div class="button-container">
-              VT340
-              <button id="repl" disabled>Start REPL</button>
-              <button id="clearvt" disabled>Clear</button>
-              &nbsp;
-            </div>
         </div>
 
         <div id=info class=topright style="width: 640px;height=100px;">
@@ -120,7 +118,7 @@ height="88%" width="640px"
 
 
     <script type="application/javascript">
-    config = { xtermjs : 1 }
+    config = { xtermjs : 1, _sdl2 : "canvas", archive: 0, autorun: 0 }
 
     function custom_prerun(){
         // no python main and no (MEMFS + VFS) yet.
@@ -160,37 +158,21 @@ height="88%" width="640px"
     async function custom_site(vfs) {
         // python and all filesystems are ready.
         console.log(__FILE__, "custom_site Begin")
-/*
-        async function _rcp(url, store) {
-            var content
-            try {
-                content = await fetch(url)
-            } catch (x) { return false }
 
-            store = store || ( "/data/data/" + url )
-            console.info(__FILE__,`rcp ${url} => ${store}`)
-            if (content.ok) {
-                const text= await content.text()
-                await FS.writeFile( store, text);
-                return true;
-            } else {
-                console.error(__FILE__,`can't rcp ${url} to ${store}`)
-                return false;
-            }
-        }
-*/
+
+
         python.readline.history = [
     "os.listdir('/data/data')",
     "cd site-packages/SimpleGUICS2Pygame/example",
     "cd /data/data/org.sdl2.pysdl2/assets/examples-wasm",
     "cd /data/data/org.python/assets;test.py",
-    "test()"]
+    "ls /usr/lib",
+    "test()", "test.py"]
 
         _rcp("current.py", "/data/data/org.python/assets/test.py")
 
 
         frame_online(  Module.arguments[0]+".html" )
-
 
 
 // PyConfig
@@ -255,8 +237,10 @@ if os.path.isfile("/data/data/pythonrc.py"):
             // FIXME: sometimes runtime is called without overlayfs ready.
 
             if (python.APK != "org.python") {
-                if (await _rcp(`${python.APK}.py`, `/data/data/${python.APK}/assets/main.py`)) {
-                    console.log(__FILE__, "prepare to APK", python.APK)
+                if (!config.autorun) {
+                    if (await _rcp(`${python.APK}.py`, `/data/data/${python.APK}/assets/main.py`)) {
+                        console.log(__FILE__, "prepare apk static code if any", python.APK)
+                    }
                 }
                 // hide the top status bar (emscripten loader)
                 setTimeout(python.setStatus, 1000, "hide")
@@ -264,7 +248,7 @@ if os.path.isfile("/data/data/pythonrc.py"):
                 on_click("aiopaused_false","aio.paused=False")
                 on_click("pygame_music_pause","pygame.music.pause()")
             } else {
-                console.log(__FILE__, "not APK to prepare")
+                console.log(__FILE__, "no apk to prepare, running interactive")
             }
         } else {
             runsite = runsite +'embed.prompt();'
@@ -298,21 +282,16 @@ ${pycode}
         // nothing is ready.
 
 
-
-
         var wasmterm
 
         if (!config.xtermjs) {
             // xterm js placeholder
             wasmterm = { print : console.log, sixel : function(){}}
         } else {
-            // it uses  document.getElementById('terminal') to get its host
-            wasmterm = new WasmTerminal( document.getElementById('terminal') )
+            // it uses  document.getElementById() to get its host
+            wasmterm = new WasmTerminal( 'terminal', 132, 50 )
 
             window.xterm = wasmterm.xterm
-
-            const replButton = document.getElementById('repl')
-            const clearButton  = document.getElementById('clearvt')
 
             on_click('repl',`
 print(chr(27),"[2J",chr(27),"[H",sep='',end='')
@@ -323,12 +302,9 @@ print(sys.version)
 
             on_click('clearvt',"", ()=>{xterm.clear()} )
 
-            clearButton.removeAttribute('disabled')
-
         }
 
-        pythonvm("canvas", wasmterm )
-
+        pythonvm(wasmterm, config)
 
     }
 
