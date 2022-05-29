@@ -13,25 +13,39 @@ def new_screen(title):
     return screen
 
 
-
-
 from threading import Thread
 
 
+# still bugs in that thread model
 class Moving_bmp(Thread):
     async def run(self):
         global count, screen
         bmp = pygame.image.load_basic( "pygc.bmp" )
-
+        way = 1
         while await self:
             decal = abs(count) % 100
             if not decal:
                 way = -way
-            screen.blit( bmp, 50+(way*decal), 50 + (way*decal) )
+            screen.blit( bmp, (50+(way*decal), 50 + (-way*decal)) )
 
 
-def moving_png(*args):
-    global count, win
+def moving_bmp(win):
+    global count
+    bmp = pygame.image.load_basic( "pygc.bmp" )
+    way = 1
+    while not aio.exit:
+        decal = abs(count) % 100
+        if not decal:
+            way = -way
+
+        win.blit( bmp, (50+(way*decal), 50 + (-way*decal)) )
+        yield aio
+
+
+
+
+def moving_png(win):
+    global count
     try:
         png = pygame.image.load( "pygc.png" )
         way = 1
@@ -52,18 +66,18 @@ def color_background(win):
         yield aio
 
 
-
-bmp = pygame.image.load_basic( "pygc.bmp" )
-
 async def main():
-    global count, bmp, win
+    global count, bmp
 
     # using the whole display.
     win = new_screen("TEST")
 
     count = 3
 
-    mbmp = Moving_bmp()
+    # still bugs in that thread model
+    #mbmp = Moving_bmp()
+
+    mbmp = Thread(target=moving_bmp, args=[win])
     mpng = Thread(target=moving_png, args=[win])
 
     mbg = Thread(target=color_background, args=[win])
@@ -80,11 +94,18 @@ async def main():
         )
 
         if count == 0:
+            # Green threads are ordered at runtime unlike system threads.
 
-            screen.blit( bmp, (abs(count) % 100,abs(count) % 100) )
-            #mbmp.start()
+            # erase and fill
             mbg.start()
+
+            # 1st object to draw
             mpng.start()
+
+            # 2nd
+            mbmp.start()
+
+
 
 
         pygame.display.update()
