@@ -30,17 +30,20 @@ class Moving_bmp(Thread):
             screen.blit( bmp, 50+(way*decal), 50 + (way*decal) )
 
 
-def moving_png(win):
-    global count
-    png = pygame.image.load( "pygc.png" )
-    way = 1
-    while not aio.exit:
-        decal = abs(count) % 100
-        if not decal:
-            way = -way
+def moving_png(*args):
+    global count, win
+    try:
+        png = pygame.image.load( "pygc.png" )
+        way = 1
+        while not aio.exit:
+            decal = abs(count) % 100
+            if not decal:
+                way = -way
 
-        win.blit( png, (200+(way*decal), 100 + (way*decal) ) )
-        yield aio
+            win.blit( png, (200+(way*decal), 100 + (way*decal) ) )
+            yield aio
+    except:
+        print("png support error upgrade SDL_image !")
 
 
 def color_background(win):
@@ -53,7 +56,7 @@ def color_background(win):
 bmp = pygame.image.load_basic( "pygc.bmp" )
 
 async def main():
-    global count, bmp
+    global count, bmp, win
 
     # using the whole display.
     win = new_screen("TEST")
@@ -79,7 +82,7 @@ async def main():
         if count == 0:
 
             screen.blit( bmp, (abs(count) % 100,abs(count) % 100) )
-            mbmp.start()
+            #mbmp.start()
             mbg.start()
             mpng.start()
 
