@@ -40,7 +40,11 @@ else:
 DEFAULT_SCRIPT = "main.py"
 
 
-def main(patharg, cdn=DEFAULT_CDN):
+def main():
+    main_run(Path(sys.argv[-1]).resolve())
+
+
+def main_run(patharg, cdn=DEFAULT_CDN):
     global DEFAULT_PORT, DEFAULT_SCRIPT
 
     if patharg.is_file():
