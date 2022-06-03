@@ -40,10 +40,8 @@ else:
 DEFAULT_SCRIPT = "main.py"
 
 
-def main(cdn=DEFAULT_CDN):
+def main(patharg, cdn=DEFAULT_CDN):
     global DEFAULT_PORT, DEFAULT_SCRIPT
-
-    patharg = Path(sys.argv[-1]).resolve()
 
     if patharg.is_file():
         DEFAULT_SCRIPT = patharg.name
@@ -58,7 +56,7 @@ def main(cdn=DEFAULT_CDN):
         # https://docs.python.org/3.11/library/shutil.html#shutil.copytree dirs_exist_ok = 3.8
         reqs.append("pygbag requires CPython version >= 3.8")
 
-    if not app_folder.is_dir():
+    if not app_folder.is_dir() or patharg.as_posix().endswith("/pygbag/__main__.py"):
         reqs.append(
             "ERROR: Last argument must be app top level directory, or the main python script"
         )
@@ -208,17 +206,11 @@ now packing application ....
         "version": __version__,
     }
 
-
-
-
     def cache_file(remote_url, suffix):
         nonlocal cache_dir
         cache = hashlib.md5(remote_url.encode()).hexdigest()
         cached = cache_dir.joinpath(cache + "." + suffix)
         return cached
-
-
-
 
     # get local or online template in order
     # _______________________________________
@@ -265,30 +257,27 @@ now packing application ....
         # dirs_exist_ok = 3.8
         shutil.copytree(app_folder.joinpath("static"), build_dir, dirs_exist_ok=True)
 
-
-
-
     # get local or online favicon in order
     # _______________________________________
 
     icon_file = Path(args.icon)
     if not icon_file.is_file():
         icon_url = f"{cdn}{args.icon}"
-        icon_file =  cache_file(icon_url, "png")
+        icon_file = cache_file(icon_url, "png")
         icon_file, headers = urllib.request.urlretrieve(icon_url, icon_file)
         icon_file = Path(icon_file)
 
-        print(f"""
+        print(
+            f"""
     caching icon {icon_url}
     cached locallly at {icon_file}
-    """)
-
+    """
+        )
 
     if icon_file.is_file():
-        shutil.copyfile( icon_file, build_dir.joinpath("favicon.png") )
+        shutil.copyfile(icon_file, build_dir.joinpath("favicon.png"))
     else:
         print(f"error: cannot find {icon_file=}")
-
 
     if template_file.is_file():
         with template_file.open("r", encoding="utf-8") as source:

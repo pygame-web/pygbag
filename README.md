@@ -49,24 +49,27 @@ command help:
     pygbag --help your_game_folder
 
 ```
-usage: __main__.py [-h] [--bind ADDRESS] [--directory DIRECTORY]
-                   [--cache CACHE] [--cdn CDN] [--template TEMPLATE]
-                   [--ssl SSL] [--port [PORT]]
+
+usage: __main__.py [-h] your_game_folder[/main.py]
 
 optional arguments:
   -h, --help            show this help message and exit
   --bind ADDRESS        Specify alternate bind address [default: localhost]
   --directory DIRECTORY
-                        Specify alternative directory
-                        [default: <your_game_folder>/build/web]
+                        Specify alternative directory [default:/data/git/pygbag/test/build/web]
+  --app_name APP_NAME   Specify user facing name of application[default:test]
   --cache CACHE         md5 based url cache directory
-  --cdn CDN             web site to cache locally
-                        [default:https://pmp-p.github.io/pygbag/]
+  --package PACKAGE     package name, better make it unique
+  --version VERSION     package name, please make it unique
+  --build               build only, do not run test server
+  --main MAIN           Specify main script[default:main.py]
+  --icon ICON           package name, please make it unique
+  --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/pygbag/]
   --template TEMPLATE   index.html template
   --ssl SSL             enable ssl with server.pem and key.pem
   --port [PORT]         Specify alternate port [default: 8000]
-```
 
+```
 
 Now navigate to http://localhost:8000 with a modern Browser.
 
