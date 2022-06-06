@@ -109,7 +109,11 @@ class CodeHandler(SimpleHTTPRequestHandler):
                         l = fh.readline()
                         if l.find(": ") > 0:
                             k, v = l.strip().split(": ", 1)
-                            if k in ["Content-Length", "Access-Control-Allow-Origin"]:
+                            if k in [
+                                "Content-Length",
+                                "Access-Control-Allow-Origin",
+                                "Cross-Origin-Embedder-Policy",
+                            ]:
                                 continue
                             self.send_header(k, v)
                         else:
@@ -188,6 +192,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
 
             self.send_header("Content-Length", str(file_size))
             self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
 
             if not cached:
                 self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
