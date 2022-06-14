@@ -268,15 +268,18 @@ now packing application ....
     if not icon_file.is_file():
         icon_url = f"{cdn}{args.icon}"
         icon_file = cache_file(icon_url, "png")
-        icon_file, headers = urllib.request.urlretrieve(icon_url, icon_file)
-        icon_file = Path(icon_file)
-
-        print(
+        try:
+            icon_file, headers = urllib.request.urlretrieve(icon_url, icon_file)
+            icon_file = Path(icon_file)
+            print(
             f"""
     caching icon {icon_url}
     cached locallly at {icon_file}
     """
         )
+        except urllib.error.HTTPError:
+            print(f"{icon_url} not found")
+
 
     if icon_file.is_file():
         shutil.copyfile(icon_file, build_dir.joinpath("favicon.png"))

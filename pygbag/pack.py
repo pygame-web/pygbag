@@ -7,80 +7,78 @@ TRUNCATE = 0
 ASSETS = []
 HAS_STATIC = False
 HAS_MAIN = False
+LEVEL=-1
+
+def pack_files(zf, parent, zfolders, newpath):
+    global COUNTER, TRUNCATE, ASSETS, HAS_STATIC, HAS_MAIN, LEVEL
+    try:
+        LEVEL += 1
+        os.chdir(newpath)
+
+        for current, dirnames, filenames in os.walk(newpath):
+            p_dirname = Path(current)
+            dispname = Path(current[TRUNCATE:] or "/").as_posix()
+            print(f"now in .{dispname} [lvl={LEVEL} dirs={len(dirnames)} files={len(filenames)}]")
 
 
-def pack_files(zf, pushpopd, newpath):
-    global COUNTER, TRUNCATE, ASSETS, HAS_STATIC, HAS_MAIN
+            for subdir in dirnames:
 
-    if str(newpath).find("/.git") >= 0:
-        return
+                # do not put git subfolders
+                if subdir.startswith('.git'):
+                    continue
 
-    os.chdir(newpath)
+                # do not put python build/cache folders
+                if subdir in ["build","__pycache__"]:
+                    continue
 
-    for dirname, dirnames, filenames in os.walk(newpath):
-        p_dirname = Path(dirname).as_posix()
-        # do not put git subfolders
-        if p_dirname.find("/.git") >= 0:
-            continue
+                # do not archive static web files at toplevel
+                if LEVEL==0:
+                    if subdir == "static":
+                        HAS_STATIC = True
+                        continue
 
-        if p_dirname.endswith("/build"):
-            continue
+                # recurse
+                zfolders.append(subdir)
+                pack_files(zf, p_dirname, zfolders , p_dirname.joinpath(subdir).as_posix())
 
-        if p_dirname.endswith("/static"):
-            HAS_STATIC = True
-            continue
 
-        try:
-            dispname = Path(dirname[TRUNCATE:] or "/").as_posix()
-            if dispname.startswith("/build"):
-                continue
-            os.chdir(dirname)
-            print(f"now in .{dispname}")
+            for f in filenames:
+                # do not pack ourself
+                if f.endswith(".apk"):
+                    continue
 
-        except:
-            print("Invalid Folder :", pushpopd, newpath)
+                if f.endswith(".gitignore"):
+                    continue
 
-        for f in filenames:
-            # do not pack ourself
-            if f.endswith(".apk"):
-                continue
+                if  Path(f).is_symlink():
+                    print("sym",f)
 
-            if f.endswith(".gitignore"):
-                continue
+                if not os.path.isfile(f):
+                    continue
 
-            if not os.path.isfile(f):
-                continue
+                if LEVEL==0 and Path(f).as_posix().endswith("/main.py"):
+                    HAS_MAIN = True
 
-            if Path(f).as_posix().endswith("/main.py"):
-                HAS_MAIN = True
+                # ext = f.rsplit(".", 1)[-1].lower()
+                # folders to skip __pycache__
+                # extensions to skip : pyc pyx pyd pyi
+                zpath = list(zfolders)
+                zpath.append(f)
+                src = "/".join(zpath)
 
-            # ext = f.rsplit(".", 1)[-1].lower()
-            # folders to skip __pycache__
-            # extensions to skip : pyc pyx pyd pyi
+                if not src in ASSETS:
+                    #print( zpath , f )
+                    zf.write(f, src)
+                    ASSETS.append(src)
 
-            src = os.path.join(os.getcwd(), f)
-            src = f"assets{src[TRUNCATE:]}"
+                    COUNTER += 1
 
-            if not src in ASSETS:
-                zf.write(f, src)
-                # print(src)
-                ASSETS.append(src)
+            break
 
-                COUNTER += 1
-
-        for subdir in dirnames:
-            # do not archive static web files
-            if subdir == "static":
-                HAS_STATIC = True
-                continue
-
-            if subdir == "build":
-                continue
-
-            if subdir != ".git":
-                pack_files(zf, os.getcwd(), subdir)
-
-    os.chdir(pushpopd)
+    finally:
+        os.chdir(parent)
+        zfolders.pop()
+        LEVEL-=1
 
 
 def archive(apkname, target_folder, build_dir=None):
@@ -93,11 +91,11 @@ def archive(apkname, target_folder, build_dir=None):
         with zipfile.ZipFile(
             apkname, mode="x", compression=zipfile.ZIP_DEFLATED, compresslevel=9
         ) as zf:
-            pack_files(zf, Path.cwd(), target_folder)
+            pack_files(zf, Path.cwd(),['assets'], target_folder)
     except TypeError:
         # 3.6 does not support compresslevel
         with zipfile.ZipFile(apkname, mode="x", compression=zipfile.ZIP_DEFLATED) as zf:
-            pack_files(zf, Path.cwd(), target_folder)
+            pack_files(zf, Path.cwd(),['assets'], target_folder)
     print(COUNTER)
 
     if not (HAS_MAIN or HAS_STATIC):
