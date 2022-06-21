@@ -126,6 +126,10 @@ def main_run(patharg, cdn=DEFAULT_CDN):
     )
 
     parser.add_argument(
+        "--archive", action="store_true", help="make build/web.zip archive for itch.io"
+    )
+
+    parser.add_argument(
         "--main",
         default=DEFAULT_SCRIPT,
         help="Specify main script" "[default:%s]" % DEFAULT_SCRIPT,
@@ -263,23 +267,25 @@ now packing application ....
 
     # get local or online favicon in order
     # _______________________________________
-
-    icon_file = Path(args.icon)
-    if not icon_file.is_file():
-        icon_url = f"{cdn}{args.icon}"
-        icon_file = cache_file(icon_url, "png")
-        try:
-            icon_file, headers = urllib.request.urlretrieve(icon_url, icon_file)
-            icon_file = Path(icon_file)
-            print(
-            f"""
-    caching icon {icon_url}
-    cached locallly at {icon_file}
-    """
-        )
-        except urllib.error.HTTPError:
-            print(f"{icon_url} not found")
-
+    try:
+        icon_file = Path(args.icon)
+        if not icon_file.is_file():
+            icon_url = f"{cdn}{args.icon}"
+            icon_file = cache_file(icon_url, "png")
+            try:
+                icon_file, headers = urllib.request.urlretrieve(icon_url, icon_file)
+                icon_file = Path(icon_file)
+                print(
+                    f"""
+        caching icon {icon_url}
+        cached locallly at {icon_file}
+        """
+                )
+            except urllib.error.HTTPError:
+                print(f"{icon_url} not found")
+    except urllib.error.URLError:
+        print(f"CDN {cdn} is not responding : not runing test server")
+        args.build = True
 
     if icon_file.is_file():
         shutil.copyfile(icon_file, build_dir.joinpath("favicon.png"))
@@ -300,7 +306,22 @@ now packing application ....
                         line = line.replace("{{cookiecutter." + k + "}}", v)
 
                     target.write(line)
-        if not args.build:
+
+        # files should be all ready now
+        # except on CDN error on first test, but you did test do you ?
+        if args.archive:
+            print(
+                f"""
+    only building a web archive suitable for itch.io
+    archive file will be :
+    {build_dir}.zip
+"""
+            )
+
+            pack.web_archive(f"{app_name}.apk", build_dir)
+            raise SystemExit
+
+        elif not args.build:
             testserver.run_code_server(args, CC)
         else:
             print(
