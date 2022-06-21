@@ -289,7 +289,7 @@ ${pycode}
             wasmterm = { print : console.log, sixel : function(){}}
         } else {
             // it uses  document.getElementById() to get its host
-            wasmterm = new WasmTerminal( 'terminal', 132, 50 )
+            wasmterm = new WasmTerminal( 'terminal', 132, 50, "./xtermjsixel/xterm-addon-image-worker.js")
 
             window.xterm = wasmterm.xterm
 

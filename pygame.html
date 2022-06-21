@@ -290,7 +290,7 @@ if os.path.isfile("/data/data/pythonrc.py"):
             wasmterm = { print : console.log, sixel : function(){}}
         } else {
             // it uses  document.getElementById('terminal') to get its host
-            wasmterm = new WasmTerminal( "terminal", 100, 35 )
+            wasmterm = new WasmTerminal( "terminal", 100, 35, "./xtermjsixel/xterm-addon-image-worker.js" )
 
             window.xterm = wasmterm.xterm
 

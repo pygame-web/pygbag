@@ -132,6 +132,10 @@ except:
 
             myglob = f"global {', '.join(myglobs)}\n"
 
+            if aio.cross.simulator:
+                print(myglob)
+
+
             for mark, indent in tmpl:
                 __prepro[mark] = " " * indent + myglob
 
