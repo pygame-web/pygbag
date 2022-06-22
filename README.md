@@ -35,7 +35,7 @@ asyncio.run( main() )
 # do not add anything from here
 # asyncio.run is non block on pygame-wasm
 
-```
+
 usage:
 
     pip3 install pygbag --user --upgrade
@@ -46,6 +46,7 @@ command help:
     pygbag --help your_game_folder
 ```
 
+eg
 
 ```
 user@pp /data/git/pygbag $ python3.8 -m pygbag --help test
