@@ -36,9 +36,6 @@ asyncio.run( main() )
 # asyncio.run is non block on pygame-wasm
 
 ```
-
-
-
 usage:
 
     pip3 install pygbag --user --upgrade
@@ -47,10 +44,18 @@ usage:
 command help:
 
     pygbag --help your_game_folder
-
 ```
 
-usage: __main__.py [-h] your_game_folder[/main.py]
+
+```
+user@pp /data/git/pygbag $ python3.8 -m pygbag --help test
+ *pygbag 0.0.9*
+
+Serving python files from [/data/git/pygbag/test/build/web]
+
+with no security/performance in mind, i'm just a test tool : don't rely on me
+usage: __main__.py [-h] [--bind ADDRESS] [--directory DIRECTORY] [--app_name APP_NAME] [--cache CACHE] [--package PACKAGE] [--version VERSION] [--build] [--archive] [--main MAIN] [--icon ICON] [--cdn CDN]
+                   [--template TEMPLATE] [--ssl SSL] [--port [PORT]]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -62,13 +67,13 @@ optional arguments:
   --package PACKAGE     package name, better make it unique
   --version VERSION     package name, please make it unique
   --build               build only, do not run test server
+  --archive             make build/web.zip archive for itch.io
   --main MAIN           Specify main script[default:main.py]
   --icon ICON           package name, please make it unique
   --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/pygbag/]
   --template TEMPLATE   index.html template
   --ssl SSL             enable ssl with server.pem and key.pem
   --port [PORT]         Specify alternate port [default: 8000]
-
 ```
 
 Now navigate to http://localhost:8000 with a modern Browser.
