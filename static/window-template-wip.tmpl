@@ -101,50 +101,46 @@
         </div>
     </div>
 
-    <!-- <div class="thick_border" align=center > -->
-        <div align="center">
-            <canvas class="emscripten" id="canvas"
+    <div align="center">
+        <canvas class="emscripten" id="canvas"
 width="800px" height="600px"
 style="width: 100%;"
-            oncontextmenu="event.preventDefault()" tabindex=0>
-            </canvas>
-            <div id="system" hidden>
-                <div class="button-container">
-                    800x600=&gt;470x320
-                    <button id="aiostop" disabled>AIO ⏏︎</button>
-                    <button id="aiopaused_true" disabled>AIO ■</button>
-                    <button id="aiopaused_false" disabled>AIO ▶</button>
-                    <button id="pygame_music_pause" disabled>Music ■</button>
-                    &nbsp;
-                </div>
-            </div>
+        oncontextmenu="event.preventDefault()" tabindex=0>
+        </canvas>
 
+        <div id="system" hidden>
+            <div class="button-container">
+                <button id="aiostop" disabled>AIO ⏏︎</button>
+                <button id="aiopaused_true" disabled>AIO ■</button>
+                <button id="aiopaused_false" disabled>AIO ▶</button>
+                <button id="pygame_music_pause" disabled>Music ■</button>
+            </div>
         </div>
 
-        <div id="pyconsole" hidden>
-            <div id="terminal" tabIndex=1 align="left"><p></div>
-            <br>
-            &nbsp;VT340
+    </div>
 
-            <div id="info" class="trinfo" style="width: 470px;height=70px;">
-            </div>
+    <div id="pyconsole" hidden>
+        <div id="terminal" tabIndex=1 align="left"><p></div>
+        <br>
+        &nbsp;VT340
 
-            <iframe id="iframe" class="framed" name="iframe"
-    height="88%" width="470px"
-                sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
-                mozallowfullscreen="true"
-                allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
-                frameborder="0"
-                src="about://"
-                msallowfullscreen="true"
-                scrolling="yes"
-                allowfullscreen="true"
-                webkitallowfullscreen="true"
-                allowtransparency="true">
-            </iframe>
+        <div id="info" class="trinfo" style="width: 470px;height=70px;">
         </div>
 
-    <!--    </div> -->
+        <iframe id="iframe" class="framed" name="iframe"
+width="470px" height="88%"
+            sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
+            mozallowfullscreen="true"
+            allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
+            frameborder="0"
+            src="about://"
+            msallowfullscreen="true"
+            scrolling="yes"
+            allowfullscreen="true"
+            webkitallowfullscreen="true"
+            allowtransparency="true">
+        </iframe>
+    </div>
 
 
     <script type="application/javascript">

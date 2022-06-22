@@ -190,6 +190,8 @@ package={args.package}
 # icon 96x96 for dekstop 16x16 for web
 icon={args.icon}
 
+# js/wasm provider
+cdn={args.cdn}
 
 now packing application ....
 
@@ -233,12 +235,12 @@ now packing application ....
 """
         )
     else:
-        tmpl_url = f"{cdn}{args.template}"
+        tmpl_url = f"{args.cdn}{args.template}"
         tmpl = cache_file(tmpl_url, "tmpl")
         if tmpl.is_file():
             print(
                 f"""
-    building from local cached template {cdn}{args.template}
+    building from local cached template {args.cdn}{args.template}
     cached at {tmpl}
     result files will be in {build_dir}
 """
@@ -247,7 +249,7 @@ now packing application ....
         else:
             print(
                 f"""
-    caching template {cdn}{args.template}
+    caching template {args.cdn}{args.template}
     cached locally at {tmpl}
     result files will be in {build_dir}
 """
@@ -270,7 +272,7 @@ now packing application ....
     try:
         icon_file = Path(args.icon)
         if not icon_file.is_file():
-            icon_url = f"{cdn}{args.icon}"
+            icon_url = f"{args.cdn}{args.icon}"
             icon_file = cache_file(icon_url, "png")
             try:
                 icon_file, headers = urllib.request.urlretrieve(icon_url, icon_file)
@@ -284,7 +286,7 @@ now packing application ....
             except urllib.error.HTTPError:
                 print(f"{icon_url} not found")
     except urllib.error.URLError:
-        print(f"CDN {cdn} is not responding : not runing test server")
+        print(f"CDN {args.cdn} is not responding : not runing test server")
         args.build = True
 
     if icon_file.is_file():
