@@ -4,7 +4,14 @@ from pathlib import Path
 
 # rm $(find |grep pygbag.png$)
 # pngquant -f --ext -pygbag.png --quality 40 $(find|grep png$)
+"""
+for wav in $(find |grep wav$)
+do
+    ffmpeg -i $wav $wav.ogg
+done
 
+
+"""
 
 COUNTER = 0
 TRUNCATE = 0
@@ -13,10 +20,12 @@ HAS_STATIC = False
 HAS_MAIN = False
 LEVEL = -1
 PNGOPT = []
+WAVOPT = []
+
 
 
 def pack_files(zf, parent, zfolders, newpath):
-    global COUNTER, TRUNCATE, ASSETS, HAS_STATIC, HAS_MAIN, LEVEL, PNGOPT
+    global COUNTER, TRUNCATE, ASSETS, HAS_STATIC, HAS_MAIN, LEVEL, PNGOPT, WAVOPT
     try:
         LEVEL += 1
         os.chdir(newpath)
@@ -59,6 +68,11 @@ def pack_files(zf, parent, zfolders, newpath):
                 if f.endswith("-pygbag.png"):
                     continue
 
+                # skip wav converted to ogg optimized cache files
+                if f.endswith(".wav"):
+                    if Path(f"{f}.ogg").is_file():
+                        continue
+
                 if f.endswith(".gitignore"):
                     continue
 
@@ -73,20 +87,16 @@ def pack_files(zf, parent, zfolders, newpath):
 
                 # folders to skip __pycache__
                 # extensions to skip : pyc pyx pyd pyi
+
+                ext = f.rsplit(".", 1)[-1].lower()
+
+                if ext in ['pyc','pyx','pyd','pyi']:
+                    continue
+
                 zpath = list(zfolders)
                 zpath.append(f)
                 src = "/".join(zpath)
 
-                ext = f.rsplit(".", 1)[-1].lower()
-                if ext == "wav":
-                    print(
-                        """
-    ===============================================================
-        using .wav format for in assets for web publication
-        has a serious performance/size hit, prefer .ogg format
-    ===============================================================
-"""
-                    )
                 if ext == "png":
                     name, ext = f.rsplit(".", 1)
                     maybe = f"{name}-pygbag.png"
@@ -94,11 +104,25 @@ def pack_files(zf, parent, zfolders, newpath):
                         PNGOPT.append(f)
                         f = maybe
 
+                elif ext == "wav":
+                    maybe = f"{f}.ogg"
+                    if Path(maybe).is_file():
+                        WAVOPT.append(f)
+                    else:
+                        print(
+                        """
+    ===============================================================
+        using .wav format for in assets for web publication
+        has a serious performance/size hit, prefer .ogg format
+    ===============================================================
+"""
+                    )
+
+
                 if not src in ASSETS:
                     # print( zpath , f )
                     zf.write(f, src)
                     ASSETS.append(src)
-
                     COUNTER += 1
 
             break
