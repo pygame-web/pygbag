@@ -2,15 +2,18 @@ import sys, os
 import zipfile
 from pathlib import Path
 
-# rm $(find |grep pygbag.png$)
-# pngquant -f --ext -pygbag.png --quality 40 $(find|grep png$)
 """
+pngquant -f --ext -pygbag.png --quality 40 $(find|grep png$)
+
 for wav in $(find |grep wav$)
 do
     ffmpeg -i $wav $wav.ogg
 done
 
-
+for mp3 in $(find |grep mp3$)
+do
+    ffmpeg -i $mp3 $mp3.ogg
+done
 """
 
 COUNTER = 0
@@ -21,11 +24,12 @@ HAS_MAIN = False
 LEVEL = -1
 PNGOPT = []
 WAVOPT = []
-
+MP3OPT = []
 
 
 def pack_files(zf, parent, zfolders, newpath):
-    global COUNTER, TRUNCATE, ASSETS, HAS_STATIC, HAS_MAIN, LEVEL, PNGOPT, WAVOPT
+    global COUNTER, TRUNCATE, ASSETS, HAS_STATIC, HAS_MAIN, LEVEL
+    global PNGOPT, WAVOPT, MP3OPT
     try:
         LEVEL += 1
         os.chdir(newpath)
@@ -68,10 +72,35 @@ def pack_files(zf, parent, zfolders, newpath):
                 if f.endswith("-pygbag.png"):
                     continue
 
-                # skip wav converted to ogg optimized cache files
+                # skip wav/mp3 converted to ogg optimized cache files
                 if f.endswith(".wav"):
                     if Path(f"{f}.ogg").is_file():
+                        WAVOPT.append(f)
                         continue
+                    else:
+                        print(
+                            """
+    ===============================================================
+        using .wav format for in assets for web publication
+        has a serious performance/size hit, prefer .ogg format
+    ===============================================================
+"""
+                        )
+
+                if f.endswith(".mp3"):
+                    if Path(f"{f}.ogg").is_file():
+                        MP3OPT.append(f)
+                        continue
+                    else:
+                        print(
+                            """
+    ===============================================================
+        using .mp3 format in assets for web publication
+        has a serious compatibility problem amongst browsers
+        prefer .ogg format
+    ===============================================================
+"""
+                        )
 
                 if f.endswith(".gitignore"):
                     continue
@@ -90,34 +119,20 @@ def pack_files(zf, parent, zfolders, newpath):
 
                 ext = f.rsplit(".", 1)[-1].lower()
 
-                if ext in ['pyc','pyx','pyd','pyi']:
+                if ext in ["pyc", "pyx", "pyd", "pyi"]:
                     continue
 
                 zpath = list(zfolders)
                 zpath.append(f)
                 src = "/".join(zpath)
 
+                name, ext = f.rsplit(".", 1)
+
                 if ext == "png":
-                    name, ext = f.rsplit(".", 1)
                     maybe = f"{name}-pygbag.png"
                     if Path(maybe).is_file():
                         PNGOPT.append(f)
                         f = maybe
-
-                elif ext == "wav":
-                    maybe = f"{f}.ogg"
-                    if Path(maybe).is_file():
-                        WAVOPT.append(f)
-                    else:
-                        print(
-                        """
-    ===============================================================
-        using .wav format for in assets for web publication
-        has a serious performance/size hit, prefer .ogg format
-    ===============================================================
-"""
-                    )
-
 
                 if not src in ASSETS:
                     # print( zpath , f )
@@ -155,6 +170,12 @@ def archive(apkname, target_folder, build_dir=None):
 
     if len(PNGOPT):
         print(f"INFO: {len(PNGOPT)} png format files were optimized for packing")
+
+    if len(WAVOPT):
+        print(f"INFO: {len(WAVOPT)} wav format files were swapped for packing")
+
+    if len(MP3OPT):
+        print(f"INFO: {len(MP3OPT)} mp3 format files were swapped for packing")
 
 
 def web_archive(apkname, build_dir):
