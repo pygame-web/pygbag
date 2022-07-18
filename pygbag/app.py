@@ -8,9 +8,10 @@ import urllib
 import shutil
 from datetime import datetime
 
-from . import pack
-
 from .__init__ import __version__
+
+from . import pack
+from . import web
 
 
 # FIXME: remove that when 0.1
@@ -255,8 +256,11 @@ now packing application ....
 """
             )
 
-            template_file, headers = urllib.request.urlretrieve(tmpl_url, tmpl)
-            template_file = Path(template_file)
+            try:
+                template_file, headers = web.get(tmpl_url, tmpl)
+            except:
+                print(f"CDN {args.cdn} is not responding : not running test server")
+                args.build = True
 
     if app_folder.joinpath("static").is_dir():
         print(
@@ -269,25 +273,29 @@ now packing application ....
 
     # get local or online favicon in order
     # _______________________________________
-    try:
-        icon_file = Path(args.icon)
-        if not icon_file.is_file():
-            icon_url = f"{args.cdn}{args.icon}"
-            icon_file = cache_file(icon_url, "png")
+    icon_file = Path(args.icon)
+    if not icon_file.is_file():
+        icon_url = f"{args.cdn}{args.icon}"
+        icon_file = cache_file(icon_url, "png")
+
+        if icon_file.is_file():
+            print(
+                f"""
+    using icon from local cached file {icon_url}
+    cached at {icon_file}"""
+            )
+
+        else:
             try:
-                icon_file, headers = urllib.request.urlretrieve(icon_url, icon_file)
-                icon_file = Path(icon_file)
+                icon_file, headers = web.get(icon_url, icon_file)
                 print(
                     f"""
         caching icon {icon_url}
         cached locallly at {icon_file}
         """
                 )
-            except urllib.error.HTTPError:
+            except:
                 print(f"{icon_url} not found")
-    except urllib.error.URLError:
-        print(f"CDN {args.cdn} is not responding : not runing test server")
-        args.build = True
 
     if icon_file.is_file():
         shutil.copyfile(icon_file, build_dir.joinpath("favicon.png"))

@@ -1,11 +1,5 @@
 <!doctype html>
 <html lang="en-us">
-<head>
-    <title>CPython</title>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="mobile-web-app-capable" content="yes">
 <!--
     Pygbag Version : {{cookiecutter.version}}
     CDN URL : {{cookiecutter.cdn}}
@@ -20,12 +14,19 @@
     {% endif %}
 
 -->
-    <link rel="icon" type="image/png" href="{{cookiecutter.cdn}}/favicon.png" sizes="16x16" />
 
+<head>
+    <title>{{cookiecutter.title}}</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
     <link rel="stylesheet" href="{{cookiecutter.cdn}}/styles.css"/>
+
     <link rel="stylesheet" href="{{cookiecutter.cdn}}/xtermjsixel/xterm.css" />
     <link rel="stylesheet" href="{{cookiecutter.cdn}}/xtermjsixel/style.css"/>
-
     <style>
         #status {
             display: inline-block;
@@ -46,12 +47,13 @@
         div.thick_border { border: 4px solid black; }
 
         /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-        canvas.emscripten { border: 0px none; background-color: blue; }
+        canvas.emscripten { border: 0px none; background-color: black; }
 
         body {
             font-family: arial;
             margin: 0;
             padding: none;
+            background-color:powderblue;
         }
 
         /* average size of droid screen 470dp x 320dp  */
@@ -59,6 +61,12 @@
            position:absolute;
            top:5px;
            right:5px;
+        }
+
+        .topleft {
+            position:absolute;
+            top: 8px;
+            left: 8px;
         }
 
         .trinfo{
@@ -86,39 +94,40 @@
 </head>
 
 <body>
-    <div class="spinner" id='spinner'></div>
-    <div class="emscripten" id="status">Downloading...</div>
-    <div class="emscripten">
-      <progress value="0" max="100" id="progress" hidden=1></progress>
+    <div id="transfer" align=center>
+        <div class="spinner" id='spinner'></div>
+        <div class="emscripten" id="status">Downloading...</div>
+        <div class="emscripten">
+        <progress value="0" max="100" id="progress"></progress>
+        </div>
     </div>
 
-    <!-- <div class="thick_border" align=center > -->
-        <div class="topright" align="center">
-            <canvas class="emscripten" id="canvas"
-width="800px" height="600px"
-style="width: 470px; height: 320px;"
-            oncontextmenu="event.preventDefault()" tabindex=0>
-            </canvas>
+    <div align="center">
+        <canvas class="emscripten" id="canvas"
+style="width: 100%; height=100%"
+        oncontextmenu="event.preventDefault()" tabindex=0>
+        </canvas>
+
+        <div id="system" hidden>
             <div class="button-container">
-                800x600=&gt;470x320
                 <button id="aiostop" disabled>AIO ⏏︎</button>
                 <button id="aiopaused_true" disabled>AIO ■</button>
                 <button id="aiopaused_false" disabled>AIO ▶</button>
-                <button id="pygame_music_pause" disabled>Music ■</button>
-                &nbsp;
+                <button id="pygame_mixer_music_pause" disabled>Music ■</button>
             </div>
-
         </div>
 
+    </div>
+
+    <div id="pyconsole">
         <div id="terminal" tabIndex=1 align="left"><p></div>
         <br>
         &nbsp;VT340
 
-        <div id="info" class="trinfo" style="width: 470px;height=70px;">
-        </div>
+        <div id="info" class="trinfo" style="width: 470px;height: 70px;"></div>
 
         <iframe id="iframe" class="framed" name="iframe"
-height="88%" width="470px"
+width="470px" height="88%"
             sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
             mozallowfullscreen="true"
             allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
@@ -130,8 +139,12 @@ height="88%" width="470px"
             webkitallowfullscreen="true"
             allowtransparency="true">
         </iframe>
+    </div>
 
-    <!--    </div> -->
+    <div id="dlg">
+    <input type="file" id="dlg_multifile" multiple accept="image/*">
+    <label for="dlg_multifile">Select files</label>
+    </div>
 
 
     <script type="application/javascript">
@@ -181,17 +194,11 @@ height="88%" width="470px"
     async function custom_site(vfs) {
         // python and all filesystems are ready.
         console.log(__FILE__, "custom_site Begin")
-
         python.readline.history = []
 
-        if ( Module.arguments[0] != "./this.program" ) {
-            console.warn("[",Module.arguments[0],"]")
-            frame_online(  Module.arguments[0]+".html" )
-        }
 
 // PyConfig
 // https://docs.python.org/dev/c-api/init_config.html
-
 
 
         // your needs to the minimal pyconfig
@@ -248,6 +255,9 @@ if os.path.isfile("/data/data/pythonrc.py"):
 
         if (await _rcp("{{cookiecutter.cdn}}/pythonrc.py","/data/data/pythonrc.py")) {
 
+            await _rcp("{{cookiecutter.cdn}}/custom.py","/data/data/custom.py")
+
+
             if (python.APK != "org.python") {
                 if (config.autorun) {
                     if (await _rcp(`${python.APK}.py`, `/data/data/${python.APK}/assets/main.py`)) {
@@ -257,10 +267,12 @@ if os.path.isfile("/data/data/pythonrc.py"):
 
                 // hide the top status bar (emscripten loader)
                 setTimeout(python.setStatus, 1000, "hide")
+                transfer.hidden = true;
+
                 on_click("aiostop","shell.stop()")
                 on_click("aiopaused_true","aio.paused=True")
                 on_click("aiopaused_false","aio.paused=False")
-                on_click("pygame_music_pause","pygame.music.pause()")
+                on_click("pygame_mixer_music_pause","pygame.mixer.music.pause()")
             } else {
                 console.log(__FILE__, "not APK to prepare")
             }
@@ -271,21 +283,126 @@ if os.path.isfile("/data/data/pythonrc.py"):
     }
 
 
+
     window.onload = function () {
+
         var wasmterm
+        var debug_hidden = true;
+
+        if (location.hash == "#debug") {
+            debug_hidden = false;
+        }
+
+        system.hidden = debug_hidden;
+        pyconsole.hidden = debug_hidden;
+        dlg.hidden = debug_hidden;
+        //on_change("dlg_multifile","__import__('webbrowser').EventTarget.build('change','dlg_multifile')");
+
+        var uploaded_file_count = 0
+
+        function readFileAsArrayBuffer(file, success, error) {
+            var fr = new FileReader();
+            fr.addEventListener('error', error, false);
+            if (fr.readAsBinaryString) {
+                fr.addEventListener('load', function () {
+                    var string = this.resultString != null ? this.resultString : this.result;
+                    var result = new Uint8Array(string.length);
+                    for (var i = 0; i < string.length; i++) {
+                        result[i] = string.charCodeAt(i);
+                    }
+                    success(result.buffer);
+                }, false);
+                return fr.readAsBinaryString(file);
+            } else {
+                fr.addEventListener('load', function () {
+                    success(this.result);
+                }, false);
+                return fr.readAsArrayBuffer(file);
+            }
+        }
+
+// file transfer
+        async function transfer_uploads(){
+            //let reader = new FileReader();
+
+            for (var i=0;i<dlg_multifile.files.length;i++) {
+                let file = dlg_multifile.files[i]
+                var frec = {}
+                const datapath = `/tmp/upload-${uploaded_file_count}`
+                    frec["name"] = file.name
+                frec["size"] = file.size
+                frec["mimetype"] = file.type
+                frec["text"] = datapath
+
+                function file_done(data) {
+                    const pydata = JSON.stringify(frec)
+                    console.warn("UPLOAD", pydata );
+                    FS.writeFile(datapath, new Int8Array(data) )
+                    Module.PyRun_SimpleString(`#!
+__import__('webbrowser').EventTarget.build('upload', json.dumps(${pydata}))
+`)
+                }
+                readFileAsArrayBuffer(file, file_done, console.error )
+                uploaded_file_count++;
+            }
+
+        }
+        dlg_multifile.addEventListener("change", transfer_uploads );
+
+
+// window resize
+        function window_resize() {
+            var want_w
+            var want_h
+
+            const ar = canvas.width / canvas.height
+
+            want_w = window.innerWidth
+            want_h = window.innerHeight
+
+            console.log("window:", want_w, want_h )
+            if (window.devicePixelRatio != 1 )
+                console.warn("Unsupported device pixel ratio", window.devicePixelRatio)
+
+
+// TODO: check height bounding box
+            if (!debug_hidden) {
+                want_w = Math.trunc(want_w /2)
+                want_h = Math.trunc(want_w / ar)
+
+                console.log("window[DEBUG]:", want_w, want_h, ar)
+            } else {
+                want_h = Math.trunc(want_w / ar)
+            }
+
+            if (want_h > window.innerHeight) {
+                want_h = window.innerHeight
+                want_w = want_h * ar
+            }
+
+            canvas.style.width = want_w + "px"
+            canvas.style.height = want_h + "px"
+            console.log("style[NEW]:", canvas.style.width, canvas.style.height)
+        }
+
+        window.addEventListener('resize', window_resize);
+        window.window_resize = window_resize
+
+
 
         if (!config.xtermjs) {
             // xterm js placeholder
             wasmterm = { print : console.log, sixel : function(){}}
         } else {
             // it uses  document.getElementById('terminal') to get its host
-            wasmterm = new WasmTerminal( "terminal", 100, 35 )
+            wasmterm = new WasmTerminal( "terminal", 132, 35 )
 
             window.xterm = wasmterm.xterm
 
         }
 
         pythonvm(wasmterm, config)
+
 
     }
 

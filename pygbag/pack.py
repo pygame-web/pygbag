@@ -14,6 +14,11 @@ for mp3 in $(find |grep mp3$)
 do
     ffmpeg -i $mp3 $mp3.ogg
 done
+
+Scour is an SVG optimizer/cleaner written in Python
+https://github.com/scour-project/scour
+
+
 """
 
 COUNTER = 0
@@ -52,9 +57,20 @@ def pack_files(zf, parent, zfolders, newpath):
                     continue
 
                 # do not archive static web files at toplevel
+                # do not recurse in venv ( pycharm ? )
                 if LEVEL == 0:
                     if subdir == "static":
                         HAS_STATIC = True
+                        continue
+
+                    if subdir == "venv":
+                        print("""
+    ===================================================================
+        Not packing venv. if non stdlib pure python modules were used
+        they should be in game folder not venv install ( for now ).
+    ===================================================================
+"""
+                        )
                         continue
 
                 # recurse
@@ -81,7 +97,7 @@ def pack_files(zf, parent, zfolders, newpath):
                         print(
                             """
     ===============================================================
-        using .wav format for in assets for web publication
+        using .wav format in assets for web publication
         has a serious performance/size hit, prefer .ogg format
     ===============================================================
 """
@@ -105,6 +121,7 @@ def pack_files(zf, parent, zfolders, newpath):
                 if f.endswith(".gitignore"):
                     continue
 
+
                 if Path(f).is_symlink():
                     print("sym", f)
 
@@ -119,7 +136,7 @@ def pack_files(zf, parent, zfolders, newpath):
 
                 ext = f.rsplit(".", 1)[-1].lower()
 
-                if ext in ["pyc", "pyx", "pyd", "pyi"]:
+                if ext in ["pyc", "pyx", "pyd", "pyi","exe"]:
                     continue
 
                 zpath = list(zfolders)
