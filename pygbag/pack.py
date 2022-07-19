@@ -2,6 +2,10 @@ import sys, os
 import zipfile
 from pathlib import Path
 
+from .gathering import gather
+from .filtering import filter
+from .optimizing import optimize
+
 """
 pngquant -f --ext -pygbag.png --quality 40 $(find|grep png$)
 
@@ -64,7 +68,8 @@ def pack_files(zf, parent, zfolders, newpath):
                         continue
 
                     if subdir == "venv":
-                        print("""
+                        print(
+                            """
     ===================================================================
         Not packing venv. if non stdlib pure python modules were used
         they should be in game folder not venv install ( for now ).
@@ -121,7 +126,6 @@ def pack_files(zf, parent, zfolders, newpath):
                 if f.endswith(".gitignore"):
                     continue
 
-
                 if Path(f).is_symlink():
                     print("sym", f)
 
@@ -136,7 +140,7 @@ def pack_files(zf, parent, zfolders, newpath):
 
                 ext = f.rsplit(".", 1)[-1].lower()
 
-                if ext in ["pyc", "pyx", "pyd", "pyi","exe"]:
+                if ext in ["pyc", "pyx", "pyd", "pyi", "exe"]:
                     continue
 
                 zpath = list(zfolders)
@@ -170,6 +174,14 @@ def archive(apkname, target_folder, build_dir=None):
     TRUNCATE = len(target_folder.as_posix())
     if build_dir:
         apkname = build_dir.joinpath(apkname).as_posix()
+
+    files = []
+    for f in gather(target_folder):
+        files.append(f)
+        sched_yield()
+
+
+
 
     try:
         with zipfile.ZipFile(

@@ -90,11 +90,13 @@ def get(url, path):
 
         finally:
             if error:
+                print("WARNING: web.get", e)
                 raise error
 
             if data_fileNone:
                 return Path(data_file), header
             raise Exception(f"cannot cache {url} to {path}")
+
 
 if __name__ == "__main__":
     fixcert()
