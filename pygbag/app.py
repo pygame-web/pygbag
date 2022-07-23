@@ -342,22 +342,11 @@ now packing application ....
             return
 
         elif not args.build:
-            if 1:
-                ESC("(0")
-                CSI("104;93m")
-                print("l--------------k")
-                print("x      علي     x")
-                print("m--------------j")
-                CSI("0m")
-                ESC("(B")
 
-                CSI("2;10r")
+            from . import testserver
 
-                from . import testserver
+            testserver.run_code_server(args, CC)
 
-                testserver.run_code_server(args, CC)
-            else:
-                import uasyncio
         else:
             print(
                 f"""
