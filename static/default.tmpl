@@ -351,7 +351,7 @@ __import__('webbrowser').EventTarget.build('upload', json.dumps(${pydata}))
 
 
 // window resize
-        function window_resize() {
+        function window_canvas_adjust() {
             var want_w
             var want_h
 
@@ -385,9 +385,14 @@ __import__('webbrowser').EventTarget.build('upload', json.dumps(${pydata}))
             console.log("style[NEW]:", canvas.style.width, canvas.style.height)
         }
 
+
+        function window_resize() {
+            setTimeout(window_canvas_adjust, 100);
+            setTimeout(window.focus, 200);
+        }
+
         window.addEventListener('resize', window_resize);
         window.window_resize = window_resize
-
 
 
         if (!config.xtermjs) {
@@ -399,10 +404,11 @@ __import__('webbrowser').EventTarget.build('upload', json.dumps(${pydata}))
 
             window.xterm = wasmterm.xterm
 
-        }
 
+        }
         pythonvm(wasmterm, config)
 
+        window_canvas_adjust();
 
     }
 

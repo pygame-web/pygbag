@@ -1,6 +1,8 @@
+import asyncio
 import sys
 import os
 import argparse
+
 
 from pathlib import Path
 import hashlib
@@ -42,10 +44,10 @@ DEFAULT_SCRIPT = "main.py"
 
 
 def main():
-    main_run(Path(sys.argv[-1]).resolve())
+    asyncio.run(main_run(Path(sys.argv[-1]).resolve()))
 
 
-def main_run(patharg, cdn=DEFAULT_CDN):
+async def main_run(patharg, cdn=DEFAULT_CDN):
     global DEFAULT_PORT, DEFAULT_SCRIPT
 
     if patharg.is_file():
@@ -77,6 +79,14 @@ def main_run(patharg, cdn=DEFAULT_CDN):
     build_dir.mkdir(exist_ok=True)
 
     cache_dir = app_folder.joinpath("build/web-cache")
+
+    if devmode and cache_dir.is_dir():
+        print("DEVMODE: clearing cache")
+        if shutil.rmtree.avoids_symlink_attacks:
+            shutil.rmtree(cache_dir.as_posix())
+        else:
+            print("can't clear cache : rmtree is not safe")
+
     cache_dir.mkdir(exist_ok=True)
 
     version = "0.0.0"
@@ -199,9 +209,7 @@ now packing application ....
 """
     )
 
-    pack.archive(f"{app_name}.apk", app_folder, build_dir)
-
-    from . import testserver
+    await pack.archive(f"{app_name}.apk", app_folder, build_dir)
 
     CC = {
         "cdn": args.cdn,
@@ -258,7 +266,8 @@ now packing application ....
 
             try:
                 template_file, headers = web.get(tmpl_url, tmpl)
-            except:
+            except Exception as e:
+                print(e)
                 print(f"CDN {args.cdn} is not responding : not running test server")
                 args.build = True
 
@@ -294,8 +303,9 @@ now packing application ....
         cached locallly at {icon_file}
         """
                 )
-            except:
-                print(f"{icon_url} not found")
+            except Exception as e:
+                sys.print_exception(e)
+                print(f"{icon_url} caching error :", e)
 
     if icon_file.is_file():
         shutil.copyfile(icon_file, build_dir.joinpath("favicon.png"))
@@ -328,11 +338,26 @@ now packing application ....
 """
             )
 
-            pack.web_archive(f"{app_name}.apk", build_dir)
-            raise SystemExit
+            await pack.web_archive(f"{app_name}.apk", build_dir)
+            return
 
         elif not args.build:
-            testserver.run_code_server(args, CC)
+            if 1:
+                ESC("(0")
+                CSI("104;93m")
+                print("l--------------k")
+                print("x      علي     x")
+                print("m--------------j")
+                CSI("0m")
+                ESC("(B")
+
+                CSI("2;10r")
+
+                from . import testserver
+
+                testserver.run_code_server(args, CC)
+            else:
+                import uasyncio
         else:
             print(
                 f"""

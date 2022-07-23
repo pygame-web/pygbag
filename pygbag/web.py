@@ -2,6 +2,8 @@ import os
 import os.path
 
 import urllib
+import urllib.request
+
 
 from pathlib import Path
 
@@ -17,6 +19,7 @@ import sys
 
 # https://stackoverflow.com/questions/42098126/mac-osx-python-ssl-sslerror-ssl-certificate-verify-failed-certificate-verify
 def fixcert():
+    wd = os.getcwd()
     import stat
     import subprocess
 
@@ -67,35 +70,46 @@ def fixcert():
     os.symlink(relpath_to_certifi_cafile, openssl_cafile)
     print(" -- setting permissions")
     os.chmod(openssl_cafile, STAT_0o775)
+    os.chdir(wd)
     print(" -- update complete")
 
 
 def get(url, path):
     error = None
     data_file = None
-    while True:
-        try:
-            data_file, header = urllib.request.urlretrieve(url, path)
-            break
+    try:
+        print(f'urllib.request.urlretrieve("{url}", "{path}")')
+        while data_file is None:
+            try:
+                data_file, header = urllib.request.urlretrieve(url, path)
 
-        except urllib.error.HTTPError as e:
-            error = e
-            break
-        except urllib.error.URLError as e:
-            error = e
-            break
-        except ssl.SSLCertVerificationError:
-            print("Trying to fix certificate error")
-            fixcert()
+            except urllib.error.HTTPError as e:
+                error = e
 
-        finally:
+            except urllib.error.URLError as e:
+                error = e
+
+            except ssl.SSLCertVerificationError:
+                print("Trying to fix certificate error")
+                fixcert()
+                continue
+
+            if data_file is not None:
+                break
+
             if error:
                 print("WARNING: web.get", e)
-                raise error
 
-            if data_fileNone:
-                return Path(data_file), header
-            raise Exception(f"cannot cache {url} to {path}")
+            time.sleep(5)
+            print("retrying in 5 seconds")
+
+    finally:
+        if data_file is not None:
+            return Path(data_file), header
+        # this is normal in dev mode for favicon and templates because
+        # proxy is not yet started.
+        print(f"NO DATA RECEIVED FOR {url}")
+        raise Exception(f"cannot cache {url} to {path}")
 
 
 if __name__ == "__main__":

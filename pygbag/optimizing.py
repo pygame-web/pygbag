@@ -1,2 +1,3 @@
-def optimize(*argv, **kw):
-    pass
+def optimize(filenames, **kw):
+    for filename in filenames:
+        yield filename

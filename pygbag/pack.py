@@ -137,17 +137,30 @@ def pack_files(zf, parent, zfolders, newpath):
 
                 # folders to skip __pycache__
                 # extensions to skip : pyc pyx pyd pyi
+                if not f.count("."):
+                    print(
+                        f"""
+    ==================================================================
+    {f} has no extension
+    ==================================================================
+                    """
+                    )
+                    zpath = list(zfolders)
+                    zpath.append(f)
+                    src = "/".join(zpath)
+                    name = f
+                    ext = ""
+                else:
 
-                ext = f.rsplit(".", 1)[-1].lower()
+                    name, ext = f.rsplit(".", 1)
+                    ext = ext.lower()
 
-                if ext in ["pyc", "pyx", "pyd", "pyi", "exe"]:
-                    continue
+                    if ext in ["pyc", "pyx", "pyd", "pyi", "exe", "log"]:
+                        continue
 
                 zpath = list(zfolders)
                 zpath.append(f)
                 src = "/".join(zpath)
-
-                name, ext = f.rsplit(".", 1)
 
                 if ext == "png":
                     maybe = f"{name}-pygbag.png"
@@ -169,19 +182,32 @@ def pack_files(zf, parent, zfolders, newpath):
         LEVEL -= 1
 
 
-def archive(apkname, target_folder, build_dir=None):
+async def archive(apkname, target_folder, build_dir=None):
     global COUNTER, TRUNCATE, ASSETS, HAS_MAIN, HAS_STATIC
     TRUNCATE = len(target_folder.as_posix())
     if build_dir:
         apkname = build_dir.joinpath(apkname).as_posix()
 
-    files = []
-    for f in gather(target_folder):
-        files.append(f)
+    walked = []
+    for folder, filenames in gather(target_folder):
+        walked.append([folder, filenames])
         sched_yield()
 
+    filtered = []
+    last = ""
+    for infolder, fullpath in filter(walked):
+        if last != infolder:
+            print(f"Now in {infolder}")
+            last = infolder
 
+        # print(" " * 4, fullpath)
+        filtered.append(fullpath)
+        sched_yield()
 
+    packlist = []
+    for filename in optimize(filtered):
+        packlist.append(filename)
+        sched_yield()
 
     try:
         with zipfile.ZipFile(
@@ -207,7 +233,7 @@ def archive(apkname, target_folder, build_dir=None):
         print(f"INFO: {len(MP3OPT)} mp3 format files were swapped for packing")
 
 
-def web_archive(apkname, build_dir):
+async def web_archive(apkname, build_dir):
     archfile = build_dir.with_name("web.zip")
     if archfile.is_file():
         archfile.unlink()
