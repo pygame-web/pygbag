@@ -193,7 +193,7 @@ function on_click(button_id, pycode, jsfunc) {
         if (pycode) {
             wdg.addEventListener('click', (e) => {
                 // #! turns echo off
-                Module.PyRun_SimpleString("#!\n${pycode}")
+                Module.PyRun_SimpleString(`#!\n${pycode}`)
             })
         }
         if (jsfunc)
@@ -203,6 +203,23 @@ function on_click(button_id, pycode, jsfunc) {
         console.error(__FILE__, `cannot bind code to id=${button_id}`)
 }
 register(on_click)
+
+function on_change(elem_id, pycode, jsfunc) {
+   const wdg = document.getElementById(elem_id)
+    if (wdg) {
+        if (pycode) {
+            wdg.addEventListener('change', (e) => {
+                // #! turns echo off
+                Module.PyRun_SimpleString(`#!\n${pycode}`)
+            })
+        }
+        if (jsfunc)
+            jsfunc()
+        wdg.removeAttribute('disabled')
+    } else
+        console.error(__FILE__, `cannot bind code to id=${button_id}`)
+}
+register(on_change)
 
 
 
@@ -469,13 +486,13 @@ async function mount_at(archive, path, relpath, hint) {
             function(e, memfs) {
                 BrowserFS.FileSystem.OverlayFS.Create({"writable" :  memfs, "readable" : apkfs },
                     function(e, ovfs) {
-                                BrowserFS.FileSystem.MountableFileSystem.Create({
-                                    '/' : ovfs
-                                    }, async function(e, mfs) {
-                                        await BrowserFS.initialize(mfs);
-                                        await VM.FS.mount(BFS, {root: relpath}, path );
-                                        prom[mark] = true;
-                                    })
+                        BrowserFS.FileSystem.MountableFileSystem.Create({
+                            '/' : ovfs
+                            }, async function(e, mfs) {
+                                await BrowserFS.initialize(mfs);
+                                await VM.FS.mount(BFS, {root: relpath}, path );
+                                prom[mark] = true;
+                            })
                     }
                 );
             }

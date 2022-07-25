@@ -79,9 +79,11 @@ except:
                     tmpl.append([len(__prepro), l.find("g")])
                     __prepro.append("#globals")
                     continue
+
                 elif testline.startswith("import "):
                     testline = testline.replace("import ", "").strip()
                     imports.extend(map(str.strip, testline.split(",")))
+
                 elif testline.startswith("from "):
                     testline = testline.replace("from ", "").strip()
                     imports.append(testline.split(" import ")[0].strip())
@@ -213,7 +215,7 @@ if defined("embed") and hasattr(embed, "readline"):
             if not len(argv):
                 argv = ["."]
             for arg in argv:
-                for out in os.listdir(arg):
+                for out in sorted(os.listdir(arg)):
                     print(out)
 
         @classmethod
@@ -274,12 +276,18 @@ if defined("embed") and hasattr(embed, "readline"):
                     print("a program is already running, using 'stop' cmd before retrying")
                     cls.stop()
                     pgzrun = None
-                    aio.defer(cls.exec,(cmd,*argv),env, 500)
+                    aio.defer(cls.exec,(cmd,*argv),env, delay=500)
 
                 else:
                     execfile(cmd)
                 return True
             return False
+
+        @classmethod
+        def dll(cls, *argv):
+            cdll = __import__("ctypes").CDLL(None)
+            print( getattr(cdll, argv[0])(*argv[1:]) )
+            return True
 
         @classmethod
         def strace(cls, *argv, **env):
@@ -295,8 +303,8 @@ if defined("embed") and hasattr(embed, "readline"):
             # pgzrun will reset to None next exec
             if not pgzrun:
                 # pgzrun does its own cleanup call
-                aio.defer(aio.recycle.cleanup, (), {}, 500)
-                aio.defer(embed.prompt, (), {}, 800)
+                aio.defer(aio.recycle.cleanup, (), {}, delay=500)
+                aio.defer(embed.prompt, (), {}, delay=800)
 
     def _process_args(argv, env):
         catch = True
@@ -379,9 +387,34 @@ except Exception as e:
 import random
 random.seed(1)
 
+if not aio.cross.simulator:
+    import webbrowser
+
+    def browser_open(url, new=0, autoraise=True):
+        __import__('__EMSCRIPTEN__').window.open(url, "_blank")
+
+    def browser_open_new(url):
+        return browser_open(url, 1)
+
+    def browser_open_new_tab(url):
+        return browser_open(url, 2)
+
+    webbrowser.open = browser_open
+    webbrowser.open_new = browser_open_new
+    webbrowser.open_new_tab = browser_open_new_tab
+
+    # merge emscripten browser module here ?
+    # https://rdb.name/panda3d-webgl.md.html#supplementalmodules/asynchronousloading
+    #
+
+
 # ======================================================
 
-# import pygame
+def ESC(*argv):
+    for arg in argv:
+        sys.__stdout__.write(chr(27),arg, sep="", endl="")
+
+import pygame
 pgzrun = None
 
 if __WASM__ and __EMSCRIPTEN__ and __EMSCRIPTEN__.is_browser:
@@ -399,10 +432,14 @@ if __WASM__ and __EMSCRIPTEN__ and __EMSCRIPTEN__.is_browser:
 else:
     pdb("TODO: js sim")
 
+if os.path.isfile('/data/data/custom.py'):
+    execfile('/data/data/custom.py')
 
 import aio.recycle
 # ============================================================
 # DO NOT ADD ANYTHING FROM HERE OR APP RECYCLING WILL TRASH IT
+
+
 
 
 
