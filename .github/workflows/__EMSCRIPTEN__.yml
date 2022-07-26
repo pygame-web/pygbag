@@ -10,6 +10,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Checkout
+      env:
+            PYBUILD=3.11
+            EMFLAVOUR=tot
       run: |
             WD=$(pwd)
             python3 -V
