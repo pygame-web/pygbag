@@ -2,9 +2,7 @@ name: emsdk_build
 on: [workflow_dispatch]
 
 jobs:
-  # Build job. Builds app for web with emsdk
-  build-emsdk:
-    name: Build for Emscripten
+  build:
     runs-on: ubuntu-22.04
     env:
       # python version
