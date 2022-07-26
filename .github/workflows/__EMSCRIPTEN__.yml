@@ -6,13 +6,16 @@ jobs:
   build-emsdk:
     name: Build for Emscripten
     runs-on: ubuntu-latest
+    env:
+      # python version
+      PYBUILD=3.11
+      # emsdk version
+      EMFLAVOUR=tot
+
 
     steps:
     - uses: actions/checkout@v2
     - name: Checkout
-      env:
-            PYBUILD=3.11
-            EMFLAVOUR=tot
       run: |
             WD=$(pwd)
             python3 -V
