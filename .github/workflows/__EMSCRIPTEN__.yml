@@ -5,13 +5,12 @@ jobs:
   # Build job. Builds app for web with emsdk
   build-emsdk:
     name: Build for Emscripten
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       # python version
       PYBUILD=3.11
       # emsdk version
       EMFLAVOUR=tot
-
 
     steps:
     - uses: actions/checkout@v2
