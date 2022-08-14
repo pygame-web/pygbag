@@ -1,21 +1,69 @@
-<!doctype html>
-<html lang="en-us">
-<!--
+<html lang="en-us"><script src="{{cookiecutter.cdn}}runpy.js?cpython3.11#" type=module id="main" data-src="vtx,fs,gui" async defer>#<!--
+
+import asyncio, platform, json
+from pathlib import Path
+
+print("""
+Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
     Pygbag Version : {{cookiecutter.version}}
+    Template Version : 0.1.4
     CDN URL : {{cookiecutter.cdn}}
 
     Title   : {{cookiecutter.title}}
     Folder  : {{cookiecutter.directory}}
     Authors : {{cookiecutter.authors}}
     SPDX-License-Identifier: {{cookiecutter.spdx}}
+""")
+
+async def pygbag_loader():
+    global track
+    mount_point = Path("/data/data/{{cookiecutter.archive}}")
+    mount_point.mkdir()
+    cfg = {
+        "io": "url",
+        "type":"mount",
+        "mount" : {
+            "point" : mount_point.as_posix(),
+            "path" : "/",
+        }
+
+    }
+
+    window.transfer.hidden = true
+
+    track = window.MM.prepare("{{cookiecutter.archive}}.apk", json.dumps(cfg))
+
+    while not track.ready:
+        await asyncio.sleep(0)
+
+    os.chdir(mount_point / "assets")
+    sys.path.insert(0, os.getcwd() )
+
+    aio.defer( execfile , [ mount_point / "assets" / "main.py" ], {} )
+
+
+asyncio.run( pygbag_loader() )
+
+# --></script><head><!--
 
     {%- if cookiecutter.comment != "" -%}
 {{cookiecutter.comment}}
     {% endif %}
 
--->
+--><script type="application/javascript">
 
-<head>
+config = {
+    xtermjs : "{{cookiecutter.xtermjs}}" ,
+    _sdl2 : "canvas",
+    archive : "{{cookiecutter.archive}}",
+    gui_debug : 3,
+    cdn : "{{cookiecutter.cdn}}",
+    autorun : {{cookiecutter.autorun}},
+    PYBUILD : "3.11"
+}
+
+</script>
+
     <title>{{cookiecutter.title}}</title>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -25,8 +73,6 @@
     <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
     <link rel="stylesheet" href="{{cookiecutter.cdn}}/styles.css"/>
 
-    <link rel="stylesheet" href="{{cookiecutter.cdn}}/xtermjsixel/xterm.css" />
-    <link rel="stylesheet" href="{{cookiecutter.cdn}}/xtermjsixel/style.css"/>
     <style>
         #status {
             display: inline-block;
@@ -69,6 +115,12 @@
             left: 8px;
         }
 
+        .center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .trinfo{
            position:absolute;
            top:330px;
@@ -84,77 +136,98 @@
         }
     </style>
 
-    <script src="{{cookiecutter.cdn}}/xtermjsixel/xterm.js"></script>
-    <script src="{{cookiecutter.cdn}}/xtermjsixel/xterm-addon-image.js"></script>
     <script src="{{cookiecutter.cdn}}/browserfs.min.js"></script>
-
-    <script type="module" src="{{cookiecutter.cdn}}/python311.js" async defer></script>
-
 
 </head>
 
 <body>
+
     <div id="transfer" align=center>
         <div class="spinner" id='spinner'></div>
         <div class="emscripten" id="status">Downloading...</div>
         <div class="emscripten">
-        <progress value="0" max="100" id="progress"></progress>
+            <progress value="0" max="100" id="progress"></progress>
         </div>
     </div>
 
-    <div align="center">
-        <canvas class="emscripten" id="canvas"
-style="width: 100%; height=100%"
-        oncontextmenu="event.preventDefault()" tabindex=0>
-        </canvas>
+    <div id=crt  class=topright >
 
-        <div id="system" hidden>
-            <div class="button-container">
-                <button id="aiostop" disabled>AIO ⏏︎</button>
-                <button id="aiopaused_true" disabled>AIO ■</button>
-                <button id="aiopaused_false" disabled>AIO ▶</button>
-                <button id="pygame_mixer_music_pause" disabled>Music ■</button>
+        <div id=crt align=center >
+
+            <div id="system" hidden>
+                <div class="button-container">
+                    <button id="aiostop" disabled>AIO ⏏︎</button>
+                    <button id="aiopaused_true" disabled>AIO ■</button>
+                    <button id="aiopaused_false" disabled>AIO ▶</button>
+                    <button id="pygame_mixer_music_pause" disabled>Music ■</button>
+                </div>
+
+                <div class="button-container">
+                    <div id=load_min>min</div>
+                    <div id=load_avg>avg</div>
+                    <div id=load_max>max</div>
+                  <button id="load_rst" disabled>RESET</button>
+                </div>
             </div>
+
+
+
+            <canvas class="emscripten" id="canvas"
+style="width: 100%; height=100%"
+            oncontextmenu="event.preventDefault()" tabindex=0>
+            </canvas>
+
+            <div id=box class="emscripten_border">
+                <div id="info" class="trinfo"></div>
+
+            <iframe id="iframe" class="framed" name="iframe"
+    width="470px" height="88%"
+                sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
+                mozallowfullscreen="true"
+                allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
+                frameborder="0"
+                src="about://"
+                msallowfullscreen="true"
+                scrolling="yes"
+                allowfullscreen="true"
+                webkitallowfullscreen="true"
+                allowtransparency="true">
+            </iframe>
+            </div>
+
         </div>
 
+    </div>
+
+
+
+    <div id="dlg" hidden>
+        <input type="file" id="dlg_multifile" multiple accept="image/*">
+        <label for="dlg_multifile">Select files</label>
     </div>
 
     <div id="pyconsole">
         <div id="terminal" tabIndex=1 align="left"><p></div>
-        <br>
-        &nbsp;VT340
-
-        <div id="info" class="trinfo" style="width: 470px;height: 70px;"></div>
-
-        <iframe id="iframe" class="framed" name="iframe"
-width="470px" height="88%"
-            sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
-            mozallowfullscreen="true"
-            allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
-            frameborder="0"
-            src="about://"
-            msallowfullscreen="true"
-            scrolling="yes"
-            allowfullscreen="true"
-            webkitallowfullscreen="true"
-            allowtransparency="true">
-        </iframe>
     </div>
-
-    <div id="dlg">
-    <input type="file" id="dlg_multifile" multiple accept="image/*">
-    <label for="dlg_multifile">Select files</label>
-    </div>
-
 
     <script type="application/javascript">
-    config = {
-        xtermjs : "{{cookiecutter.xtermjs}}" ,
-        _sdl2 : "canvas",
-        archive : "{{cookiecutter.archive}}",
-        cdn : "{{cookiecutter.cdn}}",
-        autorun : {{cookiecutter.autorun}}
+    function custom_onload(debug_hidden) {
+        console.log(__FILE__, "custom_onload")
+        pyconsole.hidden = debug_hidden
+        system.hidden = debug_hidden
+        iframe.hidden = debug_hidden
+        transfer.hidden = debug_hidden
+        info.hidden = debug_hidden
+        box.hidden =  debug_hidden
     }
+
+    function debug() {
+        python.config.debug = true
+        custom_onload(false)
+        PyRun_SimpleString("shell.uptime()")
+        window_resize()
+    }
+
 
     function custom_prerun(){
         // no python main and no (MEMFS + VFS) yet.
@@ -190,228 +263,9 @@ width="470px" height="88%"
     function frame_online(url) {
         window.frames["iframe"].location = url;
     }
-
-    async function custom_site(vfs) {
-        // python and all filesystems are ready.
-        console.log(__FILE__, "custom_site Begin")
-        python.readline.history = []
-
-
-// PyConfig
-// https://docs.python.org/dev/c-api/init_config.html
-
-
-        // your needs to the minimal pyconfig
-        python.PyConfig =  JSON.parse(`
-{
-    "base_executable" : null,
-    "base_prefix" : null,
-    "buffered_stdio" : null,
-    "bytes_warning" : 0,
-    "warn_default_encoding" : 0,
-    "code_debug_ranges" : 1,
-    "check_hash_pycs_mode" : "default",
-    "configure_c_stdio" : 1,
-    "dev_mode" : -1,
-    "dump_refs" : 0,
-    "exec_prefix" : null,
-    "executable" : "${python.PyConfig.executable}",
-    "faulthandler" : 0,
-    "filesystem_encoding" : "utf-8",
-    "filesystem_errors" : "surrogatepass",
-    "use_hash_seed" : 1,
-    "hash_seed" : 1,
-    "home": null,
-    "import_time" : 0,
-    "inspect" : 1,
-    "install_signal_handlers" :0 ,
-    "interactive" : 1,
-    "isolated" : 1,
-    "legacy_windows_stdio":0,
-    "malloc_stats" : 0 ,
-    "platlibdir" : "lib",
-    "prefix" : "/data/data/org.python/assets/site-packages",
-    "ps1" : ">>> ",
-    "ps2" : "... "
-}
-`)
-
-        var runsite = `#!
-import os,sys,json
-
-PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
-
-if os.path.isdir(PyConfig['prefix']):
-    sys.path.append(PyConfig['prefix'])
-    os.chdir(PyConfig['prefix'])
-
-if os.path.isfile("/data/data/pythonrc.py"):
-    exec(open("/data/data/pythonrc.py").read(), globals(), globals())
-# <- keep it here
-`
-        if (python.motd)
-            runsite = runsite+ `print("_"*80);print("${python.motd}");print("_"*80);`
-
-
-        if (await _rcp("{{cookiecutter.cdn}}/pythonrc.py","/data/data/pythonrc.py")) {
-
-            await _rcp("{{cookiecutter.cdn}}/custom.py","/data/data/custom.py")
-
-
-            if (python.APK != "org.python") {
-                if (config.autorun) {
-                    if (await _rcp(`${python.APK}.py`, `/data/data/${python.APK}/assets/main.py`)) {
-                        console.log(__FILE__, "prepare to APK", python.APK)
-                    }
-                }
-
-                // hide the top status bar (emscripten loader)
-                setTimeout(python.setStatus, 1000, "hide")
-                transfer.hidden = true;
-
-                on_click("aiostop","shell.stop()")
-                on_click("aiopaused_true","aio.paused=True")
-                on_click("aiopaused_false","aio.paused=False")
-                on_click("pygame_mixer_music_pause","pygame.mixer.music.pause()")
-            } else {
-                console.log(__FILE__, "not APK to prepare")
-            }
-        } else {
-            runsite = runsite +'embed.prompt();'
-        }
-        python.PyRun_SimpleString(runsite)
-    }
-
-
-
-    window.onload = function () {
-
-        var wasmterm
-        var debug_hidden = true;
-
-        if (location.hash == "#debug") {
-            debug_hidden = false;
-        }
-
-        system.hidden = debug_hidden;
-        pyconsole.hidden = debug_hidden;
-        dlg.hidden = debug_hidden;
-        //on_change("dlg_multifile","__import__('webbrowser').EventTarget.build('change','dlg_multifile')");
-
-        var uploaded_file_count = 0
-
-        function readFileAsArrayBuffer(file, success, error) {
-            var fr = new FileReader();
-            fr.addEventListener('error', error, false);
-            if (fr.readAsBinaryString) {
-                fr.addEventListener('load', function () {
-                    var string = this.resultString != null ? this.resultString : this.result;
-                    var result = new Uint8Array(string.length);
-                    for (var i = 0; i < string.length; i++) {
-                        result[i] = string.charCodeAt(i);
-                    }
-                    success(result.buffer);
-                }, false);
-                return fr.readAsBinaryString(file);
-            } else {
-                fr.addEventListener('load', function () {
-                    success(this.result);
-                }, false);
-                return fr.readAsArrayBuffer(file);
-            }
-        }
-
-// file transfer
-        async function transfer_uploads(){
-            //let reader = new FileReader();
-
-            for (var i=0;i<dlg_multifile.files.length;i++) {
-                let file = dlg_multifile.files[i]
-                var frec = {}
-                const datapath = `/tmp/upload-${uploaded_file_count}`
-                    frec["name"] = file.name
-                frec["size"] = file.size
-                frec["mimetype"] = file.type
-                frec["text"] = datapath
-
-                function file_done(data) {
-                    const pydata = JSON.stringify(frec)
-                    console.warn("UPLOAD", pydata );
-                    FS.writeFile(datapath, new Int8Array(data) )
-                    Module.PyRun_SimpleString(`#!
-__import__('webbrowser').EventTarget.build('upload', json.dumps(${pydata}))
-`)
-                }
-                readFileAsArrayBuffer(file, file_done, console.error )
-                uploaded_file_count++;
-            }
-
-        }
-        dlg_multifile.addEventListener("change", transfer_uploads );
-
-
-// window resize
-        function window_canvas_adjust() {
-            var want_w
-            var want_h
-
-            const ar = canvas.width / canvas.height
-
-            want_w = window.innerWidth
-            want_h = window.innerHeight
-
-            console.log("window:", want_w, want_h )
-            if (window.devicePixelRatio != 1 )
-                console.warn("Unsupported device pixel ratio", window.devicePixelRatio)
-
-
-// TODO: check height bounding box
-            if (!debug_hidden) {
-                want_w = Math.trunc(want_w /2)
-                want_h = Math.trunc(want_w / ar)
-
-                console.log("window[DEBUG]:", want_w, want_h, ar)
-            } else {
-                want_h = Math.trunc(want_w / ar)
-            }
-
-            if (want_h > window.innerHeight) {
-                want_h = window.innerHeight
-                want_w = want_h * ar
-            }
-
-            canvas.style.width = want_w + "px"
-            canvas.style.height = want_h + "px"
-            console.log("style[NEW]:", canvas.style.width, canvas.style.height)
-        }
-
-
-        function window_resize() {
-            setTimeout(window_canvas_adjust, 100);
-            setTimeout(window.focus, 200);
-        }
-
-        window.addEventListener('resize', window_resize);
-        window.window_resize = window_resize
-
-
-        if (!config.xtermjs) {
-            // xterm js placeholder
-            wasmterm = { print : console.log, sixel : function(){}}
-        } else {
-            // it uses  document.getElementById('terminal') to get its host
-            wasmterm = new WasmTerminal( "terminal", 132, 35 )
-
-            window.xterm = wasmterm.xterm
-
-
-        }
-        pythonvm(wasmterm, config)
-
-        window_canvas_adjust();
-
-    }
-
     </script>
+
+
+
 </body>
 </html>
