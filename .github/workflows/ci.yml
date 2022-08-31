@@ -28,18 +28,34 @@ jobs:
       run: |
             cd $GITHUB_WORKSPACE
             git clone --depth 1 --single-branch --branch main https://github.com/pygame-web/pygame-wasm-plus
-            du -hs *
-           
-    - name: build
+            mv -vf pygame-wasm-plus/* ./
+
+
+    - name: build 3.10
       run: |
-            echo " === Building  ===="
-            cd $GITHUB_WORKSPACE/pygame-wasm-plus
-            time bash ./wasm-build-all.sh
-            du -hs $(find prebuilt/emsdk/)
-            cp -fv $GITHUB_WORKSPACE/static/* dist/
             cd $GITHUB_WORKSPACE
-            mv $GITHUB_WORKSPACE/dist ./
-            cp -vf static/* dist/
+            BUILDS=3.10 bash ./wasm-build-all.sh
+            du -hs dist/*
+
+    - name: build 3.11
+      run: |
+            cd $GITHUB_WORKSPACE
+            BUILDS=3.11 bash ./wasm-build-all.sh
+            du -hs dist/*
+
+    - name: build 3.12
+      run: |
+            cd $GITHUB_WORKSPACE
+            BUILDS=3.12 bash ./wasm-build-all.sh
+            du -hs dist/*
+
+           
+    - name: publishing
+      run: |
+            cd $GITHUB_WORKSPACE
+            du -hs $(find prebuilt/emsdk/)
+            cp -fv static/* support/pythonrc.py dist/
+           
 
     - name : "Upload to GitHub pages"
       uses: JamesIves/github-pages-deploy-action@4.1.7
