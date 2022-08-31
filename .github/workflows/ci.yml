@@ -26,19 +26,24 @@ jobs:
 
     - name: get pygame-wasm-plus
       run: |
+            cd $GITHUB_WORKSPACE
             git clone --depth 1 --single-branch --branch main https://github.com/pygame-web/pygame-wasm-plus
-            mv pygame-wasm-plus/* ./
+            du -hs *
            
     - name: build
       run: |
             echo " === Building  ===="
-            cd $GITHUB_WORKSPACE
+            cd $GITHUB_WORKSPACE/pygame-wasm-plus
             time bash ./pygame-wasm-plus.sh
             du -hs $(find prebuilt/emsdk/)
-            cp -fv static/* dist/
+            cp -fv $GITHUB_WORKSPACE/static/* dist/
+            cd $GITHUB_WORKSPACE
+            mv $GITHUB_WORKSPACE/dist ./
+            cp -vf static/* dist/
 
     - name : "Upload to GitHub pages"
       uses: JamesIves/github-pages-deploy-action@4.1.7
       with:
         branch: gh-pages
         folder: dist
+
