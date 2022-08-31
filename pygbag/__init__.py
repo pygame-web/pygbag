@@ -1,21 +1,24 @@
-__version__ = "0.2.0"
+__version__ = "0.1.5"
+
+
+
+# WaPy=>CPython compat
+
+import builtins
 
 try:
     sched_yield
 except:
-    __import__("builtins").sched_yield = lambda: None
+    builtins.sched_yield = lambda: None
 
 import sys, traceback
 
+if not hasattr(sys, "print_exception"):
+    def print_exception(e, out=sys.stderr, **kw):
+        kw["file"] = out
+        traceback.print_exc(**kw)
 
-def print_exception(e, out=sys.stderr, **kw):
-    kw["file"] = out
-    traceback.print_exc(**kw)
-
-
-sys.print_exception = print_exception
-
-import builtins
+    sys.print_exception = print_exception
 
 
 def ESC(*argv):

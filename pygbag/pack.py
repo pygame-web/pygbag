@@ -6,185 +6,39 @@ from .gathering import gather
 from .filtering import filter
 from .optimizing import optimize
 
-"""
-pngquant -f --ext -pygbag.png --quality 40 $(find|grep png$)
-
-for wav in $(find |grep wav$)
-do
-    ffmpeg -i $wav $wav.ogg
-done
-
-for mp3 in $(find |grep mp3$)
-do
-    ffmpeg -i $mp3 $mp3.ogg
-done
-
-Scour is an SVG optimizer/cleaner written in Python
-https://github.com/scour-project/scour
-
-
-"""
-
 COUNTER = 0
-TRUNCATE = 0
-ASSETS = []
-HAS_STATIC = False
-HAS_MAIN = False
-LEVEL = -1
-PNGOPT = []
-WAVOPT = []
-MP3OPT = []
 
+async def pack_files(zf, packlist, zfolders, target_folder):
+    global COUNTER
+    print("\n" * 4)
+    print("=" * 80)
+    print(target_folder)
+    print("\n" * 4)
+    for asset in packlist:
+        zpath = list(zfolders)
+        zpath.insert(0, str(target_folder))
+        zpath.append(str(asset)[1:])
 
-def pack_files(zf, parent, zfolders, newpath):
-    global COUNTER, TRUNCATE, ASSETS, HAS_STATIC, HAS_MAIN, LEVEL
-    global PNGOPT, WAVOPT, MP3OPT
-    try:
-        LEVEL += 1
-        os.chdir(newpath)
+        zip_content = target_folder / str(asset)[1:]
 
-        for current, dirnames, filenames in os.walk(newpath):
-            p_dirname = Path(current)
-            dispname = Path(current[TRUNCATE:] or "/").as_posix()
-            print(
-                f"now in .{dispname} [lvl={LEVEL} dirs={len(dirnames)} files={len(filenames)}]"
-            )
+        zpath = list(zfolders)
+        zpath.append(str(asset)[1:].replace("-pygbag.", "."))
 
-            for subdir in dirnames:
-
-                # do not put git subfolders
-                if subdir.startswith(".git"):
-                    continue
-
-                # do not put python build/cache folders
-                if subdir in ["build", "__pycache__"]:
-                    continue
-
-                # do not archive static web files at toplevel
-                # do not recurse in venv ( pycharm ? )
-                if LEVEL == 0:
-                    if subdir == "static":
-                        HAS_STATIC = True
-                        continue
-
-                    if subdir == "venv":
-                        print(
-                            """
-    ===================================================================
-        Not packing venv. if non stdlib pure python modules were used
-        they should be in game folder not venv install ( for now ).
-    ===================================================================
-"""
-                        )
-                        continue
-
-                # recurse
-                zfolders.append(subdir)
-                pack_files(
-                    zf, p_dirname, zfolders, p_dirname.joinpath(subdir).as_posix()
-                )
-
-            for f in filenames:
-                # do not pack ourself
-                if f.endswith(".apk"):
-                    continue
-
-                # skip pngquant optimized cache files
-                if f.endswith("-pygbag.png"):
-                    continue
-
-                # skip wav/mp3 converted to ogg optimized cache files
-                if f.endswith(".wav"):
-                    if Path(f"{f}.ogg").is_file():
-                        WAVOPT.append(f)
-                        continue
-                    else:
-                        print(
-                            """
-    ===============================================================
-        using .wav format in assets for web publication
-        has a serious performance/size hit, prefer .ogg format
-    ===============================================================
-"""
-                        )
-
-                if f.endswith(".mp3"):
-                    if Path(f"{f}.ogg").is_file():
-                        MP3OPT.append(f)
-                        continue
-                    else:
-                        print(
-                            """
-    ===============================================================
-        using .mp3 format in assets for web publication
-        has a serious compatibility problem amongst browsers
-        prefer .ogg format
-    ===============================================================
-"""
-                        )
-
-                if f.endswith(".gitignore"):
-                    continue
-
-                if Path(f).is_symlink():
-                    print("sym", f)
-
-                if not os.path.isfile(f):
-                    continue
-
-                if LEVEL == 0 and f == "main.py":
-                    HAS_MAIN = True
-
-                # folders to skip __pycache__
-                # extensions to skip : pyc pyx pyd pyi
-                if not f.count("."):
-                    print(
-                        f"""
-    ==================================================================
-    {f} has no extension
-    ==================================================================
-                    """
-                    )
-                    zpath = list(zfolders)
-                    zpath.append(f)
-                    src = "/".join(zpath)
-                    name = f
-                    ext = ""
-                else:
-
-                    name, ext = f.rsplit(".", 1)
-                    ext = ext.lower()
-
-                    if ext in ["pyc", "pyx", "pyd", "pyi", "exe", "log"]:
-                        continue
-
-                zpath = list(zfolders)
-                zpath.append(f)
-                src = "/".join(zpath)
-
-                if ext == "png":
-                    maybe = f"{name}-pygbag.png"
-                    if Path(maybe).is_file():
-                        PNGOPT.append(f)
-                        f = maybe
-
-                if not src in ASSETS:
-                    # print( zpath , f )
-                    zf.write(f, src)
-                    ASSETS.append(src)
-                    COUNTER += 1
-
+        if not zip_content.is_file():
+            print("ERROR", zip_content)
             break
+        zip_name = Path("/".join(zpath))
+        COUNTER += 1
+        zf.write(zip_content, zip_name)
 
-    finally:
-        os.chdir(parent)
-        zfolders.pop()
-        LEVEL -= 1
+    # raise SystemExit
 
 
 async def archive(apkname, target_folder, build_dir=None):
-    global COUNTER, TRUNCATE, ASSETS, HAS_MAIN, HAS_STATIC
-    TRUNCATE = len(target_folder.as_posix())
+    global COUNTER
+
+    COUNTER = 0
+
     if build_dir:
         apkname = build_dir.joinpath(apkname).as_posix()
 
@@ -200,12 +54,12 @@ async def archive(apkname, target_folder, build_dir=None):
             print(f"Now in {infolder}")
             last = infolder
 
-        # print(" " * 4, fullpath)
+        print(" " * 4, fullpath)
         filtered.append(fullpath)
         sched_yield()
 
     packlist = []
-    for filename in optimize(filtered):
+    for filename in optimize(target_folder, filtered):
         packlist.append(filename)
         sched_yield()
 
@@ -213,24 +67,17 @@ async def archive(apkname, target_folder, build_dir=None):
         with zipfile.ZipFile(
             apkname, mode="x", compression=zipfile.ZIP_DEFLATED, compresslevel=9
         ) as zf:
-            pack_files(zf, Path.cwd(), ["assets"], target_folder)
+            # pack_files(zf, Path.cwd(), ["assets"], target_folder)
+            await pack_files(zf, packlist, ["assets"], target_folder)
+
     except TypeError:
         # 3.6 does not support compresslevel
         with zipfile.ZipFile(apkname, mode="x", compression=zipfile.ZIP_DEFLATED) as zf:
-            pack_files(zf, Path.cwd(), ["assets"], target_folder)
-    print(COUNTER)
+            # pack_files(zf, Path.cwd(), ["assets"], target_folder)
+            await pack_files(zf, packlist, ["assets"], target_folder)
 
-    if not (HAS_MAIN or HAS_STATIC):
-        print("Warning : this apk has no startup file (main.py or static )")
+    print(f"packing {COUNTER} files complete")
 
-    if len(PNGOPT):
-        print(f"INFO: {len(PNGOPT)} png format files were optimized for packing")
-
-    if len(WAVOPT):
-        print(f"INFO: {len(WAVOPT)} wav format files were swapped for packing")
-
-    if len(MP3OPT):
-        print(f"INFO: {len(MP3OPT)} mp3 format files were swapped for packing")
 
 
 async def web_archive(apkname, build_dir):

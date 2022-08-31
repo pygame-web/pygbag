@@ -4,6 +4,7 @@ import os.path
 import urllib
 import urllib.request
 
+import time
 
 from pathlib import Path
 
@@ -98,7 +99,7 @@ def get(url, path):
                 break
 
             if error:
-                print("WARNING: web.get", e)
+                print("WARNING: web.get", error)
 
             time.sleep(5)
             print("retrying in 5 seconds")

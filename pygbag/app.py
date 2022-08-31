@@ -16,12 +16,12 @@ from . import pack
 from . import web
 
 
-# FIXME: remove that when 0.1
+# FIXME: remove later
 devmode = os.path.isfile("dev")
 if devmode:
     DEFAULT_PORT = 8666
     DEFAULT_CDN = f"http://localhost:8000/"
-    DEFAULT_TMPL = "static/default.tmpl"
+    DEFAULT_TMPL = "static/wip.tmpl"
     print(
         f"""
 
@@ -128,6 +128,8 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
         help="package name, better make it unique",
     )
 
+    parser.add_argument("--title", default="", help="App nice looking name")
+
     parser.add_argument(
         "--version", default=version, help="package name, please make it unique"
     )
@@ -140,11 +142,11 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
         "--archive", action="store_true", help="make build/web.zip archive for itch.io"
     )
 
-    parser.add_argument(
-        "--main",
-        default=DEFAULT_SCRIPT,
-        help="Specify main script" "[default:%s]" % DEFAULT_SCRIPT,
-    )
+    #    parser.add_argument(
+    #        "--main",
+    #        default=DEFAULT_SCRIPT,
+    #        help="Specify main script" "[default:%s]" % DEFAULT_SCRIPT,
+    #    )
 
     parser.add_argument(
         "--icon", default="favicon.png", help="package name, please make it unique"
@@ -219,7 +221,7 @@ now packing application ....
         "autorun": "0",
         "authors": "pgw",
         "icon": args.icon,
-        "title": "cookiecutter.title",
+        "title": (args.title or app_name),
         "directory": app_name,
         "spdx": "cookiecutter.spdx",
         "version": __version__,
@@ -317,7 +319,7 @@ now packing application ....
             with open(
                 build_dir.joinpath("index.html").resolve(), "w", encoding="utf-8"
             ) as target:
-                # while ( line := source.readline():
+                # while ( line := source.readline()):
                 while True:
                     line = source.readline()
                     if not line:
@@ -327,14 +329,14 @@ now packing application ....
 
                     target.write(line)
 
-        # files should be all ready now
-        # except on CDN error on first test, but you did test do you ?
+        # files should be all ready and tested now
+        # except on CDN error on first test, but you did test didn't you ?
         if args.archive:
             print(
                 f"""
     only building a web archive suitable for itch.io
     archive file will be :
-    {build_dir}.zip
+        {build_dir}.zip
 """
             )
 

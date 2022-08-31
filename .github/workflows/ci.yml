@@ -1,0 +1,44 @@
+name: CI
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v1
+    - name: pygame-wasm-builder prepare
+      run: |
+            pwd
+            echo
+            python3 -V
+            echo
+            clang --version | head -n 1
+            echo
+            gcc --version | head -n 1
+            echo
+            env|grep GITHUB
+            echo
+            env|grep ANDROID
+            echo
+            apt-get update 2>&1 >/dev/null
+            apt-get install -y bash wget lz4 pv  2>&1 >/dev/null
+
+    - name: get pygame-wasm-plus
+      run: |
+            git clone --depth 1 --single-branch --branch main https://github.com/pygame-web/pygame-wasm-plus
+            mv pygame-wasm-plus/* ./
+           
+    - name: build
+      run: |
+            echo " === Building  ===="
+            cd $GITHUB_WORKSPACE
+            time bash ./pygame-wasm-plus.sh
+            du -hs $(find prebuilt/emsdk/)
+            cp -fv static/* dist/
+
+    - name : "Upload to GitHub pages"
+      uses: JamesIves/github-pages-deploy-action@4.1.7
+      with:
+        branch: gh-pages
+        folder: dist
