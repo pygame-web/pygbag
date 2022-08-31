@@ -34,7 +34,7 @@ jobs:
       run: |
             echo " === Building  ===="
             cd $GITHUB_WORKSPACE/pygame-wasm-plus
-            time bash ./pygame-wasm-plus.sh
+            time bash ./wasm-build-all.sh
             du -hs $(find prebuilt/emsdk/)
             cp -fv $GITHUB_WORKSPACE/static/* dist/
             cd $GITHUB_WORKSPACE
