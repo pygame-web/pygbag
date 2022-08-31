@@ -8,6 +8,7 @@ from .optimizing import optimize
 
 COUNTER = 0
 
+
 async def pack_files(zf, packlist, zfolders, target_folder):
     global COUNTER
     print("\n" * 4)
@@ -77,7 +78,6 @@ async def archive(apkname, target_folder, build_dir=None):
             await pack_files(zf, packlist, ["assets"], target_folder)
 
     print(f"packing {COUNTER} files complete")
-
 
 
 async def web_archive(apkname, build_dir):
