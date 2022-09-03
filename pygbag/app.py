@@ -20,7 +20,7 @@ from . import web
 devmode = os.path.isfile("dev")
 if devmode:
     DEFAULT_PORT = 8666
-    DEFAULT_CDN = f"http://localhost:8000/"
+    DEFAULT_CDN = f"http://localhost:8000/{__version__}/"
     DEFAULT_TMPL = "static/wip.tmpl"
     print(
         f"""
@@ -104,19 +104,27 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
         "--bind",
         default="localhost",
         metavar="ADDRESS",
-        help="Specify alternate bind address " "[default: localhost]",
+        help="Specify alternate bind address [default: localhost]",
     )
     parser.add_argument(
         "--directory",
         default=build_dir.as_posix(),
-        help="Specify alternative directory " "[default:%s]" % build_dir,
+        help="Specify alternative directory [default:%s]" % build_dir,
     )
 
     parser.add_argument(
         "--app_name",
         default=app_folder.name,
-        help="Specify user facing name of application" "[default:%s]" % app_folder.name,
+        help="Specify user facing name of application [default:%s]" % app_folder.name,
     )
+
+
+    parser.add_argument(
+        "--ume_block",
+        default=1,
+        help="Specify wait for user media engagement before running [default:%s]" % 1,
+    )
+
 
     parser.add_argument(
         "--cache", default=cache_dir.as_posix(), help="md5 based url cache directory"
@@ -131,7 +139,7 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
     parser.add_argument("--title", default="", help="App nice looking name")
 
     parser.add_argument(
-        "--version", default=version, help="package name, please make it unique"
+        "--version", default=__version__, help="override prebuilt version path [default:%s]" % __version__
     )
 
     parser.add_argument(
@@ -149,7 +157,7 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
     #    )
 
     parser.add_argument(
-        "--icon", default="favicon.png", help="package name, please make it unique"
+        "--icon", default="favicon.png", help="icon png file 32x32 min should be favicon.png"
     )
 
     parser.add_argument(
@@ -158,7 +166,7 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
         help="web site to cache locally [default:%s]" % cdn,
     )
 
-    parser.add_argument("--template", default=DEFAULT_TMPL, help="index.html template")
+    parser.add_argument("--template", default=DEFAULT_TMPL, help="index.html template [default:%s]" % DEFAULT_TMPL)
 
     parser.add_argument(
         "--ssl", default=False, help="enable ssl with server.pem and key.pem"
@@ -217,6 +225,7 @@ now packing application ....
         "cdn": args.cdn,
         "proxy": f"http://{args.bind}:{args.port}/",
         "xtermjs": "1",
+        "ume_block" : args.ume_block,
         "archive": app_name,
         "autorun": "0",
         "authors": "pgw",
@@ -325,7 +334,7 @@ now packing application ....
                     if not line:
                         break
                     for k, v in CC.items():
-                        line = line.replace("{{cookiecutter." + k + "}}", v)
+                        line = line.replace("{{cookiecutter." + k + "}}", str(v))
 
                     target.write(line)
 

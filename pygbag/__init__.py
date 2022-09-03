@@ -1,4 +1,5 @@
-__version__ = "0.1.5"
+__version__ = "0.2.0"
+
 
 
 # WaPy=>CPython compat
@@ -13,7 +14,6 @@ except:
 import sys, traceback
 
 if not hasattr(sys, "print_exception"):
-
     def print_exception(e, out=sys.stderr, **kw):
         kw["file"] = out
         traceback.print_exc(**kw)
