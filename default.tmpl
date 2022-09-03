@@ -1,76 +1,230 @@
-<html lang="en-us"><script src="{{cookiecutter.cdn}}runpy.js?cpython3.11&{{cookiecutter.archive}}.apk#main.py" type=module id="main" data-src="vtx,fs,gui" async defer>#<!--
+<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js?cpython3.11#" type=module id="main" data-src="vtx,fs,snd,gui" async defer>#<!--
 
-import asyncio, platform, json
+import sys
+import asyncio
+import platform
+import json
 from pathlib import Path
+
+# screen pixels (real, hardware)
+WIDTH=1024  # {{cookiecutter.width}}
+HEIGHT=600  # {{cookiecutter.height}}
+
+# reference/idealized screen pixels
+REFX = 1980
+REFY = 1080
+
+def u(real, ref, v):
+    if abs(v)<0.9999999:
+        result = int( (float(real)/100.0) * (v*1000))
+        if v<0:
+            return real-result
+        return result
+    return int( (real/ref) * v )
+
+def ux(*argv):
+    global WIDTH, REFX
+    acc = 0
+    for v in argv:
+        acc += u(WIDTH, REFX, v)
+    return acc
+
+def uy(*argv):
+    global HEIGHT, REFY
+    acc = 0
+    for v in argv:
+        acc += u(HEIGHT, REFY, v)
+    return acc
 
 print("""
 Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
     Pygbag Version : {{cookiecutter.version}}
-    Template Version : 0.1.5
+    Template Version : 0.2.0
     CDN URL : {{cookiecutter.cdn}}
-
+    Screen  : {{cookiecutter.width}}x{{cookiecutter.height}}
     Title   : {{cookiecutter.title}}
     Folder  : {{cookiecutter.directory}}
     Authors : {{cookiecutter.authors}}
     SPDX-License-Identifier: {{cookiecutter.spdx}}
+
 """)
 
 # don't rename
 async def sitecustomize():
+    import embed
+
+    platform.document.body.style.background = "#7f7f7f"
+
+    import pygame
+
+    def compose():
+        pygame.display.update()
+        window.chromakey(None, *screen.get_colorkey(), 40)
+
+    pygame.init()
+    pygame.font.init()
+
+    screen = pygame.display.set_mode([ux(.100),uy(.100)], pygame.SRCALPHA, 32)
+    screen.set_colorkey( (0,0,0,0), pygame.RLEACCEL )
+    screen.fill( (0,0,0,0) )
+
+    compose()
+
+    platform.window.transfer.hidden = true
+    platform.window.canvas.style.visibility = "visible"
 
 
-    apk = PyConfig["cpy_argv"][-1]
 
-    appname = apk.rsplit('.apk')[0]
+    apk = "{{cookiecutter.archive}}.apk"
 
-    mount_point = Path(f"/data/data/{appname}")
-    mount_point.mkdir()
+    bundle = "{{cookiecutter.archive}}"
+
+    # the C or js loader could do that but be explicit.
+    appdir = Path(f"/data/data/{bundle}") # /data/data/{{cookiecutter.archive}}
+    appdir.mkdir()
+
+
+    # mount apk
+
     cfg = {
         "io": "url",
         "type":"mount",
         "mount" : {
-            "point" : mount_point.as_posix(),
+            "point" : appdir.as_posix(),
             "path" : "/",
         }
 
     }
 
+    track = platform.window.MM.prepare(apk, json.dumps(cfg))
+
+    marginx = ux(.020) # 20%
+    marginy = uy(.045) # 45%
 
 
-    track = window.MM.prepare(apk, json.dumps(cfg))
+    def pg_bar(pos):
+        nonlocal marginx, marginy
+        # resolution of progress bar, recalculate since it may not be know yet.
+        total = track.len or 10  # avoid div0
+        slot = ux(.060)/ total # 60%
 
+        pygame.draw.rect(screen,(10,10,10),( marginx-ux(10), marginy-uy(10), (total*slot)+ux(20), uy(110) ) )
+        pygame.draw.rect(screen,(0,255,0), ( marginx, marginy, track.pos*slot, uy(90)) )
+
+    # wait until zip mount + overlayfs is complete
     while not track.ready:
-        await asyncio.sleep(0)
+        pg_bar(track.pos)
+        compose()
+        await asyncio.sleep(.1)
 
-    window.transfer.hidden = true
-    window.canvas.style.visibility = "visible"
+    # fill it up in case it was cached and instant download
+    pg_bar(track.len)
+    compose()
 
 
-    os.chdir(mount_point / "assets")
-    sys.path.insert(0, os.getcwd() )
+    # preloader will change dir and prepend it to sys.path
+    platform.run_main(PyConfig, loaderhome= appdir / "assets", loadermain=None)
 
-    aio.defer( execfile , [ mount_point / "assets" / "main.py" ], {} )
+
+    # wait preloading complete
+    # that includes images and wasm compilation of bundled modules
+    while embed.counter()<0:
+        await asyncio.sleep(.1)
+
+    main = appdir / "assets" / "main.py"
+
+    # test/wait user media interaction
+    if not platform.window.MM.UME:
+
+        # now that apk is mounted we have access to font cache
+        # but we need to fill __file__ that is not yet set
+        __import__(__name__).__file__ = main
+
+        # now make a prompt
+        fnt = pygame.sysfont.SysFont("freesans",  uy(80) )
+        prompt = fnt.render("Ready to start !", True, "blue")
+        pg_bar(track.len)
+        screen.blit(prompt, ( marginx+ ux(80), marginy - uy(10) ) )
+        compose()
+        print("""
+        * Waiting for media user engagement : please click/touch page *
+    """)
+        while not platform.window.MM.UME:
+            await asyncio.sleep(.1)
+
+
+    print("145: running main and resuming EventTarget in a few seconds")
+    execfile(main)
+
+    # if you don't reach that step
+    # your main.py has an infinite sync loop somewhere !
+    print("150: ready")
+
+
+    # makes all queued events arrive after program has looped a few cycles
+    while not aio.run_called:
+        await asyncio.sleep(.1)
+
+    aio.create_task(platform.EventTarget.process())
+
 
 
 asyncio.run( sitecustomize() )
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+# BEGIN BLOCK
+#
+#
+#
+# now this is the html part you can (and should) customize
+# It is not mandatory : pygame-script when it reads the above code (firt line )
+# create absolute minimal widget set required for running with default rules
+#
+# do not alter that comment block it is separating python code from html code
+# =============================================================================
 # --></script><head><!--
+//=============================================================================
+//
+//
+//
+//
+//
+//
+//
 
     {%- if cookiecutter.comment != "" -%}
 {{cookiecutter.comment}}
     {% endif %}
 
 --><script type="application/javascript">
+// END BLOCK
+
+
+
+// this dict is available under PyConfig.config from __main__
 
 config = {
     xtermjs : "{{cookiecutter.xtermjs}}" ,
     _sdl2 : "canvas",
+    user_canvas : 1,
+    ume_block : {{cookiecutter.ume_block}},
     archive : "{{cookiecutter.archive}}",
-    gui_debug : 3,  // divisor for canvas size in debug mode
+    gui_debug : 3,
     cdn : "{{cookiecutter.cdn}}",
     autorun : {{cookiecutter.autorun}},
-    user_canvas : 0, // does loader manager canvas position/expansion
     PYBUILD : "3.11"
 }
 
@@ -82,8 +236,8 @@ config = {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
 
+
     <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
-    <link rel="stylesheet" href="{{cookiecutter.cdn}}/styles.css"/>
 
     <style>
         #status {
@@ -105,7 +259,23 @@ config = {
         div.thick_border { border: 4px solid black; }
 
         /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-        canvas.emscripten { border: 0px none; background-color: black; }
+        /* average size of droid screen 470dp x 320dp  */
+        canvas.emscripten {
+            border: 0px none;
+            background-color: transparent;
+            width: 100%;
+            height=100%;
+            z-index: 5;
+
+            padding: 0;
+            margin: 0 auto;
+
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
 
         body {
             font-family: arial;
@@ -114,17 +284,16 @@ config = {
             background-color:powderblue;
         }
 
-        /* average size of droid screen 470dp x 320dp  */
         .topright{
            position:absolute;
            top:0px;
            right:0px;
         }
 
-        .topleft {
+        .bottomright {
             position:absolute;
-            top: 8px;
-            left: 8px;
+            top: 40%;
+            right: 0px;
         }
 
         .center {
@@ -134,15 +303,14 @@ config = {
         }
 
         .trinfo{
-           position:absolute;
-           top:330px;
+           position:relative;
            right:0px;
            border: 1px solid black;
         }
 
         .framed{
-           position:absolute;
-           top:400px;
+           position:relative;
+           top:150px;
            right:10px;
            border: 1px solid black;
         }
@@ -155,7 +323,7 @@ config = {
 <body>
 
     <div id="transfer" align=center>
-        <div class="spinner" id='spinner'></div>
+<!--        <div class="spinner" id='spinner'></div> -->
         <div class="emscripten" id="status">Downloading...</div>
         <div class="emscripten">
             <progress value="0" max="100" id="progress"></progress>
@@ -163,14 +331,17 @@ config = {
     </div>
 
 
+
     <canvas class="emscripten" id="canvas"
 width="1px"
 height="1px"
-style="width: 100%; height=100%; visibility: hidden;"
-        oncontextmenu="event.preventDefault()" tabindex=1>
+    oncontextmenu="event.preventDefault()" tabindex=1>
     </canvas>
 
-    <div id=crt  class=topright >
+    <div id=html></div>
+
+    <div id=crt  class=bottomright >
+
         <div id="system" hidden>
             <div class="button-container">
                 <button id="aiostop" disabled>AIO ⏏︎</button>
@@ -191,25 +362,26 @@ style="width: 100%; height=100%; visibility: hidden;"
 
         </div>
 
-        <div id=box class="emscripten_border">
+        <div id=box class="emscripten_border" hidden=true>
+
             <div id="info" class="trinfo"></div>
 
-        <iframe id="iframe" class="framed" name="iframe"
+            <iframe id="iframe" class="framed" name="iframe"
 width="470px" height="90%"
-            sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
-            mozallowfullscreen="true"
-            allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
-            frameborder="0"
-            src="about://"
-            msallowfullscreen="true"
-            scrolling="yes"
-            allowfullscreen="true"
-            webkitallowfullscreen="true"
-            allowtransparency="true">
-        </iframe>
+                allowfullscreen="true"
+                webkitallowfullscreen="true"
+                msallowfullscreen="true"
+                mozallowfullscreen="true"
+                sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
+                allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
+frameborder="1"
+                src="{{cookiecutter.cdn}}empty.html"
+                scrolling="yes"
+                allowtransparency="true" style="z-index: 10">
+            </iframe>
         </div>
-    </div>
 
+    </div>
 
 
     <div id="dlg" hidden>
@@ -218,17 +390,18 @@ width="470px" height="90%"
     </div>
 
     <div id="pyconsole">
-        <div id="terminal" tabIndex=1 align="left"><p></div>
+        <div id="terminal" tabIndex=1 align="left"></div>
     </div>
 
     <script type="application/javascript">
 
-    // called at startup and from debug()
-    function custom_onload(debug_hidden) {
-        console.log(__FILE__, "custom_onload", "debug hide :",debug_hidden)
+    async function custom_onload(debug_hidden) {
+        // this is called before anythinh python is loaded
+        // make your js customization here
+        console.log(__FILE__, "custom_onload")
+
         pyconsole.hidden = debug_hidden
         system.hidden = debug_hidden
-        iframe.hidden = debug_hidden
         transfer.hidden = debug_hidden
         info.hidden = debug_hidden
         box.hidden =  debug_hidden
@@ -237,39 +410,45 @@ width="470px" height="90%"
     function custom_prerun(){
         // no python main and no (MEMFS + VFS) yet.
         console.log(__FILE__, "custom_prerun")
+
     }
 
     function custom_postrun(){
         // python main and no VFS filesystem yet.
-        console.log(__FILE__, "custom_prerun")
+        console.log(__FILE__, "custom_postrun")
+
     }
 
-    function info_online(url, data) {
+    function debug() {
+        // allow to gain access to dev tools from js console
+        // but only on desktop. difficult to reach when in iframe
+        python.config.debug = true
+        custom_onload(false)
+        Module.PyRun_SimpleString("shell.uptime()")
+        window_resize()
+    }
+
+    function info_inline(data){
+        document.getElementById("info").innerHTML = data
+    }
+
+    function info_online(url) {
         // display info about current APK
         fetch( url /*, options */)
             .then((response) => response.text())
             .then((html) => {
-                document.getElementById("info").innerHTML = html || data;
+                info_inline(html);
         })
         .catch((error) => {
             console.warn(error);
         });
     }
 
-
-    function info_inline(data){
-        document.getElementById("info").innerHTML = data
-    }
-
-    var ifram_dom
-
-    function childLoaded() { ifram_dom = childGetElementById('someid');}
-
     function frame_online(url) {
         window.frames["iframe"].location = url;
     }
-    </script>
 
+    </script>
 
 </body>
 </html>
