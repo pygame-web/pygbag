@@ -191,8 +191,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
                 f = io.BytesIO(content)
 
             self.send_header("Content-Length", str(file_size))
-            #self.send_header("Access-Control-Allow-Origin", "*")
-            #self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
+            # self.send_header("Access-Control-Allow-Origin", "*")
+            # self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
 
             if not cached:
                 self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))

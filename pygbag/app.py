@@ -118,13 +118,11 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
         help="Specify user facing name of application [default:%s]" % app_folder.name,
     )
 
-
     parser.add_argument(
         "--ume_block",
         default=1,
         help="Specify wait for user media engagement before running [default:%s]" % 1,
     )
-
 
     parser.add_argument(
         "--cache", default=cache_dir.as_posix(), help="md5 based url cache directory"
@@ -139,7 +137,9 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
     parser.add_argument("--title", default="", help="App nice looking name")
 
     parser.add_argument(
-        "--version", default=__version__, help="override prebuilt version path [default:%s]" % __version__
+        "--version",
+        default=__version__,
+        help="override prebuilt version path [default:%s]" % __version__,
     )
 
     parser.add_argument(
@@ -157,7 +157,9 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
     #    )
 
     parser.add_argument(
-        "--icon", default="favicon.png", help="icon png file 32x32 min should be favicon.png"
+        "--icon",
+        default="favicon.png",
+        help="icon png file 32x32 min should be favicon.png",
     )
 
     parser.add_argument(
@@ -166,7 +168,11 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
         help="web site to cache locally [default:%s]" % cdn,
     )
 
-    parser.add_argument("--template", default=DEFAULT_TMPL, help="index.html template [default:%s]" % DEFAULT_TMPL)
+    parser.add_argument(
+        "--template",
+        default=DEFAULT_TMPL,
+        help="index.html template [default:%s]" % DEFAULT_TMPL,
+    )
 
     parser.add_argument(
         "--ssl", default=False, help="enable ssl with server.pem and key.pem"
@@ -225,7 +231,7 @@ now packing application ....
         "cdn": args.cdn,
         "proxy": f"http://{args.bind}:{args.port}/",
         "xtermjs": "1",
-        "ume_block" : args.ume_block,
+        "ume_block": args.ume_block,
         "archive": app_name,
         "autorun": "0",
         "authors": "pgw",
