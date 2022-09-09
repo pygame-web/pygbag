@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 0.5.0
+        SDK_VERSION: 0.6.0
         SYS_PYTHON: /usr/bin/python3
 
     steps:
@@ -29,18 +29,10 @@ jobs:
             sudo apt-get install -y bash git curl wget lz4 pv 2>&1 >/dev/null
 
 
-    - name: get pygame-wasm-plus
-      run: |
-            cd $GITHUB_WORKSPACE
-            git clone --depth 1 --single-branch --branch main https://github.com/pygame-web/pygame-wasm-plus
-            mv -vf pygame-wasm-plus/* ./
-            cp -rvf pygbag/support/* ./support/
-
-
     - name: build 3.10 packages
       run: |
             cd $GITHUB_WORKSPACE
-            PYBUILD=3.10 bash ./build-pkg.sh
+            PYBUILD=3.10 bash ./scripts/build-pkg.sh
 
     - name: build 3.10 loader
       run: |
@@ -50,10 +42,13 @@ jobs:
 
 
 
+
+
+
     - name: build 3.11 packages
       run: |
             cd $GITHUB_WORKSPACE
-            PYBUILD=3.11 bash ./build-pkg.sh
+            PYBUILD=3.11 bash ./scripts/build-pkg.sh
 
 
     - name: build 3.11 loader
@@ -63,13 +58,31 @@ jobs:
             du -hs dist/*
 
 
+
+
+
+
+    - name: build 3.12 packages
+      run: |
+            cd $GITHUB_WORKSPACE
+            PYBUILD=3.12 bash ./scripts/build-pkg.sh
+
+
+    - name: build 3.12 loader
+      run: |
+            cd $GITHUB_WORKSPACE
+            PYBUILD=3.12 bash ./scripts/build-loader.sh
+            du -hs dist/*
+
+
+
     - name: publishing
       run: |
             cd $GITHUB_WORKSPACE
-            du -hs $(find prebuilt/emsdk/)
+            du -hs $(find vm/prebuilt/emsdk/)
+            mv vm/dist ./
             cp -vf support/pythonrc.py dist/
             cp -rfv static/* dist/
-
 
     - name : "Upload to GitHub pages"
       uses: JamesIves/github-pages-deploy-action@4.1.7

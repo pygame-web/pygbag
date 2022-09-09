@@ -1,4 +1,4 @@
-<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js?cpython3.11#" type=module id="main" data-src="vtx,fs,snd,gui" async defer>#<!--
+<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js" type=module id="main" data-src="vtx,fs,snd,gui" async defer>#<!--
 
 import sys
 import asyncio
@@ -39,7 +39,7 @@ def uy(*argv):
 print("""
 Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
     Pygbag Version : {{cookiecutter.version}}
-    Template Version : 0.2.0
+    Template Version : 0.3.0
     CDN URL : {{cookiecutter.cdn}}
     Screen  : {{cookiecutter.width}}x{{cookiecutter.height}}
     Title   : {{cookiecutter.title}}
@@ -182,16 +182,12 @@ asyncio.run( sitecustomize() )
 
 
 
-
-
-
 # BEGIN BLOCK
 #
-#
-#
 # now this is the html part you can (and should) customize
-# It is not mandatory : pygame-script when it reads the above code (firt line )
-# create absolute minimal widget set required for running with default rules
+# It is not mandatory : pygame-script when it reads the first line (also called
+# shebang ) of above code create absolute minimal widget set
+# required for running with default rules
 #
 # do not alter that comment block it is separating python code from html code
 # =============================================================================
@@ -221,6 +217,7 @@ config = {
     _sdl2 : "canvas",
     user_canvas : 1,
     ume_block : {{cookiecutter.ume_block}},
+    can_close : {{cookiecutter.can_close}},
     archive : "{{cookiecutter.archive}}",
     gui_debug : 3,
     cdn : "{{cookiecutter.cdn}}",

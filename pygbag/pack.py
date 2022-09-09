@@ -29,10 +29,9 @@ async def pack_files(zf, packlist, zfolders, target_folder):
             print("ERROR", zip_content)
             break
         zip_name = Path("/".join(zpath))
+#TODO: TEST SHEBANG for .html -> .py extension
         COUNTER += 1
         zf.write(zip_content, zip_name)
-
-    # raise SystemExit
 
 
 async def archive(apkname, target_folder, build_dir=None):

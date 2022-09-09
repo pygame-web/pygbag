@@ -99,7 +99,7 @@ def get(url, path):
                 break
 
             if error:
-                print("WARNING: web.get", error)
+                print(f"WARNING: web.get({url}) : {error}")
 
             time.sleep(5)
             print("retrying in 5 seconds")

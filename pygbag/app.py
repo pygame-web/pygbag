@@ -20,7 +20,7 @@ from . import web
 devmode = os.path.isfile("dev")
 if devmode:
     DEFAULT_PORT = 8666
-    DEFAULT_CDN = f"http://localhost:8000/{__version__}/"
+    DEFAULT_CDN = f"http://localhost:8000/archives/{__version__}/"
     DEFAULT_TMPL = "static/wip.tmpl"
     print(
         f"""
@@ -122,6 +122,12 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
         "--ume_block",
         default=1,
         help="Specify wait for user media engagement before running [default:%s]" % 1,
+    )
+
+    parser.add_argument(
+        "--can_close",
+        default=0,
+        help="Specify if window will ask confirmation for closing [default:%s]" % 0,
     )
 
     parser.add_argument(
@@ -232,6 +238,7 @@ now packing application ....
         "proxy": f"http://{args.bind}:{args.port}/",
         "xtermjs": "1",
         "ume_block": args.ume_block,
+        "can_close": args.can_close,
         "archive": app_name,
         "autorun": "0",
         "authors": "pgw",
@@ -352,6 +359,7 @@ now packing application ....
     only building a web archive suitable for itch.io
     archive file will be :
         {build_dir}.zip
+
 """
             )
 
@@ -371,7 +379,7 @@ now packing application ....
 
 build_dir = {build_dir}
 
-            """
+"""
             )
     else:
         print(args.template, "is not a valid template")
