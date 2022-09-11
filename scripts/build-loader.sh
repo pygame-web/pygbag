@@ -170,13 +170,22 @@ then
         CPY_LDFLAGS="-lsqlite3"
     fi
 
-    for lib in python mpdec expat pygame
+    for lib in python mpdec expat
     do
         cpylib=${SDKROOT}/prebuilt/emsdk/lib${lib}${PYBUILD}.a
         if [ -f $cpylib ]
         then
             CPY_LDFLAGS="$CPY_LDFLAGS $cpylib"
         fi
+    done
+
+    for lib in $PACKAGES
+    do
+        cpylib=${SDKROOT}/prebuilt/emsdk/lib${lib}${PYBUILD}.a
+#        if [ -f $cpylib ]
+#        then
+            CPY_LDFLAGS="$CPY_LDFLAGS $cpylib -DPYDK_$lib=1"
+#        fi
     done
 
     echo CPY_LDFLAGS=$CPY_LDFLAGS

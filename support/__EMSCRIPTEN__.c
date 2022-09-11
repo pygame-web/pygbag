@@ -6,6 +6,7 @@ static void pymain_free(void);
 
 
     http://troubles.md/why-do-we-need-the-relooper-algorithm-again/
+
     https://medium.com/leaningtech/solving-the-structured-control-flow-problem-once-and-for-all-5123117b1ee2
 
     https://github.com/WebAssembly/exception-handling
@@ -14,9 +15,14 @@ static void pymain_free(void);
 
 tty ?
 https://github.com/emscripten-core/emscripten/blob/6dc4ac5f9e4d8484e273e4dcc554f809738cedd6/src/library_syscall.js#L311
+    finish ncurses : https://github.com/jamesbiv/ncurses-emscripten
 
 
 headless tests ?
+
+    playwright
+        https://playwright.dev/docs/screenshots
+        https://stackoverflow.com/questions/73267809/run-playwright-in-interactive-mode-in-python
 
     https://github.com/paulrouget/servo-embedding-example
 
@@ -63,11 +69,9 @@ self hosting:
 
 #include <unistd.h>
 
-extern void pygame_Inittab();
 
-#if defined(PY_HARFANG3D)
-    extern PyMODINIT_FUNC PyInit_harfang(void);
-#endif
+#include "../build/gen_inittab.h"
+
 
 static long long embed = 0;
 
@@ -195,15 +199,6 @@ embed_run_script(PyObject *self, PyObject *argv) {
     return Py_BuildValue("s", emscripten_run_script_string(code) );
 }
 
-static PyObject *
-embed_coroutine(PyObject *self, PyObject *argv) {
-    char *code = NULL;
-    if (!PyArg_ParseTuple(argv, "s", &code)) {
-        return NULL;
-    }
-    return Py_BuildValue("i", emscripten_run_script_int(code) );
-}
-
 
 static PyObject *
 embed_eval(PyObject *self, PyObject *argv) {
@@ -261,7 +256,6 @@ static PyMethodDef mod_embed_methods[] = {
     {"preload", (PyCFunction)embed_preload,  METH_VARARGS, "emscripten_run_preload_plugins"},
     {"symlink", (PyCFunction)embed_symlink,  METH_VARARGS, "FS.symlink"},
     {"run_script", (PyCFunction)embed_run_script,  METH_VARARGS, "run js"},
-    {"coroutine", (PyCFunction)embed_coroutine,  METH_VARARGS, "run js coro"},
     {"eval", (PyCFunction)embed_eval,  METH_VARARGS, "run js eval()"},
     {"readline", (PyCFunction)embed_readline,  METH_NOARGS, "get current line"},
     {"flush", (PyCFunction)embed_flush,  METH_NOARGS, "flush stdio+stderr"},
@@ -466,33 +460,37 @@ main(int argc, char **argv)
     };
 
 
+    PyImport_AppendInittab("embed", init_embed);
+
 #if defined(EMIFACE)
     PyImport_AppendInittab("embed_emscripten", PyInit_emscripten);
     PyImport_AppendInittab("embed_browser", PyInit_browser);
+#else
+    #pragma message "not linking emscripten/browser support"
 #endif
-#if defined(PY_HARFANG3D)
-    PyImport_AppendInittab("harfang", PyInit_harfang);
-#endif
 
-    PyImport_AppendInittab("embed", init_embed);
 
-    pygame_Inittab();
-    setenv("LC_ALL", "C.UTF-8", 1);
-    setenv("TERM","xterm", 1);
-    setenv("TERMINFO", "/usr/share/terminfo", 1);
-    setenv("COLS","132", 1);
-    setenv("LINES","30", 1);
-    setenv("NCURSES_NO_UTF8_ACS","1",1);
+#include "../build/gen_inittab.c"
 
-    setenv("LANG","en_US.UTF-8", 0);
+// defaults
+    setenv("LC_ALL", "C.UTF-8", 0);
+    setenv("TERMINFO", "/usr/share/terminfo", 0);
+    setenv("COLS","132", 0);
+    setenv("LINES","30", 0);
+    setenv("TERM", "xterm", 0);
+    setenv("NCURSES_NO_UTF8_ACS", "1", 0);
+    setenv("PYTHONINTMAXSTRDIGITS", "0", 0);
+    setenv("LANG", "en_US.UTF-8", 0);
 
+
+// force
     setenv("PYTHONHOME","/usr", 1);
     setenv("PYTHONUNBUFFERED", "1", 1);
     setenv("PYTHONINSPECT","1",1);
     setenv("PYTHONDONTWRITEBYTECODE","1",1);
-
     setenv("HOME", "/home/web_user", 1);
     setenv("APPDATA", "/home/web_user", 1);
+
 
     status = pymain_init(&args);
 

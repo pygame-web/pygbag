@@ -1,0 +1,1 @@
+    pygame_Inittab();

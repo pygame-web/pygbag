@@ -90,8 +90,11 @@ then
 fi
 
 
+> build/gen_inittab.h
+> build/gen_inittab.c
 
-for pkg in PACKAGES
+
+for pkg in ${PACKAGES:-pygame}
 do
     pkg_script=packages.d/$pkg.sh
 
@@ -105,6 +108,32 @@ do
 
     # for packages build destination
     mkdir -p $DYNLOAD $REQUIREMENTS $PKGDIR
+
+
+
+
+# always do it so we get a warning if lib is not linked
+    if [ -f packages.d/$pkg.h ]
+    then
+        cat >> build/gen_inittab.h <<END
+// auto generated from build-pkg.sh
+#if defined(PYDK_$pkg)
+#   include "../packages.d/$pkg.h"
+#endif
+END
+    fi
+
+    if [ -f packages.d/$pkg.c ]
+    then
+        cat >> build/gen_inittab.c <<END
+// auto generated from build-pkg.sh
+#if defined(PYDK_$pkg)
+#   include "../packages.d/$pkg.c"
+#else
+    #pragma message "not linking $pkg"
+#endif
+END
+    fi
 
 
 # TODO make a clean option

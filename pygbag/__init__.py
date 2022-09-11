@@ -1,3 +1,5 @@
+""" packager+server for pygbag wasm loader """
+
 __version__ = "0.3.0"
 
 
