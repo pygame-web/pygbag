@@ -6,8 +6,12 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 0.6.0
+        SDK_VERSION: 3.1.19.0
         SYS_PYTHON: /usr/bin/python3
+        PACKAGES: pygame
+        BUILDS: 3.12 3.11 3.10
+        CYTHON: Cython-3.0.0a11-py2.py3-none-any.whl
+
 
     steps:
     - uses: actions/checkout@v1
@@ -20,6 +24,8 @@ jobs:
             clang --version | head -n 1
             echo
             gcc --version | head -n 1
+            echo
+            echo CI=$CI
             echo
             env|grep GITHUB
             echo
@@ -38,7 +44,7 @@ jobs:
       run: |
             cd $GITHUB_WORKSPACE
             PYBUILD=3.10 bash ./scripts/build-loader.sh
-            du -hs dist/*
+
 
 
 
@@ -50,12 +56,11 @@ jobs:
             cd $GITHUB_WORKSPACE
             PYBUILD=3.11 bash ./scripts/build-pkg.sh
 
-
     - name: build 3.11 loader
       run: |
             cd $GITHUB_WORKSPACE
             PYBUILD=3.11 bash ./scripts/build-loader.sh
-            du -hs dist/*
+
 
 
 
@@ -67,26 +72,24 @@ jobs:
             cd $GITHUB_WORKSPACE
             PYBUILD=3.12 bash ./scripts/build-pkg.sh
 
-
     - name: build 3.12 loader
       run: |
             cd $GITHUB_WORKSPACE
             PYBUILD=3.12 bash ./scripts/build-loader.sh
-            du -hs dist/*
+
+
 
 
 
     - name: publishing
       run: |
             cd $GITHUB_WORKSPACE
-            du -hs $(find vm/prebuilt/emsdk/)
-            mv vm/dist ./
-            cp -vf support/pythonrc.py dist/
-            cp -rfv static/* dist/
+            cp -vf support/pythonrc.py build/web/archives/
+
 
     - name : "Upload to GitHub pages"
       uses: JamesIves/github-pages-deploy-action@4.1.7
       with:
         branch: gh-pages
-        folder: dist
+        folder: build/web
 

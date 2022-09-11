@@ -1,8 +1,10 @@
 #!/bin/bash
-export LC_ALL=C
-export SDK_VERSION=${SDK_VERSION:-0.5.0}
-export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
+export SDK_VERSION=${SDK_VERSION:-3.1.19.0}
 export PYBUILD=${PYBUILD:-3.11}
+
+
+export LC_ALL=C
+export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
 export PYMAJOR=$(echo -n $PYBUILD|cut -d. -f1)
 export PYMINOR=$(echo -n $PYBUILD|cut -d. -f2)
 
@@ -21,18 +23,19 @@ export PATH=${SDKROOT}/.local/bin:$PATH
 # sdk
 if [ -d ${SDKROOT}/prebuilt/emsdk/${PYBUILD} ]
 then
-    echo "  * not upgrading python-wasm-sdk ${PYBUILD}"
+    echo "  * not upgrading python-wasm-sdk ${PYBUILD}" 1>&2
 else
     if [ -f "../${SDK_ARCHIVE}" ]
     then
         echo "
     * using cached python-wasm-sdk archive ${SDK_ARCHIVE}
-"
+" 1>&2
         tar xfvP ../${SDK_ARCHIVE} --use-compress-program=lz4 \
          | pv -f -c -p -l -s 20626 >/dev/null
     else
         url=https://github.com/pygame-web/python-wasm-sdk/releases/download/${SDK_VERSION}/${SDK_ARCHIVE}
-        echo "  * getting and installing python-wasm-sdk archive $url"
+        echo "  * getting and installing python-wasm-sdk archive $url
+" 1>&2
         curl -sL --retry 5 $url \
          | tar xvP --use-compress-program=lz4 \
          | pv -f -c -p -l -s 20626 >/dev/null
@@ -86,13 +89,17 @@ then
     cp -rf support/__EMSCRIPTEN__.patches/${PYBUILD}/* ${SDKROOT}/devices/emsdk/usr/lib/python${PYBUILD}/
 fi
 
-for pkg_script in packages.d/*.sh
+
+
+for pkg in PACKAGES
 do
-    pkg=$(basename $pkg_script .sh)
+    pkg_script=packages.d/$pkg.sh
+
+    #pkg=$(basename $pkg_script .sh)
 
     echo "
     * processing build script $pkg_script for $pkg
-"
+" 1>&2
 
     export PKGDIR=$REQUIREMENTS/$pkg
 
@@ -100,14 +107,26 @@ do
     mkdir -p $DYNLOAD $REQUIREMENTS $PKGDIR
 
 
+# TODO make a clean option
+    if [ -f ${SDKROOT}/prebuilt/emsdk/lib${pkg}${PYBUILD}.a ]
+    then
+        echo " RE USING  ${pkg}
+" 1>&2
+        continue
+    fi
+
+
+
     if ./packages.d/${pkg}.sh
     then
 
         if [ -f ${SDKROOT}/prebuilt/emsdk/lib${pkg}${PYBUILD}.a ]
         then
-            echo "success building ${pkg}"
+            echo "success building ${pkg}
+" 1>&2
         else
-            echo "failed to build lib${pkg}${PYBUILD}.a"
+            echo "failed to build lib${pkg}${PYBUILD}.a
+" 1>&2
             exit 119
         fi
 
@@ -123,7 +142,8 @@ do
         fi
 
     else
-        echo "script $pkg_script failed"
+        echo "script $pkg_script failed
+" 1>&2
     fi
 
 done

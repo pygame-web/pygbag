@@ -14,10 +14,10 @@ echo "
             SDKROOT=$SDKROOT
             SYS_PYTHON=${SYS_PYTHON}
 
-"
+" 1>&2
 
 
-if [ -f dev ]
+if [ -f /pp ]
 then
     DEV=true
 else
@@ -32,10 +32,18 @@ else
     CYTHON=$($SYS_PYTHON -m cython -V 2>&1)
     if echo $CYTHON| grep -q 3.0.0a11$
     then
-        echo "  * not upgrading cython $CYTHON"
+        echo "  * not upgrading cython $CYTHON
+" 1>&2
     else
-        echo "  * upgrading cython $CYTHON to 3.0.0a11+"
-        $SYS_PYTHON -m pip install --user --upgrade git+https://github.com/cython/cython.git
+        echo "  * upgrading cython $CYTHON to 3.0.0a11+
+"  1>&2
+        #$SYS_PYTHON -m pip install --user --upgrade git+https://github.com/cython/cython.git
+        CYTHON=${CYTHON:-Cython-3.0.0a11-py2.py3-none-any.whl}
+        pushd build
+        wget -q -c https://github.com/cython/cython/releases/download/3.0.0a11/${CYTHON}
+        $SYS_PYTHON -m pip install $CYTHON
+        popd
+
     fi
 fi
 
@@ -46,13 +54,14 @@ if true
 then
     echo "
     * using pygame-wasm WIP repo
-    "
+" 1>&2
     PG_BRANCH="pygame-wasm"
     PG_GIT="https://github.com/pmp-p/pygame-wasm.git"
+
 else
     echo "
     * using main pygame repo
-    "
+" 1>&2
     PG_BRANCH="main"
     PG_GIT="https://github.com/pygame/pygame.git"
 fi
@@ -74,7 +83,8 @@ touch $(find | grep pxd$)
 if $SYS_PYTHON setup.py cython_only
 then
     # do not link -lSDL2 some emmc versions will think .so will use EM_ASM
-    SDL_IMAGE="-s USE_SDL=2 -lfreetype -lwebp"
+    #SDL_IMAGE="-s USE_SDL=2 -lfreetype -lwebp"
+    SDL_IMAGE="-lSDL2 -lfreetype -lwebp"
 
     export CFLAGS="-DHAVE_STDARG_PROTOTYPES -DBUILD_STATIC -DSDL_NO_COMPAT $SDL_IMAGE"
 
@@ -82,13 +92,16 @@ then
 
     export CC=emcc
 
+    # remove SDL1 for good
+    rm -rf /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/include/SDL
+
     [ -d build ] && rm -r build
     [ -f Setup ] && rm Setup
     [ -f ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a ] && rm ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a
 
     if $SDKROOT/python3-wasm setup.py -config -auto -sdl2
     then
-        $SDKROOT/python3-wasm setup.py build -j1 || echo "encountered some build errors"
+        $SDKROOT/python3-wasm setup.py build -j1 || echo "encountered some build errors" 1>&2
 
         OBJS=$(find build/temp.wasm32-*/|grep o$)
 
@@ -105,12 +118,12 @@ then
 
 
     else
-        echo "ERROR: pygame configuration failed"
+        echo "ERROR: pygame configuration failed" 1>&2
         exit 109
     fi
 
 else
-    echo "cythonize failed"
+    echo "cythonize failed" 1>&2
     exit 114
 fi
 

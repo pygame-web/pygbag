@@ -32,16 +32,21 @@ echo "
 
 # CF_SDL="-sUSE_SDL=2 -sUSE_ZLIB=1 -sUSE_BZIP2=1"
 
-CF_SDL=""
-LD_SDL="-L/opt/python-wasm-sdk/devices/emsdk/usr/lib -lSDL2_gfx -lSDL2_mixer -lSDL2_image -lwebp -ljpeg -lpng -lSDL2_ttf -lharfbuzz -lfreetype"
+CF_SDL="-I${SDKROOT}/devices/emsdk/usr/include/SDL2"
+LD_SDL="-L${SDKROOT}/devices/emsdk/usr/lib -lSDL2_gfx -lSDL2_mixer -lSDL2_image -lwebp -ljpeg -lpng -lSDL2_ttf -lharfbuzz -lfreetype"
 
 
 SUPPORT_FS=""
 
-mkdir -p build dist dist/python${PYMAJOR}${PYMINOR}
+DIST_DIR=$(pwd)/build/web/archives/$($SYS_PYTHON -c "import pygbag;print(pygbag.__version__)")
 
+mkdir -p $DIST_DIR/python${PYMAJOR}${PYMINOR}
 
-mkdir -p tests/assets tests/code  # git does not keep empty dirs
+rm $DIST_DIR/python${PYMAJOR}${PYMINOR}/main.* 2>/dev/null
+
+# git does not keep empty dirs
+mkdir -p tests/assets tests/code
+
 ALWAYS_ASSETS=$(realpath tests/assets)
 ALWAYS_CODE=$(realpath tests/code)
 
@@ -165,7 +170,7 @@ then
         CPY_LDFLAGS="-lsqlite3"
     fi
 
-    for lib in python pygame mpdec expat
+    for lib in python mpdec expat pygame
     do
         cpylib=${SDKROOT}/prebuilt/emsdk/lib${lib}${PYBUILD}.a
         if [ -f $cpylib ]
@@ -186,16 +191,37 @@ then
      $SUPPORT_FS \
      --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \
-     -o dist/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o  \
+     -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o  \
      $CPY_LDFLAGS -lffi -lbz2 -lz \
      $LD_SDL \
      -ldl -lm
     then
         rm build/${MODE}.o
-        du -hs dist/*
+        du -hs ${DIST_DIR}/*
         echo Total
         echo _________
-        du -hs dist
+        if $CI
+        then
+            cp -r static/* ${DIST_DIR}/
+            cp support/pythonrc.py ${DIST_DIR}/pythonrc.py
+        else
+            [ -f ${DIST_DIR}/pythonrc.py ] || ln support/pythonrc.py ${DIST_DIR}/pythonrc.py
+            pushd static
+            for fn in *
+            do
+                if [ -f $fn ]
+                then
+                    [ -f ${DIST_DIR}/$fn ] && continue
+                    ln $fn ${DIST_DIR}/$fn
+                    continue
+                fi
+                [ -L ${DIST_DIR}/$fn ] && continue
+                ln -s $(pwd)/$fn ${DIST_DIR}/$fn
+            done
+            popd
+        fi
+
+        du -hs ${DIST_DIR}
     else
         echo "pymain+loader linking failed"
         exit 178

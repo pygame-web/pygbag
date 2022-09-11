@@ -45,13 +45,24 @@ String.prototype.rsplit = function(sep, maxsplit) {
     return [this]
 }
 
+function jsimport(url, sync) {
+    const jsloader=document.createElement('script')
+    jsloader.setAttribute("type","text/javascript")
+    jsloader.setAttribute("src", url)
+    if (!sync)
+        jsloader.setAttribute('async', true);
+    document.head.appendChild(jsloader)
+}
+window.jsimport = jsimport
 
 window.__defineGetter__('__FILE__', function() {
   return (new Error).stack.split('/').slice(-1).join().split('?')[0].split(':')[0] +": "
 })
 
 
+
 const delay = (ms, fn_solver) => new Promise(resolve => setTimeout(() => resolve(fn_solver()), ms));
+
 
 function _until(fn_solver){
     return async function fwrapper(){
@@ -61,7 +72,7 @@ function _until(fn_solver){
             {};
     }
 }
-window._until = _until
+window._until =  _until
 
 function defined(e, o) {
     if (typeof o === 'undefined' || o === null)
@@ -873,13 +884,12 @@ async function onload() {
     }
 
     console.warn("Loading python interpreter from", config.executable)
-    const jswasmloader=document.createElement('script')
-    jswasmloader.setAttribute("type","text/javascript")
-    jswasmloader.setAttribute("src", config.executable )
-    jswasmloader.setAttribute('async', true);
-    document.head.appendChild(jswasmloader)
+    jsimport(config.executable)
 
 }
+
+
+
 
 
 window.busy = 1
@@ -1098,8 +1108,20 @@ __EMSCRIPTEN__.EventTarget.build('${ev.name}', """${ev.data}""")
 
 // =============================  media manager ===========================
 
+function download(diskfile, filename) {
+    if (!filename)
+        filename = diskfile.rsplit("/")
 
-window.MM = { tracks : 0, UME : true }
+    const blob = new Blob([FS.readFile(filename)])
+    const elem = window.document.createElement('a');
+    elem.href = window.URL.createObjectURL(blob);
+    elem.download = filename;
+    document.body.appendChild(elem);
+    elem.click();
+    document.body.removeChild(elem);
+}
+
+window.MM = { tracks : 0, UME : true, download : download }
 
 async function media_prepare(trackid) {
     const track = MM[trackid]

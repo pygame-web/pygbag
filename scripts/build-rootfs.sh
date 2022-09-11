@@ -119,6 +119,11 @@ with open("build/stdlib.list","w") as tarlist:
             #if name.find('asyncio/unix_events.py')>0:
             #    continue
 
+            if name.find('/site-packages/setuptools/')>0:
+                continue
+
+            if name.find('/site-packages/pkg_resources/_vendor/')>0:
+                continue
 
             if name.endswith(sysconf):
                 name = name.replace(sysconf,"_sysconfigdata__emscripten_wasm32-emscripten.py")
