@@ -70,7 +70,7 @@ self hosting:
 #include <unistd.h>
 
 
-#include "../build/gen_inittab.h"
+#include "gen_inittab.h"
 
 
 static long long embed = 0;
@@ -470,7 +470,7 @@ main(int argc, char **argv)
 #endif
 
 
-#include "../build/gen_inittab.c"
+#include "gen_inittab.c"
 
 // defaults
     setenv("LC_ALL", "C.UTF-8", 0);

@@ -151,6 +151,7 @@ PYDIR=${SDKROOT}/devices/emsdk/usr/include/python${PYBUILD}
 
 if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $CF_SDL $CPOPTS \
  -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden\
+ -Ibuild \
  -I${PYDIR}/internal -I${PYDIR} -I./support -DPy_BUILD_CORE\
  -o build/${MODE}.o support/__EMSCRIPTEN__-pymain.c
 then
