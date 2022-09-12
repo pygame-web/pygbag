@@ -90,8 +90,8 @@ then
 fi
 
 
-> build/gen_inittab.h
-> build/gen_inittab.c
+> support/gen_inittab.h
+> support/gen_inittab.c
 
 
 for pkg in ${PACKAGES:-pygame}
@@ -115,7 +115,7 @@ do
 # always do it so we get a warning if lib is not linked
     if [ -f packages.d/$pkg.h ]
     then
-        cat >> build/gen_inittab.h <<END
+        cat >> support/gen_inittab.h <<END
 // auto generated from build-pkg.sh
 #if defined(PYDK_$pkg)
 #   include "../packages.d/$pkg.h"
@@ -125,7 +125,7 @@ END
 
     if [ -f packages.d/$pkg.c ]
     then
-        cat >> build/gen_inittab.c <<END
+        cat >> support/gen_inittab.c <<END
 // auto generated from build-pkg.sh
 #if defined(PYDK_$pkg)
 #   include "../packages.d/$pkg.c"
