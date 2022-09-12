@@ -84,12 +84,12 @@ jobs:
     - name: publishing
       run: |
             cd $GITHUB_WORKSPACE
-            cp -vf support/pythonrc.py build/web/archives/
+            echo "<html></html>" >  build/web/archives/index.html
 
 
     - name : "Upload to GitHub pages"
       uses: JamesIves/github-pages-deploy-action@4.1.7
       with:
         branch: gh-pages
-        folder: build/web
+        folder: build/web/archives
 
