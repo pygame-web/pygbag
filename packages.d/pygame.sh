@@ -4,6 +4,7 @@ export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
 export CONFIG=${CONFIG:-$SDKROOT/config}
 
 
+
 . ${CONFIG}
 
 echo "
@@ -30,13 +31,13 @@ else
     fi
 
     # update cython
-    CYTHON=$($SYS_PYTHON -m cython -V 2>&1)
-    if echo $CYTHON| grep -q 3.0.0a11$
+    TEST_CYTHON=$($SYS_PYTHON -m cython -V 2>&1)
+    if echo $TEST_CYTHON| grep -q 3.0.0a11$
     then
-        echo "  * not upgrading cython $CYTHON
+        echo "  * not upgrading cython $TEST_CYTHON
 " 1>&2
     else
-        echo "  * upgrading cython $CYTHON to 3.0.0a11+
+        echo "  * upgrading cython $TEST_CYTHON to 3.0.0a11+
 "  1>&2
         #$SYS_PYTHON -m pip install --user --upgrade git+https://github.com/cython/cython.git
         CYTHON=${CYTHON:-Cython-3.0.0a11-py2.py3-none-any.whl}

@@ -89,13 +89,6 @@ then
     cp -rf support/__EMSCRIPTEN__.patches/${PYBUILD}/* ${SDKROOT}/devices/emsdk/usr/lib/python${PYBUILD}/
 fi
 
-if $CI
-then
-    echo " FIXME:  SYS_PYTHON overwritten"
-    export SYS_PYTHON=/usr/bin/python3
-fi
-
-
 
 mkdir -p build
 
