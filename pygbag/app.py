@@ -158,7 +158,7 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
     )
 
     parser.add_argument(
-        "--html", action="store_true", help="build as html with embedded assets"
+        "--html", action="store_true", help="build as html with embedded assets (pygame-script)"
     )
 
     parser.add_argument(

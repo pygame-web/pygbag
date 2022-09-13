@@ -2,6 +2,9 @@
 
 pygame wasm for everyone ( packager + test server )
 
+runs pygame directly in modern web browsers, including mobile versions.
+
+
 
 "your_game_folder" must contains a main.py and its loop must be async aware eg :
 
@@ -35,7 +38,7 @@ asyncio.run( main() )
 
 # do not add anything from here
 # asyncio.run is non block on pygame-wasm
-
+```
 
 usage:
 
@@ -45,7 +48,7 @@ usage:
 command help:
 
     pygbag --help your_game_folder
-```
+
 
 eg
 
@@ -67,19 +70,24 @@ optional arguments:
   -h, --help            show this help message and exit
   --bind ADDRESS        Specify alternate bind address [default: localhost]
   --directory DIRECTORY
-                        Specify alternative directory [default:/data/git/pygbag-wip/test/build/web]
-  --app_name APP_NAME   Specify user facing name of application[default:test]
+                        Specify alternative directory [default:/data/git/pygbag/test/build/web]
+  --PYBUILD PYBUILD     Specify python version [default:3.11]
+  --app_name APP_NAME   Specify user facing name of application [default:test]
   --ume_block UME_BLOCK
-                        Specify wait for user media engagement before running[default:1]
+                        Specify wait for user media engagement before running [default:1]
+  --can_close CAN_CLOSE
+                        Specify if window will ask confirmation for closing [default:0]
   --cache CACHE         md5 based url cache directory
   --package PACKAGE     package name, better make it unique
   --title TITLE         App nice looking name
-  --version VERSION     override prebuilt version path
+  --version VERSION     override prebuilt version path [default:0.3.0]
   --build               build only, do not run test server
+  --html                build as html with embedded assets (pygame-script)
+  --no_opt              turn off assets optimizer
   --archive             make build/web.zip archive for itch.io
   --icon ICON           icon png file 32x32 min should be favicon.png
-  --cdn CDN             web site to cache locally [default:http://localhost:8000/0.2.0/]
-  --template TEMPLATE   index.html template
+  --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/archives/0.3.0/]
+  --template TEMPLATE   index.html template [default:default.tmpl]
   --ssl SSL             enable ssl with server.pem and key.pem
   --port [PORT]         Specify alternate port [default: 8000]
 ```
@@ -89,8 +97,9 @@ use http://localhost:8000#debug for getting a terminal and a sized down
 canvas
 
 v8 based browsers are preferred ( chromium/brave/chrome ... )
-because they set baseline restrictions on WebAssembly loading.
-using them while testing ensure proper operation on all browsers.
+starting with 81.0.4044 ( android 4.4 ).
+Because they set baseline restrictions on WebAssembly loading.
+Using them while testing ensure proper operation on all browsers.
 
 
 NOTES:
@@ -112,17 +121,13 @@ hard
 
 https://github.com/pygame-web/python-wasm-sdk  <= build CPython (not pyodide)
 
-https://github.com/pygame-web/pygame-wasm-plus <= build pygame
-
-then read/use pygbag CI to see how to build the C loader (pymain) and
+then read/use pygbag CI to see how to build pygame + the C loader (pymain) and
 link it to libpython + libpygame
 
 https://github.com/pygame-web/pygbag
 
-
 prebuilts used by pygbag are stored on github
-from the repo https://github.com/pygame-web/archives
-
+from the repo https://github.com/pygame-web/archives under versionned folders
 
 
 
