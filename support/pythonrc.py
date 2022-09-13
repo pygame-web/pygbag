@@ -216,13 +216,13 @@ if defined("embed") and hasattr(embed, "readline"):
         # ____________________________________
 
         @classmethod
-        def ESC(cls.*argv):
+        def ESC(cls, *argv):
             """ sent vt ESC commands """
             for arg in argv:
                 yield chr(0x1B)+arg
 
         @classmethod
-        def CSR(cls.*argv):
+        def CSR(cls, *argv):
             """ send vt CSR commands """
             for arg in argv:
                 cls.ESC("[", arg)
@@ -610,8 +610,12 @@ random.seed(1)
 if not aio.cross.simulator:
     platform = __import__("__EMSCRIPTEN__")
 
-"""
+    """
 https://pypi.org/pypi/pygbag/0.2.0/json
+
+https://pypi.org/simple/pygbag/
+
+
 """
 
     class importer:

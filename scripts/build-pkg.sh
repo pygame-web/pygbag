@@ -138,6 +138,24 @@ END
     fi
 
 
+    # copy non upstreamed patches to loader source dir
+    # even if not rebuilding static
+    if [ -d ./packages.d/${pkg}.overlay ]
+    then
+        cp -r ./packages.d/${pkg}.overlay/* $PKGDIR/
+        echo "
+        * added ./packages.d/${pkg}.overlay to $PKGDIR/
+" 1>&2
+    fi
+
+    if [ -d ./packages.d/${pkg}.overlay-$PYBUILD ]
+    then
+        cp -rf ./packages.d/${pkg}.overlay-$PYBUILD/* $PKGDIR/
+        echo "
+        * added ./packages.d/${pkg}.overlay-$PYBUILD to $PKGDIR/
+" 1>&2
+    fi
+
 # TODO make a clean option
     if [ -f ${SDKROOT}/prebuilt/emsdk/lib${pkg}${PYBUILD}.a ]
     then
@@ -145,7 +163,6 @@ END
 " 1>&2
         continue
     fi
-
 
 
     if ./packages.d/${pkg}.sh
@@ -161,16 +178,6 @@ END
             exit 119
         fi
 
-        # copy non upstreamed patches to loader source dir
-        if [ -d ./packages.d/${pkg}.overlay ]
-        then
-            cp -rv ./packages.d/${pkg}.overlay/* $PKGDIR/
-        fi
-
-        if [ -d ./packages.d/${pkg}.overlay-$PYBUILD ]
-        then
-            cp -rfv ./packages.d/${pkg}.overlay-$PYBUILD/* $PKGDIR/
-        fi
 
     else
         echo "script $pkg_script failed

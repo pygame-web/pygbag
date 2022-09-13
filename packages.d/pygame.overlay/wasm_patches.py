@@ -179,10 +179,11 @@ else:
     def patch_pygame_mixer_init(frequency=44100, size=-16, channels=2, buffer=512, devicename=None, allowedchanges=0) -> None:
         global BUFFERSIZE
         buffer = BUFFERSIZE
+        print("\n"*4)
+        print("@"*60)
         print(f"pygame mixer init {frequency=}, {size=}, {channels=}, {buffer=}" )
 
         __pygame_mixer_init(frequency, size, channels, buffer)
-
 
 
     pygame.mixer.init = patch_pygame_mixer_init

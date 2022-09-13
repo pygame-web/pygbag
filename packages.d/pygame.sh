@@ -90,7 +90,14 @@ then
 
     export CFLAGS="-DHAVE_STDARG_PROTOTYPES -DBUILD_STATIC -DSDL_NO_COMPAT $SDL_IMAGE"
 
-    export EMCC_CFLAGS="-I$PREFIX/include/SDL2 -I${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/include/freetype2 -ferror-limit=1 -fpic -Wno-unused-command-line-argument -Wno-unreachable-code-fallthrough"
+    EMCC_CFLAGS="-I${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/include/freetype2"
+    EMCC_CFLAGS="$EMCC_CFLAGS -I$PREFIX/include/SDL2"
+    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unused-command-line-argument"
+    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unreachable-code-fallthrough"
+    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unreachable-code"
+    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-parentheses-equality"
+    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unknown-pragmas"
+    export EMCC_CFLAGS="$EMCC_CFLAGS -ferror-limit=1 -fpic"
 
     export CC=emcc
 

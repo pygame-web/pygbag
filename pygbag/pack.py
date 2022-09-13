@@ -5,28 +5,27 @@ from pathlib import Path
 from .gathering import gather
 from .filtering import filter
 from .optimizing import optimize
+from .html_embed import html_embed
 
 COUNTER = 0
 
 
 async def pack_files(zf, packlist, zfolders, target_folder):
     global COUNTER
-    print("\n" * 4)
-    print("=" * 80)
-    print(target_folder)
-    print("\n" * 4)
+
     for asset in packlist:
         zpath = list(zfolders)
         zpath.insert(0, str(target_folder))
         zpath.append(str(asset)[1:])
 
+        #print(f"\t{str(asset)[1:]}")
         zip_content = target_folder / str(asset)[1:]
 
         zpath = list(zfolders)
         zpath.append(str(asset)[1:].replace("-pygbag.", "."))
 
         if not zip_content.is_file():
-            print("ERROR", zip_content)
+            print("32: ERROR", zip_content)
             break
         zip_name = Path("/".join(zpath))
 #TODO: TEST SHEBANG for .html -> .py extension
@@ -62,6 +61,10 @@ async def archive(apkname, target_folder, build_dir=None):
     for filename in optimize(target_folder, filtered):
         packlist.append(filename)
         sched_yield()
+
+
+    if "--html" in sys.argv:
+        html_embed(target_folder, packlist, apkname[:-4]+'.html')
 
     try:
         with zipfile.ZipFile(

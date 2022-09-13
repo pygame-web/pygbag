@@ -15,10 +15,10 @@ from .__init__ import __version__
 from . import pack
 from . import web
 
+devmode = "--dev" in sys.argv
 
-# FIXME: remove later
-devmode = os.path.isfile("dev")
 if devmode:
+    sys.argv.remove("--dev")
     DEFAULT_PORT = 8666
     DEFAULT_CDN = f"http://localhost:8000/archives/{__version__}/"
     DEFAULT_TMPL = "static/wip.tmpl"
@@ -113,6 +113,11 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
     )
 
     parser.add_argument(
+        "--PYBUILD",
+        default="3.11",
+        help="Specify python version [default:%s]" % "3.11",
+    )
+    parser.add_argument(
         "--app_name",
         default=app_folder.name,
         help="Specify user facing name of application [default:%s]" % app_folder.name,
@@ -150,6 +155,10 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
 
     parser.add_argument(
         "--build", action="store_true", help="build only, do not run test server"
+    )
+
+    parser.add_argument(
+        "--html", action="store_true", help="build as html with embedded assets"
     )
 
     parser.add_argument(
@@ -247,6 +256,7 @@ now packing application ....
         "directory": app_name,
         "spdx": "cookiecutter.spdx",
         "version": __version__,
+        "PYBUILD": args.PYBUILD,
     }
 
     def cache_file(remote_url, suffix):

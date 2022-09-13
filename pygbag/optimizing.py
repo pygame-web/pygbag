@@ -46,28 +46,36 @@ else:
 
         has_ffmpeg = os.popen("ffmpeg -version").read().count("version")
 
+        truncate = len( str(folder) )
+
+        def translated(fn):
+            nonlocal truncate
+            return str(fn)[truncate:]
+
+
         for fp in filenames:
-            if fp.suffix == ".png" and png_quality >= 0:
-                if fp.stem.endswith("-pygbag"):
-                    pass  # yield that file
-                else:
-                    # .with_stem() 3.9+
-                    opt = Path(f"{folder}/{fp.parent}/{fp.stem}-pygbag.png")
-
-                    if opt.is_file():
-                        # this is the no opt source, skip it
-                        print("opt-skip(38)", fp)
-                        continue
-
-                    osexec = f'pngquant -f --ext -pygbag.png --quality {png_quality} "{folder}{fp}"'
-                    os.system(osexec)
-                    if opt.is_file():
-                        yield opt
-                        continue
+            if fp.suffix == ".png":
+                if  png_quality >= 0:
+                    if fp.stem.endswith("-pygbag"):
+                        pass  # yield that file
                     else:
-                        print("ERROR", osexec, "for", opt)
+                        # .with_stem() 3.9+
+                        opt = Path(f"{folder}/{fp.parent}/{fp.stem}-pygbag.png")
 
-            if fp.suffix in [".mp3", ".wav", ".ogg"]:
+                        if opt.is_file():
+                            # this is the no opt source, skip it
+                            print("opt-skip(38)", fp)
+                            continue
+
+                        osexec = f'pngquant -f --ext -pygbag.png --quality {png_quality} "{folder}{fp}"'
+                        os.system(osexec)
+                        if opt.is_file():
+                            yield translated(opt)
+                            continue
+                        else:
+                            print("ERROR", osexec, "for", opt)
+
+            elif fp.suffix in [".mp3", ".wav", ".ogg"]:
                 if fp.stem.endswith("-pygbag"):
                     pass  # yield that file
                 else:
@@ -83,7 +91,7 @@ else:
                         os.system(osexec)
 
                     if opt.is_file():
-                        yield opt
+                        yield translated(opt)
                         continue
                     else:
                         if has_ffmpeg:
@@ -101,4 +109,6 @@ else:
 
             if fp not in done_list:
                 done_list.append(fp)
-                yield fp
+                yield fp.as_posix()
+
+

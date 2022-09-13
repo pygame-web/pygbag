@@ -1,7 +1,7 @@
 #!/bin/bash
 reset
 export PACKAGES=${PACKAGES:-pygame}
-export SDK_VERSION=${SDK_VERSION:-3.1.19.0}
+export SDK_VERSION=${SDK_VERSION:-3.1.19.1}
 export CYTHON=${CYTHON:-Cython-3.0.0a11-py2.py3-none-any.whl}
 BUILDS=${BUILDS:-3.12 3.11 3.10}
 

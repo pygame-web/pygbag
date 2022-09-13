@@ -40,8 +40,10 @@ except:
 
 class CodeHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
-        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
-        self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
+        self.send_header("cross-origin-resource-policy:","cross-origin")
+        self.send_header("cross-origin-opener-policy", "cross-origin")
+        self.send_header("cross-origin-embedder-policy", "require-corp")
+
         super().end_headers()
 
     def do_GET(self):
@@ -109,10 +111,11 @@ class CodeHandler(SimpleHTTPRequestHandler):
                         l = fh.readline()
                         if l.find(": ") > 0:
                             k, v = l.strip().split(": ", 1)
+                            k = k.lower()
                             if k in [
-                                "Content-Length",
-                                "Access-Control-Allow-Origin",
-                                "Cross-Origin-Embedder-Policy",
+                                "content-length",
+                                "access-control-allow-origin",
+                                "cross-origin-embedder-policy",
                             ]:
                                 continue
                             self.send_header(k, v)
@@ -186,11 +189,18 @@ class CodeHandler(SimpleHTTPRequestHandler):
 
             elif path.endswith(".html"):
                 print("REPLACING", path, CDN, PROXY)
-                content = f.read().replace(BCDN, BPROXY)
+                content = f.read()
+
+                # redirect known CDN to relative path
+                content = content.replace(b"https://pygame-web.github.io", b"http://localhost:8000")
+
+                # redirect user CDN to localhost
+                content= content.replace(BCDN, BPROXY)
+
                 file_size = len(content)
                 f = io.BytesIO(content)
 
-            self.send_header("Content-Length", str(file_size))
+            self.send_header("content-length", str(file_size))
             # self.send_header("Access-Control-Allow-Origin", "*")
             # self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
 

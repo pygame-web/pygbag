@@ -36,13 +36,21 @@ try:
 except:
     pass
 
+# for FS
+import tempfile
+
 # for dom event subscriptions
 import webbrowser
 
 # intaller "cp437"
 import compileall, csv, configparser, zlib
+
 # micropip
 import importlib.metadata
+
+# pgex
+from typing import tuple
+
 
 # for dom event subscriptions and js interface
 import webbrowser

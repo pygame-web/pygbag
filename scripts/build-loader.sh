@@ -32,6 +32,12 @@ echo "
 
 # CF_SDL="-sUSE_SDL=2 -sUSE_ZLIB=1 -sUSE_BZIP2=1"
 
+
+# /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic/libSDL2.a
+# /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic/libogg.a
+# /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic/libvorbis.a
+# /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic/libSDL2_mixer_ogg.a
+
 CF_SDL="-I${SDKROOT}/devices/emsdk/usr/include/SDL2"
 LD_SDL="-L${SDKROOT}/devices/emsdk/usr/lib -lSDL2_gfx -lSDL2_mixer -lSDL2_image -lwebp -ljpeg -lpng -lSDL2_ttf -lharfbuzz -lfreetype"
 
@@ -149,7 +155,14 @@ PYDIR=${SDKROOT}/devices/emsdk/usr/include/python${PYBUILD}
 
 # gnu99 not c99 for EM_ASM() js calls functions.
 
-if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $CF_SDL $CPOPTS \
+for lib in $PACKAGES
+do
+    CPY_CFLAGS="$CPY_CFLAGS -DPYDK_$lib=1"
+done
+
+echo CPY_CFLAGS=$CPY_CFLAGS
+
+if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $CPY_CFLAGS $CF_SDL $CPOPTS \
  -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden\
  -I${PYDIR}/internal -I${PYDIR} -I./support -DPy_BUILD_CORE\
  -o build/${MODE}.o support/__EMSCRIPTEN__-pymain.c
@@ -182,10 +195,7 @@ then
     for lib in $PACKAGES
     do
         cpylib=${SDKROOT}/prebuilt/emsdk/lib${lib}${PYBUILD}.a
-#        if [ -f $cpylib ]
-#        then
-            CPY_LDFLAGS="$CPY_LDFLAGS $cpylib -DPYDK_$lib=1"
-#        fi
+        CPY_LDFLAGS="$CPY_LDFLAGS $cpylib"
     done
 
     echo CPY_LDFLAGS=$CPY_LDFLAGS
@@ -200,7 +210,7 @@ then
      $SUPPORT_FS \
      --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \
-     -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o  \
+     -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \
      $CPY_LDFLAGS -lffi -lbz2 -lz \
      $LD_SDL \
      -ldl -lm
@@ -239,6 +249,5 @@ else
     echo "pymain compilation failed"
     exit 182
 fi
-
 
 
