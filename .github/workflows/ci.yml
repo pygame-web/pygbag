@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.22.1
+        SDK_VERSION: 3.1.22.0
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: pygame
         BUILDS: 3.12 3.11 3.10
