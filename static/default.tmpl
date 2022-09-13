@@ -156,7 +156,7 @@ async def sitecustomize():
 
 
     print("145: running main and resuming EventTarget in a few seconds")
-    execfile(main)
+    aio.defer(execfile, (main,), {} )
 
     # if you don't reach that step
     # your main.py has an infinite sync loop somewhere !

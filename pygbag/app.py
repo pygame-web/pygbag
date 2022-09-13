@@ -162,6 +162,10 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
     )
 
     parser.add_argument(
+        "--no_opt", action="store_true", help="turn off assets optimizer"
+    )
+
+    parser.add_argument(
         "--archive", action="store_true", help="make build/web.zip archive for itch.io"
     )
 

@@ -46,12 +46,28 @@ else:
 
         has_ffmpeg = os.popen("ffmpeg -version").read().count("version")
 
+
+
         truncate = len( str(folder) )
 
         def translated(fn):
             nonlocal truncate
             return str(fn)[truncate:]
 
+
+        # turn off all opt
+        if '--no_opt' in sys.argv:
+            for fp in filenames:
+                if fp.stem.endswith("-pygbag"):
+                    continue
+
+                if fp.suffix == ".mp3":
+                    continue
+
+                if fp not in done_list:
+                    done_list.append(fp)
+                    yield fp.as_posix()
+            return
 
         for fp in filenames:
             if fp.suffix == ".png":
