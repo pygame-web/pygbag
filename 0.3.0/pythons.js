@@ -1061,9 +1061,7 @@ config.interactive = config.interactive || (location.search.search("-i")>=0) //?
             if (config.autorun)
                 code = code + `
 if sys.platform in ('emscripten','wasi'):
-    embed.run()
-    embed.run()
-`
+    embed.run()`
 
             vm.script.blocks = [ code ]
 

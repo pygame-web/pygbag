@@ -1,4 +1,18 @@
-<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js" type=module id="main" data-src="vtx,fs,snd,gui" async defer>#<!--
+<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js" type=module id="site" data-src="vtx,fs,snd,gui" async defer>#<!--
+
+print("""
+Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
+    Pygbag Version : {{cookiecutter.version}}
+    Template Version : 0.3.0
+    Python  : {{cookiecutter.PYBUILD}}
+    CDN URL : {{cookiecutter.cdn}}
+    Screen  : {{cookiecutter.width}}x{{cookiecutter.height}}
+    Title   : {{cookiecutter.title}}
+    Folder  : {{cookiecutter.directory}}
+    Authors : {{cookiecutter.authors}}
+    SPDX-License-Identifier: {{cookiecutter.spdx}}
+
+""")
 
 import sys
 import asyncio
@@ -36,20 +50,8 @@ def uy(*argv):
         acc += u(HEIGHT, REFY, v)
     return acc
 
-print("""
-Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
-    Pygbag Version : {{cookiecutter.version}}
-    Template Version : 0.3.0
-    CDN URL : {{cookiecutter.cdn}}
-    Screen  : {{cookiecutter.width}}x{{cookiecutter.height}}
-    Title   : {{cookiecutter.title}}
-    Folder  : {{cookiecutter.directory}}
-    Authors : {{cookiecutter.authors}}
-    SPDX-License-Identifier: {{cookiecutter.spdx}}
 
-""")
-
-# don't rename
+# do not rename
 async def sitecustomize():
     import embed
 
@@ -222,7 +224,7 @@ config = {
     gui_debug : 3,
     cdn : "{{cookiecutter.cdn}}",
     autorun : {{cookiecutter.autorun}},
-    PYBUILD : "3.11"
+    PYBUILD : "{{cookiecutter.PYBUILD}}"
 }
 
 </script>
