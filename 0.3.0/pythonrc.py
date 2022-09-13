@@ -944,6 +944,8 @@ is_script = False
 if os.path.isfile('/data/data/usersite.py'):
     execfile('/data/data/usersite.py')
 
+import platform
+import asyncio
 import aio.recycle
 # ============================================================
 # DO NOT ADD ANYTHING FROM HERE OR APP RECYCLING WILL TRASH IT
