@@ -40,7 +40,7 @@ except:
 
 class CodeHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
-        self.send_header("cross-origin-resource-policy:","cross-origin")
+        self.send_header("cross-origin-resource-policy:", "cross-origin")
         self.send_header("cross-origin-opener-policy", "cross-origin")
         self.send_header("cross-origin-embedder-policy", "require-corp")
 
@@ -192,10 +192,13 @@ class CodeHandler(SimpleHTTPRequestHandler):
                 content = f.read()
 
                 # redirect known CDN to relative path
-                content = content.replace(b"https://pygame-web.github.io", b"http://localhost:8000")
+# FIXME: py*-scripts
+#                content = content.replace(
+#                    b"https://pygame-web.github.io", b"http://localhost:8000"
+#                )
 
                 # redirect user CDN to localhost
-                content= content.replace(BCDN, BPROXY)
+                content = content.replace(BCDN, BPROXY)
 
                 file_size = len(content)
                 f = io.BytesIO(content)

@@ -18,7 +18,7 @@ async def pack_files(zf, packlist, zfolders, target_folder):
         zpath.insert(0, str(target_folder))
         zpath.append(str(asset)[1:])
 
-        #print(f"\t{str(asset)[1:]}")
+        # print(f"\t{str(asset)[1:]}")
         zip_content = target_folder / str(asset)[1:]
 
         zpath = list(zfolders)
@@ -28,7 +28,7 @@ async def pack_files(zf, packlist, zfolders, target_folder):
             print("32: ERROR", zip_content)
             break
         zip_name = Path("/".join(zpath))
-#TODO: TEST SHEBANG for .html -> .py extension
+        # TODO: TEST SHEBANG for .html -> .py extension
         COUNTER += 1
         zf.write(zip_content, zip_name)
 
@@ -62,9 +62,8 @@ async def archive(apkname, target_folder, build_dir=None):
         packlist.append(filename)
         sched_yield()
 
-
     if "--html" in sys.argv:
-        html_embed(target_folder, packlist, apkname[:-4]+'.html')
+        html_embed(target_folder, packlist, apkname[:-4] + ".html")
 
     try:
         with zipfile.ZipFile(

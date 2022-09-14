@@ -17,10 +17,16 @@ from . import web
 
 devmode = "--dev" in sys.argv
 
+cdn_dot = __version__.split('.')
+cdn_dot.pop()
+cdn_version = '.'.join(cdn_dot)
+del cdn_dot
+
+
 if devmode:
     sys.argv.remove("--dev")
     DEFAULT_PORT = 8666
-    DEFAULT_CDN = f"http://localhost:8000/archives/{__version__}/"
+    DEFAULT_CDN = f"http://localhost:8000/archives/{cdn_version}/"
     DEFAULT_TMPL = "static/wip.tmpl"
     print(
         f"""
@@ -36,7 +42,7 @@ if devmode:
     )
 
 else:
-    DEFAULT_CDN = f"https://pygame-web.github.io/archives/{__version__}/"
+    DEFAULT_CDN = f"https://pygame-web.github.io/archives/{cdn_version}/"
     DEFAULT_PORT = 8000
     DEFAULT_TMPL = "default.tmpl"
 
@@ -158,7 +164,9 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
     )
 
     parser.add_argument(
-        "--html", action="store_true", help="build as html with embedded assets (pygame-script)"
+        "--html",
+        action="store_true",
+        help="build as html with embedded assets (pygame-script)",
     )
 
     parser.add_argument(

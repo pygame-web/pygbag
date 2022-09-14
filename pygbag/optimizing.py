@@ -46,17 +46,14 @@ else:
 
         has_ffmpeg = os.popen("ffmpeg -version").read().count("version")
 
-
-
-        truncate = len( str(folder) )
+        truncate = len(str(folder))
 
         def translated(fn):
             nonlocal truncate
             return str(fn)[truncate:]
 
-
         # turn off all opt
-        if '--no_opt' in sys.argv:
+        if "--no_opt" in sys.argv:
             for fp in filenames:
                 if fp.stem.endswith("-pygbag"):
                     continue
@@ -71,7 +68,7 @@ else:
 
         for fp in filenames:
             if fp.suffix == ".png":
-                if  png_quality >= 0:
+                if png_quality >= 0:
                     if fp.stem.endswith("-pygbag"):
                         pass  # yield that file
                     else:
@@ -126,5 +123,3 @@ else:
             if fp not in done_list:
                 done_list.append(fp)
                 yield fp.as_posix()
-
-
