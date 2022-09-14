@@ -18,7 +18,6 @@ from . import pack
 from . import web
 
 
-
 devmode = "--dev" in sys.argv
 
 cdn_dot = __version__.split(".")
@@ -255,7 +254,6 @@ now packing application ....
 """
     )
 
-
     CC = {
         "cdn": args.cdn,
         "proxy": f"http://{args.bind}:{args.port}/",
@@ -276,7 +274,6 @@ now packing application ....
     pygbag.config = CC
 
     await pack.archive(f"{app_name}.apk", app_folder, build_dir)
-
 
     def cache_file(remote_url, suffix):
         nonlocal cache_dir

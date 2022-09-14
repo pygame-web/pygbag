@@ -1,6 +1,6 @@
 """ packager+server for pygbag wasm loader """
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 
 # WaPy=>CPython compat

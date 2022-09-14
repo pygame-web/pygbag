@@ -11,13 +11,16 @@ builtins.builtins = builtins
 builtins.true = True
 builtins.false = False
 
+
 def breakpointhook(*argv, **kw):
     aio.paused = True
 
+
 def shed_yield():
-    #TODO: coroutine id as pid
-    print("86", time_time() - aio.enter, aio.spent )
+    # TODO: coroutine id as pid
+    print("86", time_time() - aio.enter, aio.spent)
     return True
+
 
 sys.breakpointhook = breakpointhook
 
@@ -33,27 +36,23 @@ except:
     else:
         builtins.__UPY__ = None
 
-try:
-    is_browser = not sys._emscripten_info.runtime.startswith('Node.js')
-    if sys.platform in ("emscripten", "asm.js", "wasm"):
-        builtins.__EMSCRIPTEN__ = this
-    else:
-        builtins.__EMSCRIPTEN__ = None
-
-except:
-    is_browser = False
-
-try:
-    from embed import *
-
-    if not __UPY__:
+if hasattr(sys, "_emscripten_info"):
+    is_browser = not sys._emscripten_info.runtime.startswith("Node.js")
+    builtins.__EMSCRIPTEN__ = this
+    try:
+        from embed import *
         from platform import *
         from embed_emscripten import *
         from embed_browser import window, document, navigator, Object
         from embed_browser import fetch, console, prompt, alert, confirm
-        Object_type = type( Object() )
-except:
-    pdb(__file__,":107 no browser/emscripten modules yet")
+
+        Object_type = type(Object())
+    except Exception as e:
+        sys.print_exception(e)
+        pdb(__file__, ":47 no browser/emscripten modules yet", e)
+else:
+    is_browser = False
+    builtins.__EMSCRIPTEN__ = None
 
 
 # force use a fixed, tested version of uasyncio to avoid non-determinism
@@ -99,7 +98,6 @@ def init_platform(embed):
 
     embed.js = js
 
-
     if __WASM__:
         import _thread
 
@@ -109,8 +107,6 @@ def init_platform(embed):
             pdb("WARNING: that wasm build does not support threads")
 
 
-
-
 # ========================================== DOM EVENTS ===============
 
 if is_browser:
@@ -118,24 +114,26 @@ if is_browser:
     class EventTarget:
         clients = {}
         events = []
-        def addEventListener(self, host, type, listener, options=None, useCapture=None ):
-            cli = self.clients.setdefault(type,[])
-            cli.append( listener )
 
-        def build(self, evt_name, jsondata ):
-            #print( evt_name, jsondata )
-            self.events.append( [evt_name, json.loads(jsondata) ] )
+        def addEventListener(self, host, type, listener, options=None, useCapture=None):
+            cli = self.clients.setdefault(type, [])
+            cli.append(listener)
 
-        #def dispatchEvent
+        def build(self, evt_name, jsondata):
+            # print( evt_name, jsondata )
+            self.events.append([evt_name, json.loads(jsondata)])
+
+        # def dispatchEvent
 
         async def process(self):
             import inspect
             from types import SimpleNamespace
+
             while not aio.exit:
                 if len(self.events):
-                    evtype , evdata = self.events.pop(0)
+                    evtype, evdata = self.events.pop(0)
                     discarded = True
-                    for client in self.clients.get(evtype,[]):
+                    for client in self.clients.get(evtype, []):
                         is_coro = inspect.iscoroutinefunction(client)
                         print("    -> ", is_coro, client)
                         discarded = False
@@ -151,7 +149,7 @@ if is_browser:
     EventTarget = EventTarget()
 
 
-#=============================  PRELOADING      ==============================
+# =============================  PRELOADING      ==============================
 
 
 ROOTDIR = f"/data/data/{sys.argv[0]}/assets"
@@ -160,22 +158,23 @@ ROOTDIR = f"/data/data/{sys.argv[0]}/assets"
 def explore(root):
     global prelist, preloadedWasm, preloadedImages, preloadedAudios, counter
 
-    if counter<0:
+    if counter < 0:
         counter = 0
 
     import shutil
+
     preloads = f"{preloadedImages} {preloadedAudios} {preloadedWasm}".split(" ")
     print(f"194: preloads {preloads}")
 
     for current, dirnames, filenames in os.walk(root):
         for filename in filenames:
-            if filename.find('.')>1:
+            if filename.find(".") > 1:
                 ext = filename.rsplit(".", 1)[-1].lower()
                 if ext in preloads:
                     counter += 1
                     src = f"{current}/{filename}"
                     dst = "/tmp/pre" + str(counter).zfill(4) + "." + ext
-                    print(src,"->",dst)
+                    print(src, "->", dst)
                     shutil.copyfile(src, dst)
                     prelist[src] = dst
                     embed.preload(dst)
@@ -187,8 +186,8 @@ def fix_preload_table():
     if embed.counter() < 0:
         pdb("233: asset manager not ready 0>", embed.counter())
         aio.defer(fix_preload_table, (), {}, delay=60)
-#    else:
-#        pdb("236: all assets were ready at", embed.counter())
+    #    else:
+    #        pdb("236: all assets were ready at", embed.counter())
 
     for (
         src,
@@ -234,7 +233,6 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
     preloadedImages = "png jpeg jpg gif"
     preloadedAudios = "wav ogg mp4"
 
-
     def preload_apk(p=None):
         global counter, prelist, ROOTDIR
         global explore, preloadedWasm, preloadedImages, preloadedAudios
@@ -254,7 +252,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
 
         explore(ROOTDIR)
 
-        if counter<0:
+        if counter < 0:
             pdb(f"{ROOTDIR=}")
             pdb(f"{os.getcwd()=}")
 
@@ -268,10 +266,11 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
 
     if PyConfig.get("interactive", False):
         import aio.clock
+
         aio.clock.start(x=80)
 
         # org.python REPL no preload !
-        preload = (sys.argv[0] != 'org.python')
+        preload = sys.argv[0] != "org.python"
     else:
         # org.python script
         preload = True
@@ -287,22 +286,26 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
             sys.path.insert(0, ROOTDIR)
             if loadermain:
                 if os.path.isfile("main.py"):
-                    print(f"283: running {ROOTDIR}/{loadermain} for {sys.argv[0]} (deferred)")
+                    print(
+                        f"283: running {ROOTDIR}/{loadermain} for {sys.argv[0]} (deferred)"
+                    )
                     aio.defer(execfile, [f"{ROOTDIR}/{loadermain}"], {})
                 else:
                     pdb(f"no {loadermain} found for {sys.argv[0]} in {ROOTDIR}")
                 aio.defer(embed.prompt, (), {}, delay=2000)
-#            else:
-#                pdb(f"297: no loadermain request for {ROOTDIR=}")
 
-        # C should unlock aio loop when preload count reach 0.
+    #            else:
+    #                pdb(f"297: no loadermain request for {ROOTDIR=}")
+
+    # C should unlock aio loop when preload count reach 0.
 
     else:
+
         def fix_preload_table_apk():
             global fix_preload_table_apk, ROOTDIR
             pdb("no assets preloaded")
             os.chdir(ROOTDIR)
-            aio.defer(embed.prompt, (),{})
+            aio.defer(embed.prompt, (), {})
 
         # unlock embed looper because no preloading
         embed.run()
@@ -314,30 +317,6 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
         aio.create_task(EventTarget.process())
     else:
         print("308: EventTarget delayed by loader")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #

@@ -1,15 +1,18 @@
 STEP_INTO = False
 
+
 def on():
     global STEP_INTO
     STEP_INTO = True
+
 
 def off():
     global STEP_INTO
     STEP_INTO = False
 
+
 def lines(frame, event, arg):
-    if event != 'line':
+    if event != "line":
         return
     co = frame.f_code
     func_name = co.co_name
@@ -58,6 +61,7 @@ def calls(frame, event, arg):
     if STEP_INTO:
         return lines
     return
+
 
 """
 

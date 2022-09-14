@@ -2,6 +2,17 @@ from pathlib import Path
 
 import pygbag
 
+
+def stringify(blob):
+    c = 0
+    for b in blob:
+        yield chr( int(b) + 248)
+        c += 1
+        if c > 78:
+            yield "\n"
+            c = 0
+
+
 def dump_fs(html, target_folder, packlist):
     html.write(
         f"""PYGBAG_FS={len(packlist)}
@@ -40,13 +51,8 @@ with open("{vfs_name}","w") as fs:fs.write("""\\
 
         else:
             html.write(f"\nfs_decode('{vfs_name}','''\n")
-            c = 0
-            for b in open(src_name, "rb").read():
-                html.write(chr(b + 248))
-                c += 1
-                if c > 78:
-                    html.write("\n")
-                    c = 0
+            for text in stringify(open(src_name, "rb").read()):
+                html.write(text)
             html.write("''')\n")
 
     html.write("\ndel fs_decode, PYGBAG_FS\n")

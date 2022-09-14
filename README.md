@@ -93,8 +93,12 @@ optional arguments:
 ```
 
 Now navigate to http://localhost:8000 with a modern Browser.
-use http://localhost:8000#debug for getting a terminal and a sized down
-canvas
+
+use http://localhost:8000#debug for getting a terminal and a sized down canvas
+
+for pygame-script go to http://localhost:8000/your_game_folder.html
+
+
 
 v8 based browsers are preferred ( chromium/brave/chrome ... )
 starting with 81.0.4044 ( android 4.4 ).
@@ -130,6 +134,9 @@ prebuilts used by pygbag are stored on github
 from the repo https://github.com/pygame-web/archives under versionned folders
 
 
+ADDING STATIC MODULES:
+
+    see in package.d directory
 
 
 

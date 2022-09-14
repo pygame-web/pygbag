@@ -19,7 +19,7 @@ echo "
 
 
 
-$HPY -v <<END 2>&1 |grep py$ > $FS
+$HPY -v <<END 2>&1 | tee log |grep py$ > $FS
 from __future__ import annotations
 import sys
 
@@ -36,11 +36,10 @@ try:
 except:
     pass
 
-# for FS
-import tempfile
 
-# for dom event subscriptions
+# for dom event subscriptions and js interface
 import webbrowser
+import platform
 
 # intaller "cp437"
 import compileall, csv, configparser, zlib
@@ -49,12 +48,11 @@ import compileall, csv, configparser, zlib
 import importlib.metadata
 
 # pgex
-from typing import tuple
-
-
-# for dom event subscriptions and js interface
-import webbrowser
-import platform
+import typing
+try:
+    from typing import tuple
+except:
+    pass
 
 # for wget to overload urlretrieve
 import urllib.request
@@ -99,6 +97,12 @@ import gzip
 import zlib
 from xml.etree import ElementTree
 import distutils.spawn
+
+# for FS
+import tempfile
+
+
+
 
 #pygame_gui
 import importlib.resources
@@ -147,6 +151,8 @@ os.system(tarcmd)
 END
 
 
+echo "=============================="
+grep -v ^import log |grep -v ^#
 echo "=============================="
 mkdir -p build/stdlib-rootfs
 tar xvf build/stdl.tar -C build/stdlib-rootfs | wc -l

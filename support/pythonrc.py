@@ -270,7 +270,17 @@ if defined("embed") and hasattr(embed, "readline"):
                 yield json.dumps(obj, sort_keys=True, indent=4)
 
 
-
+        @classmethod
+        def stringify(cls, *argv):
+            for filename in argv:
+                with open(filename,"rb") as f:
+                    c = 0
+                    for b in f.read():
+                        yield chr( int(b) + 248)
+                        c += 1
+                        if c > 78:
+                            yield "\n"
+                            c = 0
 
 
         @classmethod
@@ -628,7 +638,7 @@ https://pypi.org/simple/pygbag/
 
         from pathlib import Path
         if 1:
-            if platform.window.location.hostname == "localhost":
+            if window.location.hostname == "localhost":
                 cdn = Path(platform.window.location.origin)
                 dl_cdn = cdn
                 repodata = "pip.json"

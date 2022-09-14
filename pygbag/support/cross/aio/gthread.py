@@ -21,8 +21,10 @@ def _shutdown():
 
 # TODO: default granularity with https://docs.python.org/3/library/sys.html#sys.setswitchinterval
 
+
 def excepthook(*argv, **kw):
-    print("24 threading.excepthook",__file__,argv,kw)
+    print("24 threading.excepthook", __file__, argv, kw)
+
 
 class _dangling:
     @classmethod
@@ -38,11 +40,14 @@ class _dangling:
     def update(cls, saved):
         pass
 
+
 class Local:
     pass
 
+
 def local():
     return Local
+
 
 class Lock:
     count = 0
@@ -53,7 +58,7 @@ class Lock:
     def __exit__(self, *tb):
         self.release()
 
-    def acquire(self, blocking=True, timeout=- 1):
+    def acquire(self, blocking=True, timeout=-1):
         self.count += 1
         return True
 
@@ -61,7 +66,8 @@ class Lock:
         self.count -= 1
 
     def locked(self):
-        return self.count>0
+        return self.count > 0
+
 
 class Condition:
     def __init__(self, lock=None):

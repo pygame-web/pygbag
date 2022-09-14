@@ -21,7 +21,7 @@ if not defined("__WASM__"):
 
 
 if not defined("__wasi__"):
-    if __import__("sys").platform in ["wasi"]:
+    if sys.platform in ["wasi"]:
         import __wasi__
     else:
         __wasi__ = False
@@ -41,11 +41,11 @@ if not defined("__wasi__"):
 
 # this *is* the cpython way
 if hasattr(sys, "getandroidapilevel"):
-    platform = defined("__ANDROID__")
-    if not platform:
-        print("importing platform __ANDROID__")
+    platform_impl = defined("__ANDROID__")
+    if not platform_impl:
+        print("importing platform_impl __ANDROID__")
         try:
-            import __ANDROID__ as platform
+            import __ANDROID__ as platform_impl
         except Exception as e:
             if hasattr(sys, "print_exception"):
                 sys.print_exception(e)
@@ -53,11 +53,11 @@ if hasattr(sys, "getandroidapilevel"):
                 __import__("traceback").print_exc()
 
             pdb("__ANDROID__ failed to load, assuming simulator instead of error :")
-            del platform
+            del platform_impl
 
             # fake it
-            platform == __import__("__main__")
-        define("__ANDROID__", platform)
+            platform_impl == __import__("__main__")
+        define("__ANDROID__", platform_impl)
     try:
         __ANDROID_API__
     except:
@@ -65,11 +65,11 @@ if hasattr(sys, "getandroidapilevel"):
 
 
 if sys.platform == "emscripten":
-    platform = defined("__EMSCRIPTEN__")
-    if not platform:
-        print("importing platform __EMSCRIPTEN__")
+    platform_impl = defined("__EMSCRIPTEN__")
+    if not platform_impl:
+        print("importing platform_impl __EMSCRIPTEN__")
         try:
-            import __EMSCRIPTEN__ as platform
+            import __EMSCRIPTEN__ as platform_impl
         except Exception as e:
             if hasattr(sys, "print_exception"):
                 sys.print_exception(e)
@@ -77,11 +77,11 @@ if sys.platform == "emscripten":
                 __import__("traceback").print_exc()
 
             pdb("__EMSCRIPTEN__ failed to load, assuming simulator instead of error :")
-            del platform
+            del platform_impl
 
             # fake it
-            platform == __import__("__main__")
-        define("__EMSCRIPTEN__", platform)
+            platform_impl == __import__("__main__")
+        define("__EMSCRIPTEN__", platform_impl)
 
 
 driver = defined("embed")
@@ -89,23 +89,23 @@ try:
     if not driver:
         import embed as driver
 
-        print("platform embedding module driver :", driver)
+        print("platform_impl embedding module driver :", driver)
 except:
-    # use the simulator defined platform value as the embed.
-    driver = platform
+    # use the simulator defined platform_impl value as the embed.
+    driver = platform_impl
 
 # just in case it was not a module
 sys.modules.setdefault("embed", driver)
 
 try:
-    # check it the embedding module was finished for that platform.
+    # check it the embedding module was finished for that platform_impl.
     # the least shoulbe syslog ( js console / adb logcat )
     driver.log
 except:
     pdb(
         """\
 WARNING: embed softrt/syslog functions not found
-WARNING: also not in __main__ or simulator provided platform module
+WARNING: also not in __main__ or simulator provided platform_impl module
 """
     )
     driver.enable_irq = print
@@ -114,9 +114,8 @@ WARNING: also not in __main__ or simulator provided platform module
 
 define("embed", driver)
 
-platform.init_platform(driver)
-sys.modules["platform"] = platform
-
+platform_impl.init_platform(driver)
+sys.modules["platform"] = platform_impl
 
 
 # ================== leverage known python implementations ====================

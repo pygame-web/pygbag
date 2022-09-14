@@ -24,24 +24,22 @@ async def retry_async_wrap():
 """
 
 
-async def retry(code, sysinfo ):
+async def retry(code, sysinfo):
     global may_have_value
-    may_have_value = code.startswith('await ') # will display value
+    may_have_value = code.startswith("await ")  # will display value
     try:
-        code = 'builtins._ = {}'.format(code)
+        code = "builtins._ = {}".format(code)
         code = async_skeleton.format(" " * 4 + code)
         bytecode = compile(code, "<asyncify>", "exec")
-        #sys.stdout.write(f':async:  asyncify "[code stack rewritten]"\n')
+        # sys.stdout.write(f':async:  asyncify "[code stack rewritten]"\n')
 
-        exec(bytecode, vars(__import__('__main__')), globals())
+        exec(bytecode, vars(__import__("__main__")), globals())
         await retry_async_wrap()
 
         # success ? clear all previous failures
         if may_have_value:
             if builtins._ is not None:
-                sys.stdout.write('%r\n' % builtins._)
-
-
+                sys.stdout.write("%r\n" % builtins._)
 
     except Exception as e:
         # FIXME: raise old exception
@@ -49,5 +47,5 @@ async def retry(code, sysinfo ):
         sys.stdout.write(f":async: can't use code : {e}\n~~> ")
         sys.print_exception(e)
     finally:
-        #sys.ps1 = __ps1__
+        # sys.ps1 = __ps1__
         aio.prompt_request()

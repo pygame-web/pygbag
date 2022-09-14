@@ -237,7 +237,6 @@ def step(*argv):
                         print("--- stack -----", file=sys.__stderr__)
                         print("deferred from", tb, file=sys.__stderr__)
 
-
             while len(early):
                 oneshots.append(early.pop())
 
@@ -267,6 +266,7 @@ def step(*argv):
     finally:
         leave = time_time()
         spent = leave - enter
+
 
 def delta(t=None):
     global enter
@@ -358,10 +358,11 @@ def run(coro, *, debug=False):
         pdb("273: aio.run called twice !!!")
 
     # run called after a sitecustomize() completion
-    elif coro.__name__!= "sitecustomize":
+    elif coro.__name__ != "sitecustomize":
         pdb("360: * sitecustomize done *")
     else:
-        pdb("364: aio.run", coro.__name__ )
+        pdb("364: aio.run", coro.__name__)
+
 
 def exit_now(ec):
     global exit, paused
@@ -412,6 +413,7 @@ def aio_exit(maybecoro=0):
         #    pdb("309: NOT A CORO", maybecoro)
         exit_now(maybecoro)
 
+
 sys.exit = aio_exit
 
 # check if we have a Time handler.
@@ -456,6 +458,8 @@ class after:
 
 #
 import time as Time
+
+
 class aioctx:
     def __init__(self, delta, coro):
         self.coro = coro
@@ -481,7 +485,7 @@ class _(list):
                 pdb("326: aio exit on KeyboardInterrupt")
                 return await aio.sleep(0)
         else:
-            print('__aenter__ no coro')
+            print("__aenter__ no coro")
             self.__class__.current = None
             return self
 
@@ -502,12 +506,12 @@ class _(list):
         return False
 
     def __call__(self, frametime):
-        print('__call__', len(self), frametime)
+        print("__call__", len(self), frametime)
         self.__class__.current = aioctx(frametime, None)
         return self
 
     def call(self, coro):
-        print('.call', len(self), coro)
+        print(".call", len(self), coro)
         if self.__class__.current is None:
             self.__class__.current = aioctx(0, coro)
         else:

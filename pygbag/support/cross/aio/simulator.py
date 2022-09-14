@@ -3,9 +3,11 @@ print("= ${__FILE__} in websim  for  ${PLATFORM} =")
 
 # ===============================================
 import sys, os, builtins
+
 try:
     import pymunk4 as pymunk
-    sys.modules['pymunk'] = pymunk
+
+    sys.modules["pymunk"] = pymunk
 except:
     print("pymunk4 was not build for simulator")
 
@@ -61,7 +63,7 @@ if sys.platform not in unsupported:
         #! KEEP IT WOULD BE GC OTHERWISE!
         # wrapper_ref
 
-        #scheduled = []
+        # scheduled = []
         import ctypes
 
         try:
@@ -90,10 +92,10 @@ if sys.platform not in unsupported:
         scheduler_c = ctypes.cast(wrapper_ref, c_void_p)
         PyOS_InputHookFunctionPointer.value = scheduler_c.value
 
-#        # replace with faster function
-#        def schedule(fn, a):
-#            scheduled.append((fn, a))
-#
+        #        # replace with faster function
+        #        def schedule(fn, a):
+        #            scheduled.append((fn, a))
+        #
         sys.modules[__name__].schedule = schedule
 
         # now the init code is useless
@@ -101,12 +103,12 @@ if sys.platform not in unsupported:
 
     def schedule(fn, a):
         global scheduled, next_tick
-        if next_tick==0:
+        if next_tick == 0:
             sched_init()
-        next_tick = time.time() + .016
+        next_tick = time.time() + 0.016
         # cpu cool down
         cooldown = next_tick - time.time()
-        if cooldown>0:
+        if cooldown > 0:
             time.sleep(cooldown)
         scheduled.append((fn, a))
 
@@ -128,6 +130,7 @@ sys.platform = "emscripten"
 class __EMSCRIPTEN__(object):
     def __init__(self):
         import platform
+
         self.platform = platform
 
     def __getattribute__(self, name):
@@ -155,12 +158,13 @@ class __EMSCRIPTEN__(object):
 
     @classmethod
     def system(cls):
-        return 'Linux'
+        return "Linux"
 
     is_browser = False
 
     js = pdb
     run_script = pdb
+
 
 __EMSCRIPTEN__ = __EMSCRIPTEN__()
 

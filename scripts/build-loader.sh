@@ -45,6 +45,8 @@ LD_SDL="-L${SDKROOT}/devices/emsdk/usr/lib -lSDL2_gfx -lSDL2_mixer -lSDL2_image 
 SUPPORT_FS=""
 
 DIST_DIR=$(pwd)/build/web/archives/$($SYS_PYTHON -c "import pygbag;print(pygbag.__version__)")
+DIST_DIR=$(echo $DIST_DIR|cut -f1-2 -d.)
+
 
 mkdir -p $DIST_DIR/python${PYMAJOR}${PYMINOR}
 
@@ -59,9 +61,9 @@ ALWAYS_CODE=$(realpath tests/code)
 
 
 # crosstools, aio and simulator most likely from pygbag
-if [ -d support/cross ]
+if [ -d pygbag/support/cross ]
 then
-    CROSS=$(realpath support/cross)
+    CROSS=$(realpath pygbag/support/cross)
     SUPPORT_FS="$SUPPORT_FS --preload-file ${CROSS}@/data/data/org.python/assets/site-packages"
 else
     echo "
@@ -222,9 +224,9 @@ then
         if $CI
         then
             cp -r static/* ${DIST_DIR}/
-            cp support/pythonrc.py ${DIST_DIR}/pythonrc.py
+            cp pygbag/support/pythonrc.py ${DIST_DIR}/pythonrc.py
         else
-            [ -f ${DIST_DIR}/pythonrc.py ] || ln support/pythonrc.py ${DIST_DIR}/pythonrc.py
+            [ -f ${DIST_DIR}/pythonrc.py ] || ln pygbag/support/pythonrc.py ${DIST_DIR}/pythonrc.py
             pushd static
             for fn in *
             do

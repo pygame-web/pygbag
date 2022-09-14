@@ -1,7 +1,7 @@
 put your package build script + patches here
 
 eg for pygame:
-
+```
 .
 ├── pygame.overlay
 │   ├── freesansbold.ttf
@@ -12,6 +12,6 @@ eg for pygame:
 │   ├── sysfont.py
 │   └── wasm_patches.py
 └── pygame.sh
-
+```
 
 
