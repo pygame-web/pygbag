@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pygbag
 
 def dump_fs(html, target_folder, packlist):
     html.write(
@@ -59,7 +60,7 @@ def make_header(html, line):
             # found script directives after #!
             SCRIPT = line[2:].strip()
         else:
-            SCRIPT = ' src="https://pygame-web.github.io/archives/0.3.0/pythons.js"'
+            SCRIPT = f' src="{pygbag.config["cdn"]}pythons.js"'
             SCRIPT += ' data-src="vtx,fs,gui"'
 
         line = (

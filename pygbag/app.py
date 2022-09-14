@@ -12,16 +12,19 @@ from datetime import datetime
 
 from .__init__ import __version__
 
+import pygbag
+
 from . import pack
 from . import web
 
+
+
 devmode = "--dev" in sys.argv
 
-cdn_dot = __version__.split('.')
+cdn_dot = __version__.split(".")
 cdn_dot.pop()
-cdn_version = '.'.join(cdn_dot)
+cdn_version = ".".join(cdn_dot)
 del cdn_dot
-
 
 if devmode:
     sys.argv.remove("--dev")
@@ -252,7 +255,6 @@ now packing application ....
 """
     )
 
-    await pack.archive(f"{app_name}.apk", app_folder, build_dir)
 
     CC = {
         "cdn": args.cdn,
@@ -270,6 +272,11 @@ now packing application ....
         "version": __version__,
         "PYBUILD": args.PYBUILD,
     }
+
+    pygbag.config = CC
+
+    await pack.archive(f"{app_name}.apk", app_folder, build_dir)
+
 
     def cache_file(remote_url, suffix):
         nonlocal cache_dir

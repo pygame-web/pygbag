@@ -29,6 +29,7 @@ import urllib.request
 import hashlib
 from pathlib import Path
 
+
 VERB = True
 CACHE = None
 
@@ -192,10 +193,10 @@ class CodeHandler(SimpleHTTPRequestHandler):
                 content = f.read()
 
                 # redirect known CDN to relative path
-# FIXME: py*-scripts
-#                content = content.replace(
-#                    b"https://pygame-web.github.io", b"http://localhost:8000"
-#                )
+                # FIXME: py*-scripts
+                #                content = content.replace(
+                #                    b"https://pygame-web.github.io", b"http://localhost:8000"
+                #                )
 
                 # redirect user CDN to localhost
                 content = content.replace(BCDN, BPROXY)
