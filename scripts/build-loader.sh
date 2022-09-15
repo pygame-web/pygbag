@@ -1,5 +1,9 @@
 #!/bin/bash
 
+[ -f vendor.sh ] && . vendor.sh
+export VENDOR=${VENDOR:-pygbag}
+
+
 export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
 
 

@@ -1,4 +1,9 @@
 #!/bin/bash
+
+[ -f vendor.sh ] && . vendor.sh
+export VENDOR=${VENDOR:-pygbag}
+
+
 export SDK_VERSION=${SDK_VERSION:-3.1.19.0}
 export PYBUILD=${PYBUILD:-3.11}
 
