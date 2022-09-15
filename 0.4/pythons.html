@@ -1,0 +1,208 @@
+<html><head><meta charset="utf-8"></head><script src="pythons.js" type=module id="site" data-src="fs,vtx,gui" async defer>#<!--
+import sys
+import platform
+import asyncio
+from pathlib import Path
+
+
+
+# screen pixels (real, hardware)
+WIDTH=1024
+HEIGHT=600
+
+# reference/idealized screen pixels
+REFX = 1980
+REFY = 1080
+
+
+def u(real, ref, v):
+    if abs(v)<0.9999999:
+        result = int( (float(real)/100.0) * (v*1000))
+        if v<0:
+            return real-result
+        return result
+    return int( (real/ref) * v )
+
+def ux(*argv):
+    global WIDTH, REFX
+    acc = 0
+    for v in argv:
+        acc += u(WIDTH, REFX, v)
+    return acc
+
+def uy(*argv):
+    global HEIGHT, REFY
+    acc = 0
+    for v in argv:
+        acc += u(HEIGHT, REFY, v)
+    return acc
+
+import ast
+import code
+import types
+import inspect
+
+class AsyncInteractiveConsole(code.InteractiveConsole):
+
+    def __init__(self, locals):
+        super().__init__(locals)
+        self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+        self.test_code = "print('hello');await asyncio.sleep(1);print(' ... ');await asyncio.sleep(5);print('world')"
+        #self.future = None
+
+
+    def runcode(self, code):
+        print("runcode", code)
+        func = types.FunctionType(code, self.locals)
+        try:
+            coro = func()
+        except SystemExit:
+            raise
+        except KeyboardInterrupt as ex:
+            print(self,ex)
+            raise
+        except BaseException as ex:
+            sys.print_execption(ex)
+
+        if not inspect.iscoroutine(coro):
+            print("result:", coro)
+
+        print("async result:", coro)
+
+
+
+
+    def raw_input(self, prompt):
+        return self.test_code
+
+    async def interact(self, banner=None, exitmsg=None):
+        try:
+            sys.ps1
+        except AttributeError:
+            sys.ps1 = ">>> "
+        try:
+            sys.ps2
+        except AttributeError:
+            sys.ps2 = "... "
+
+        cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
+
+        if banner is None:
+            self.write("Python %s on %s\n%s\n(%s)\n" %
+                       (sys.version, sys.platform, cprt,
+                        self.__class__.__name__))
+        elif banner:
+            self.write("%s\n" % str(banner))
+        more = 0
+        while not aio.exit:
+            try:
+                if more:
+                    prompt = sys.ps2
+                else:
+                    prompt = sys.ps1
+                try:
+                    line = self.raw_input(prompt)
+                except EOFError:
+                    self.write("\n")
+                    break
+                else:
+                    more = self.push(line)
+            except KeyboardInterrupt:
+                self.write("\nKeyboardInterrupt\n")
+                self.resetbuffer()
+                more = 0
+
+        if exitmsg is None:
+            self.write('now exiting %s...\n' % self.__class__.__name__)
+        elif exitmsg != '':
+            self.write('%s\n' % exitmsg)
+
+
+if sys.platform in ("emscripten","wasi",):
+
+
+    log =  platform.console
+
+    try:
+        platform.document.body.style.background = "#7f7f7f"
+        import pygame
+        screen = pygame.display.set_mode([ux(.100),uy(.100)], pygame.SRCALPHA, 32)
+        screen.set_colorkey( (0,0,0,0), pygame.RLEACCEL )
+        screen.fill( (0,0,0,0) )
+
+    except Exception as _:
+        pygame = False
+        sys.print_exception(_)
+        log.error("cannot load pygame and clear canvas")
+
+
+
+
+    async def sitecustomize():
+        global PyConfig, con
+
+        # reset term
+        ESC("c")
+
+
+        from types import SimpleNamespace
+        print(json.dumps(PyConfig, sort_keys=True, indent=4))
+        PyConfig = SimpleNamespace(**PyConfig)
+
+
+        class VFS:
+            from pathlib import Path
+            script = Path(PyConfig.orig_argv[-1])
+            if script.suffix.lower() == ".py":
+                print("Loading:", script )
+
+
+        async with fopen('/archives/repo/index.json', 'r') as index:
+            print(index.read())
+
+
+
+        con = AsyncInteractiveConsole(globals())
+
+        await con.interact()
+
+
+
+        if 1: #not pygame:
+            return
+
+        rng = 10 # resolution of progress bar
+        slot = ux(.060)/rng # 60%
+
+        async def compose(delay=0):
+            global screen
+            pygame.display.update()
+            platform.window.chromakey(None, *screen.get_colorkey(), 40)
+            await asyncio.sleep(delay)
+
+        for i in range(rng):
+            marginx = ux(.020) # 20%
+            marginy = uy(.045) # 45%
+            pygame.draw.rect(screen,(10,10,10),( marginx-ux(10), marginy-uy(10), (rng*slot)+ux(20), uy(110) ) )
+            pygame.draw.rect(screen,(0,255,0), ( marginx, marginy, (1+i)*slot, uy(90)) )
+            await compose(1)
+
+
+
+    asyncio.run(sitecustomize())
+
+
+
+
+
+# --></script></html>
+
+
+
+
+
+
+
+
+
+
