@@ -209,65 +209,65 @@ if defined("embed") and hasattr(embed, "readline"):
 
         @classmethod
         def cat(cls, *argv):
-            """ dump binary file content """
-            for fn in map(str,argv):
+            """dump binary file content"""
+            for fn in map(str, argv):
                 with open(fn, "rb") as out:
                     print(out.read())
 
         @classmethod
         def more(cls, *argv):
-            """ dump text file content """
-            for fn in map(str,argv):
+            """dump text file content"""
+            for fn in map(str, argv):
                 with open(fn, "r") as out:
                     print(out.read())
 
         @classmethod
         def pp(cls, *argv):
-            """ pretty print objects via json """
+            """pretty print objects via json"""
             for obj in argv:
-                obj = eval( obj, vars(__import__("__main__") ) )
+                obj = eval(obj, vars(__import__("__main__")))
                 if isinstance(obj, platform.Object_type):
-                    obj = json.loads( platform.window.JSON.stringify(obj) )
+                    obj = json.loads(platform.window.JSON.stringify(obj))
                 yield json.dumps(obj, sort_keys=True, indent=4)
-
 
         @classmethod
         def ls(cls, *argv):
-            """ list directory content """
+            """list directory content"""
             if not len(argv):
                 argv = ["."]
-            for arg in map(str,argv):
+            for arg in map(str, argv):
                 for out in sorted(os.listdir(arg)):
                     print(out)
 
         @classmethod
-        def clear(cls, *argv,**kw):
-            """ clear terminal screen """
+        def clear(cls, *argv, **kw):
+            """clear terminal screen"""
             import pygame
-            screen = pygame.display.set_mode([1024,600])
-            screen.fill( (0, 0, 0) )
+
+            screen = pygame.display.set_mode([1024, 600])
+            screen.fill((0, 0, 0))
             pygame.display.update()
 
         @classmethod
-        def display(cls,*argv,**kw):
-            """ show images, or last repl pygame surface from _ """
+        def display(cls, *argv, **kw):
+            """show images, or last repl pygame surface from _"""
             import pygame
+
             if not len(argv):
                 surf = _
             else:
                 ext = argv[-1].lower()
-                if ext.endswith('.six'):
+                if ext.endswith(".six"):
                     cls.more(argv[-1])
                     return
-                if ext.endswith('bmp'):
-                    surf = pygame.image.load_basic( argv[-1] )
+                if ext.endswith("bmp"):
+                    surf = pygame.image.load_basic(argv[-1])
                 else:
-                    surf = pygame.image.load( argv[-1] )
+                    surf = pygame.image.load(argv[-1])
 
-            screen = pygame.display.set_mode([1024,600])
-            screen.blit( surf, (1,1) )
+            screen = pygame.display.set_mode([1024, 600])
+            screen.blit(surf, (1, 1))
             pygame.display.update()
-
 
         @classmethod
         def pgzrun(cls, *argv):
@@ -286,13 +286,14 @@ if defined("embed") and hasattr(embed, "readline"):
         @classmethod
         def wget(cls, *argv, **env):
             import urllib.request
+
             filename = None
-            for arg in map(str,argv):
+            for arg in map(str, argv):
 
                 if arg.startswith("-O"):
                     filename = arg[2:].lstrip()
                     continue
-                filename,_ = urllib.request.urlretrieve(arg, filename=filename)
+                filename, _ = urllib.request.urlretrieve(arg, filename=filename)
                 filename = None
             return True
 
@@ -300,13 +301,11 @@ if defined("embed") and hasattr(embed, "readline"):
         def pwd(cls, *argv):
             print(os.getcwd())
 
-
         # only work if pkg name == dist name
         @classmethod
         async def pip(cls, *argv):
-            if argv[0] == 'install':
+            if argv[0] == "install":
                 await importer.async_imports(argv[1])
-
 
         @classmethod
         def cd(cls, *argv):
@@ -319,11 +318,12 @@ if defined("embed") and hasattr(embed, "readline"):
         @classmethod
         def sha256sum(cls, *argv):
             import hashlib
-            for arg in map(str,argv):
+
+            for arg in map(str, argv):
                 sha256_hash = hashlib.sha256()
                 with open(arg, "rb") as f:
                     # Read and update hash string value in blocks of 4K
-                    for byte_block in iter(lambda: f.read(4096),b""):
+                    for byte_block in iter(lambda: f.read(4096), b""):
                         sha256_hash.update(byte_block)
                     hx = sha256_hash.hexdigest()
                     yield f"{hx}  {arg}"
@@ -334,10 +334,12 @@ if defined("embed") and hasattr(embed, "readline"):
             # TODO extract env from __main__ snapshot
             if cmd.endswith(".py"):
                 if pgzrun:
-                    print("a program is already running, using 'stop' cmd before retrying")
+                    print(
+                        "a program is already running, using 'stop' cmd before retrying"
+                    )
                     cls.stop()
                     pgzrun = None
-                    aio.defer(cls.exec,(cmd,*argv),env, delay=500)
+                    aio.defer(cls.exec, (cmd, *argv), env, delay=500)
 
                 else:
                     execfile(cmd)
@@ -347,7 +349,7 @@ if defined("embed") and hasattr(embed, "readline"):
         @classmethod
         def dll(cls, *argv):
             cdll = __import__("ctypes").CDLL(None)
-            print( getattr(cdll, argv[0])(*argv[1:]) )
+            print(getattr(cdll, argv[0])(*argv[1:]))
             return True
 
         @classmethod
@@ -375,22 +377,23 @@ if defined("embed") and hasattr(embed, "readline"):
 
         @classmethod
         def help(cls, *objs):
-            print("""
+            print(
+                """
 pygbag shell help
 ________________________
-""")
+"""
+            )
             if not len(objs):
                 objs = [cls]
             for obj in objs:
                 for cmd, item in vars(obj).items():
                     if isinstance(item, str):
                         continue
-                    if cmd[0]!='_' and item.__doc__:
-                        print(cmd,":", item.__doc__)
+                    if cmd[0] != "_" and item.__doc__:
+                        print(cmd, ":", item.__doc__)
                         print()
 
-
-# TODO: use run interactive c-api to run this one.
+        # TODO: use run interactive c-api to run this one.
         @classmethod
         def run(cls, *argv, **env):
 
@@ -398,7 +401,7 @@ ________________________
             __main__dict = vars(__main__)
 
             builtins._ = undefined
-            cmd =  " ".join(argv)
+            cmd = " ".join(argv)
 
             try:
                 time_start = time.time()
@@ -407,9 +410,11 @@ ________________________
                 if builtins._ is undefined:
                     return True
                 if aio.iscoroutine(_):
+
                     async def run(coro):
-                        print(f"async[{cmd}] :",await coro)
+                        print(f"async[{cmd}] :", await coro)
                         print(f"time[{cmd}] : {time.time() - time_start:.6f}")
+
                     aio.create_task(run(_), name=cmd)
                 else:
                     print(builtins._)
@@ -441,29 +446,33 @@ ________________________
         @classmethod
         def uptime(cls, *argv, **env):
             import asyncio, platform
+
             if platform.is_browser:
+
                 async def perf_index():
-                    ft = [0.00001] * 60*10
+                    ft = [0.00001] * 60 * 10
                     while not aio.exit:
                         ft.pop(0)
-                        ft.append(aio.spent / 0.016666666666666666 )
+                        ft.append(aio.spent / 0.016666666666666666)
                         if not (aio.ticks % 60):
-                            avg =  sum(ft) / len(ft)
+                            avg = sum(ft) / len(ft)
                             try:
-                                window.load_avg.innerText = '{:.4f}'.format(avg)
-                                window.load_min.innerText = '{:.4f}'.format(min(ft))
-                                window.load_max.innerText = '{:.4f}'.format(max(ft))
+                                window.load_avg.innerText = "{:.4f}".format(avg)
+                                window.load_min.innerText = "{:.4f}".format(min(ft))
+                                window.load_max.innerText = "{:.4f}".format(max(ft))
                             except:
                                 pdb("366:uptime: window.load_* widgets not found")
                                 break
 
                         await asyncio.sleep(0)
-                aio.create_task( perf_index() )
+
+                aio.create_task(perf_index())
             else:
                 print(f"last frame : {aio.spent / 0.016666666666666666:.4f}")
 
     def _process_args(argv, env):
         import inspect
+
         catch = True
         for cmd in argv:
             cmd = cmd.strip()
@@ -481,7 +490,7 @@ ________________________
                         for _ in fn(*args):
                             print(_)
                     elif inspect.iscoroutinefunction(fn):
-                        aio.create_task( fn(*args) )
+                        aio.create_task(fn(*args))
                     elif inspect.isasyncgenfunction(fn):
                         print("asyncgen N/I")
                     elif inspect.isawaitable(fn):
@@ -504,18 +513,27 @@ ________________________
             catch = True
 
         if isinstance(e, KeyboardInterrupt):
-            print('\r\nKeyboardInterrupt')
+            print("\r\nKeyboardInterrupt")
             return embed.prompt()
-
 
         if catch or isinstance(e, SyntaxError) and (e.filename == "<stdin>"):
             catch = True
             cmdline = embed.readline().strip()
 
             # TODO: far from perfect !
-            if cmdline.find('await ')>=0:
+            if cmdline.find("await ") >= 0:
                 import aio.toplevel
-                aio.create_task( aio.toplevel.retry(cmdline, (etype, e, tb,) ) )
+
+                aio.create_task(
+                    aio.toplevel.retry(
+                        cmdline,
+                        (
+                            etype,
+                            e,
+                            tb,
+                        ),
+                    )
+                )
                 # no prompt we're going async exec on aio now
                 return
 
@@ -524,7 +542,6 @@ ________________________
             # asyncio.get_event_loop().create_task(retry(index))
             # store trace
             # last_fail.append([etype, e, tb])
-
 
             catch = _process_args(cmdline.strip().split(";"), {})
 
@@ -536,11 +553,10 @@ ________________________
     sys.excepthook = excepthook
 
 
-
 try:
     PyConfig
     aio.cross.simulator = False
-    print(sys._emscripten_info )
+    print(sys._emscripten_info)
 #    aio.cross.simulator = (
 #        __EMSCRIPTEN__ or __wasi__ or __WASM__
 #    ).PyConfig_InitPythonConfig(PyConfig)
@@ -557,20 +573,12 @@ except Exception as e:
 
 # make simulations same each time, easier to debug
 import random
+
 random.seed(1)
-
-
-
-
-
-
-
-
 
 
 if not aio.cross.simulator:
     import __EMSCRIPTEN__ as platform
-
 
     """
 
@@ -589,6 +597,7 @@ https://pypi.org/pypi/pygbag/0.1.3/json
         ignore += ["distutils", "installer", "sysconfig", "sys"]
 
         from pathlib import Path
+
         if 1:
             if platform.window.location.hostname == "localhost":
                 cdn = Path(platform.window.location.origin)
@@ -606,11 +615,10 @@ https://pypi.org/pypi/pygbag/0.1.3/json
         print(f"552 CDN: {cdn}")
 
         @classmethod
-        def code_imports(cls, code=''):
+        def code_imports(cls, code=""):
 
             import platform
             import json
-
 
             def scan_imports(code, filename):
                 nonlocal cls
@@ -640,16 +648,15 @@ https://pypi.org/pypi/pygbag/0.1.3/json
                             required.append(mod)
                 return required
 
-            if code == '':
+            if code == "":
                 with open(__file__) as fcode:
-                    #assert code == fcode.read()
-                    cls.may_need.extend( scan_imports(fcode.read(), __file__) )
+                    # assert code == fcode.read()
+                    cls.may_need.extend(scan_imports(fcode.read(), __file__))
             else:
-                cls.may_need.extend( scan_imports(code, "<stdin>") )
+                cls.may_need.extend(scan_imports(code, "<stdin>"))
 
         @classmethod
         async def async_imports(cls, *wanted):
-
             def imports(*mods, lvl=0, wants=[]):
                 nonlocal cls
                 unseen = False
@@ -667,33 +674,38 @@ https://pypi.org/pypi/pygbag/0.1.3/json
                             wants.append(dep)
                 return wants
 
-
             async def pkg_install(*packages):
                 nonlocal cls
                 import sys
                 import sysconfig
                 import importlib
+
                 refresh = False
                 for pkg in packages:
                     pkg_info = cls.repos[0]["packages"].get(pkg, None)
-
 
                     if pkg_info is None:
                         pdb(f'144: package "{pkg}" not found in repodata')
                         continue
 
-                    file_name = pkg_info.get("file_name",'')
+                    file_name = pkg_info.get("file_name", "")
                     valid = False
                     if file_name:
                         pkg_file = f"/tmp/{file_name}"
 
-                        async with platform.fopen(cls.dl_cdn / file_name, "rb") as source:
+                        async with platform.fopen(
+                            cls.dl_cdn / file_name, "rb"
+                        ) as source:
                             source.rename_to(pkg_file)
                             for hex in shell.sha256sum(pkg_file):
-                                expected = hex.split(' ',1)[0].lower()
-                                maybe = pkg_info.get("sha256","").lower()
-                                if maybe and (maybe!=expected):
-                                    pdb(f"158: {pkg} download to {pkg_file} corrupt",pkg_info.get("sha256",""),expected)
+                                expected = hex.split(" ", 1)[0].lower()
+                                maybe = pkg_info.get("sha256", "").lower()
+                                if maybe and (maybe != expected):
+                                    pdb(
+                                        f"158: {pkg} download to {pkg_file} corrupt",
+                                        pkg_info.get("sha256", ""),
+                                        expected,
+                                    )
                                     break
                             else:
                                 valid = True
@@ -728,39 +740,36 @@ https://pypi.org/pypi/pygbag/0.1.3/json
                     await asyncio.sleep(0)
                     importlib.invalidate_caches()
                     await asyncio.sleep(0)
-                    print("preload cnt", __EMSCRIPTEN__.counter )
-                    __EMSCRIPTEN__.explore( sysconfig.get_paths()["platlib"] )
-                    print("preload cnt", __EMSCRIPTEN__.counter )
+                    print("preload cnt", __EMSCRIPTEN__.counter)
+                    __EMSCRIPTEN__.explore(sysconfig.get_paths()["platlib"])
+                    print("preload cnt", __EMSCRIPTEN__.counter)
 
             # init importer
 
             import sysconfig
+
             if not sysconfig.get_paths()["platlib"] in sys.path:
                 sys.path.append(sysconfig.get_paths()["platlib"])
 
-
             if not len(cls.repos):
                 async with platform.fopen(cdn / cls.repodata) as source:
-                    cls.repos.append( json.loads(source.read()) )
+                    cls.repos.append(json.loads(source.read()))
 
             # print(json.dumps(cls.repo[0]["packages"], sort_keys=True, indent=4))
-            print("packages :", len( cls.repos[0]["packages"] ) )
+            print("packages :", len(cls.repos[0]["packages"]))
 
             await pkg_install(*imports(*wanted))
 
-
-
-
     def fix_url(maybe_url):
         url = str(maybe_url)
-        if url.startswith('http://'):
+        if url.startswith("http://"):
             pass
-        elif url.startswith('https://'):
+        elif url.startswith("https://"):
             pass
-        elif url.startswith('https:/'):
-            url = "https:/"+ url[6:]
-        elif url.startswith('http:/'):
-            url = "http:/"+ url[5:]
+        elif url.startswith("https:/"):
+            url = "https:/" + url[6:]
+        elif url.startswith("http:/"):
+            url = "http:/" + url[5:]
         return url
 
     __EMSCRIPTEN__.fix_url = fix_url
@@ -787,7 +796,7 @@ https://pypi.org/pypi/pygbag/0.1.3/json
 
         # extensions
 
-        def browser_open_file(target=None,accept="*"):
+        def browser_open_file(target=None, accept="*"):
             if target:
                 platform.EventTarget.addEventListener("upload", target)
             platform.window.dlg_multifile.click()
@@ -798,8 +807,6 @@ https://pypi.org/pypi/pygbag/0.1.3/json
         # https://rdb.name/panda3d-webgl.md.html#supplementalmodules/asynchronousloading
         #
 
-
-
         # bad and deprecated use of sync XHR
 
         import urllib
@@ -808,27 +815,27 @@ https://pypi.org/pypi/pygbag/0.1.3/json
         def urlretrieve(maybe_url, filename=None, reporthook=None, data=None):
             url = __EMSCRIPTEN__.fix_url(maybe_url)
             filename = filename or f"/tmp/uru-{aio.ticks}"
-            rc=platform.window.python.DEPRECATED_wget_sync(str(url), str(filename))
-            if rc==200:
+            rc = platform.window.python.DEPRECATED_wget_sync(str(url), str(filename))
+            if rc == 200:
                 return filename, []
             raise Exception(f"urlib.error {rc}")
-
 
         urllib.request.urlretrieve = urlretrieve
 
     if (__WASM__ and __EMSCRIPTEN__) or platform.is_browser:
         from platform import window, document
 
-
         class fopen:
             ticks = 0
-            def __init__(self, maybe_url, mode ="r"):
+
+            def __init__(self, maybe_url, mode="r"):
                 self.url = __EMSCRIPTEN__.fix_url(maybe_url)
                 self.mode = mode
                 self.tmpfile = None
 
             async def __aenter__(self):
                 import platform
+
                 print(f'572: Download start: "{self.url}"')
                 if "b" in self.mode:
                     self.__class__.ticks += 1
@@ -846,8 +853,10 @@ https://pypi.org/pypi/pygbag/0.1.3/json
                         self.tmpfile = None
                         del self.filelike.rename_to
                         return target
+
                 else:
                     import io
+
                     jsp = platform.window.fetch(self.url)
                     response = await platform.jsprom(jsp)
                     content = await platform.jsprom(response.text())
@@ -856,14 +865,13 @@ https://pypi.org/pypi/pygbag/0.1.3/json
                     self.filelike = io.StringIO(content)
 
                     def rename_to(target):
-                        with open(target,"wb") as data:
+                        with open(target, "wb") as data:
                             date.write(self.filelike.read())
                         del self.filelike.rename_to
                         return target
 
                 self.filelike.rename_to = rename_to
                 return self.filelike
-
 
             async def __aexit__(self, *exc):
                 if self.tmpfile:
@@ -875,24 +883,26 @@ https://pypi.org/pypi/pygbag/0.1.3/json
         platform.fopen = fopen
 
         async def jsiter(iterator):
-            mark =None
+            mark = None
             value = undefined
-            while mark!=undefined:
+            while mark != undefined:
                 value = mark
                 await asyncio.sleep(0)
-                mark = next( iterator, undefined )
+                mark = next(iterator, undefined)
             return value
+
         platform.jsiter = jsiter
 
         async def jsprom(prom):
             mark = None
             value = undefined
-            wit = window.iterator( prom )
-            while mark!=undefined:
+            wit = window.iterator(prom)
+            while mark != undefined:
                 value = mark
                 await aio.sleep(0)
-                mark = next( wit , undefined )
+                mark = next(wit, undefined)
             return value
+
         platform.jsprom = jsprom
 
         apply_patches()
@@ -902,6 +912,7 @@ else:
     pdb("TODO: js simulator")
 
 # ======================================================
+
 
 def ESC(*argv):
     for arg in argv:
@@ -913,17 +924,16 @@ def CSR(*argv):
     for arg in argv:
         ESC("[", arg)
 
+
 pgzrun = None
 
-if os.path.isfile('/data/data/usersite.py'):
-    execfile('/data/data/usersite.py')
+if os.path.isfile("/data/data/usersite.py"):
+    execfile("/data/data/usersite.py")
 
 import aio.recycle
+
 # ============================================================
 # DO NOT ADD ANYTHING FROM HERE OR APP RECYCLING WILL TRASH IT
-
-
-
 
 
 #

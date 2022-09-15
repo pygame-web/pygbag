@@ -36,16 +36,57 @@ try:
 except:
     pass
 
+import pathlib
 
 # for dom event subscriptions and js interface
 import webbrowser
 import platform
 
+# for pygame-script FS
+import tempfile
+
+# for console
+import code
+
+# for wget to overload urlretrieve
+import urllib.request
+
 # intaller "cp437"
-import compileall, csv, configparser, zlib
+import compileall, csv, configparser
 
 # micropip
 import importlib.metadata
+
+# pygame_gui
+import html.parser
+import importlib.readers
+
+#pymunk+tests
+import unittest, locale
+import imp, platform
+import numbers, random
+
+#pgzero
+import hashlib, queue, pkgutil
+
+#pytmx
+import gzip
+import zlib
+from xml.etree import ElementTree
+import distutils.spawn
+
+
+#pygame_gui
+import importlib.resources
+
+#curses
+try:
+    import curses
+except:
+    print('_curses not built')
+
+# cffi
+import copy
 
 # pgex
 import typing
@@ -54,9 +95,6 @@ try:
 except:
     pass
 
-# for wget to overload urlretrieve
-import urllib.request
-
 # nodezator
 from logging.handlers import RotatingFileHandler
 from colorsys  import rgb_to_hls, hls_to_rgb
@@ -64,48 +102,6 @@ import xml.dom.minidom
 from xml.dom import expatbuilder
 import pydoc
 
-# rich
-import zlib
-
-# pygame_gui
-import html.parser
-import importlib.readers
-
-#pymunk tests
-import unittest, locale
-
-#pymunk4
-import imp, platform
-
-#pymunk6
-import numbers, random
-
-#pgzero
-import hashlib, queue, pkgutil
-
-#numpy
-import pathlib
-
-# cffi
-import copy
-
-#curses
-import curses
-
-#pytmx
-import gzip
-import zlib
-from xml.etree import ElementTree
-import distutils.spawn
-
-# for FS
-import tempfile
-
-
-
-
-#pygame_gui
-import importlib.resources
 
 if 0:
     import cffi

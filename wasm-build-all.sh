@@ -1,5 +1,8 @@
 #!/bin/bash
 reset
+[ -f vendor.sh ] && . vendor.sh
+export VENDOR=${VENDOR:-pygbag}
+
 export PACKAGES=${PACKAGES:-pygame}
 export SDK_VERSION=${SDK_VERSION:-3.1.19.1}
 export CYTHON=${CYTHON:-Cython-3.0.0a11-py2.py3-none-any.whl}
@@ -11,7 +14,7 @@ export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
 export SYS_PYTHON=${SYS_PYTHON:-$(which python3)}
 echo "
 ====================================================
-    Building pygbag loader
+    Building $VENDOR loader
     ________________________________________
     statically built modules: $PACKAGES
     with SDK $SDK_VERSION
@@ -20,8 +23,6 @@ echo "
     CI=$CI
 ====================================================
 "
-
-
 
 chmod +x *sh scripts/*.sh packages.d/*sh
 
