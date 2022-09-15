@@ -1,5 +1,10 @@
 #!/bin/bash
 
+
+DIST_DIR=$(pwd)/build/web/archives/$($SYS_PYTHON -c "import pygbag;print(pygbag.__version__)")
+DIST_DIR=$(echo $DIST_DIR|cut -f1-2 -d.)
+
+
 [ -f vendor.sh ] && . vendor.sh
 export VENDOR=${VENDOR:-pygbag}
 
@@ -48,8 +53,6 @@ LD_SDL="-L${SDKROOT}/devices/emsdk/usr/lib -lSDL2_gfx -lSDL2_mixer -lSDL2_image 
 
 SUPPORT_FS=""
 
-DIST_DIR=$(pwd)/build/web/archives/$($SYS_PYTHON -c "import pygbag;print(pygbag.__version__)")
-DIST_DIR=$(echo $DIST_DIR|cut -f1-2 -d.)
 
 
 mkdir -p $DIST_DIR/python${PYMAJOR}${PYMINOR}

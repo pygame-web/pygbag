@@ -1,5 +1,8 @@
 #!/bin/bash
 
+DIST_DIR=$(pwd)/build/web/archives/$($SYS_PYTHON -c "import pygbag;print(pygbag.__version__)")
+DIST_DIR=$(echo $DIST_DIR|cut -f1-2 -d.)
+
 [ -f vendor.sh ] && . vendor.sh
 export VENDOR=${VENDOR:-pygbag}
 
