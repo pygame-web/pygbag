@@ -158,6 +158,11 @@ SUPPORT FOR STATIC MODULES :
 
     see in package.d/<vendor>/README.md for module <vendor> specific support
 
+
+[vendor readme (if applicable)](vendor/README.md)
+
+
+
 GENERIC PYGBAG SUPPORT OR PYGAME MODULE:
 
 [for generic help around pygbag](https://github.com/pygame-web/pygbag/blob/main/packages.d/pygame/README.md)
