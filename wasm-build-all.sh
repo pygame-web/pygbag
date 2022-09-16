@@ -12,12 +12,17 @@ BUILDS=${BUILDS:-3.12 3.11 3.10}
 
 
 
-chmod +x *sh scripts/*.sh packages.d/*sh
+chmod +x *sh scripts/*.sh packages.d/*/*sh
 
 for PYBUILD in $BUILDS
 do
     export PYBUILD
-    ./scripts/build-pkg.sh
+    if ./scripts/build-pkg.sh
+    then
+        echo done
+    else
+        exit 24
+    fi
 done
 
 

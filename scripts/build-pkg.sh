@@ -99,12 +99,17 @@ mkdir -p build
 
 for pkg in ${PACKAGES:-pygame}
 do
-    pkg_script=packages.d/${pkg}/${pkg}.sh
+    pkg_script=${PKG_PATH}.sh
+
+    PKG_PATH=packages.d/${pkg}/${pkg}
+
 
     #pkg=$(basename $pkg_script .sh)
 
     echo "
-    * processing build script $pkg_script for $pkg
+
+    * processing build script $pkg_script for $pkg from $PKG_PATH
+
 " 1>&2
 
     export PKGDIR=$REQUIREMENTS/$pkg
@@ -116,23 +121,23 @@ do
 
 
 # always do it so we get a warning if lib is not linked
-    if [ -f packages.d/$pkg.h ]
+    if [ -f packages.d/${pkg}/$pkg.h ]
     then
         cat >> build/gen_inittab.h <<END
 // auto generated from build-pkg.sh
 #if defined(PYDK_$pkg)
-#   include "../packages.d/${pkg}/${pkg}.h"
+#   include "../${PKG_PATH}.h"
 #endif
 END
     fi
 
 
-    if [ -f packages.d/$pkg.c ]
+    if [ -f ${PKG_PATH}.c ]
     then
         cat >> build/gen_inittab.c <<END
 // auto generated from build-pkg.sh
 #if defined(PYDK_$pkg)
-#   include "../packages.d/${pkg}/${pkg}.c"
+#   include "../${PKG_PATH}.c"
 #else
     #pragma message "not linking $pkg"
 #endif
@@ -142,19 +147,19 @@ END
 
     # copy non upstreamed patches to loader source dir
     # even if not rebuilding static
-    if [ -d ./packages.d/${pkg}/${pkg}.overlay ]
+    if [ -d ./${PKG_PATH}.overlay ]
     then
-        cp -r ./packages.d/${pkg}/${pkg}.overlay/* $PKGDIR/
+        cp -r ./${PKG_PATH}.overlay/* $PKGDIR/
         echo "
-        * added ./packages.d/${pkg}/${pkg}.overlay to $PKGDIR/
+        * added ./${PKG_PATH}.overlay to $PKGDIR/
 " 1>&2
     fi
 
-    if [ -d ./packages.d/${pkg}/${pkg}.overlay-$PYBUILD ]
+    if [ -d ./${PGK_PATH}.overlay-$PYBUILD ]
     then
-        cp -rf ./packages.d/${pkg}/${pkg}.overlay-$PYBUILD/* $PKGDIR/
+        cp -rf ./${PKG_PATH}.overlay-$PYBUILD/* $PKGDIR/
         echo "
-        * added ./packages.d/${pkg}/${pkg}.overlay-$PYBUILD to $PKGDIR/
+        * added ./${PKG_PATH}.overlay-$PYBUILD to $PKGDIR/
 " 1>&2
     fi
 
@@ -167,7 +172,7 @@ END
     fi
 
 
-    if ./packages.d/${pkg}/${pkg}.sh
+    if ./${PKG_PATH}.sh
     then
 
         if [ -f ${SDKROOT}/prebuilt/emsdk/lib${pkg}${PYBUILD}.a ]
@@ -177,13 +182,14 @@ END
         else
             echo "failed to build lib${pkg}${PYBUILD}.a
 " 1>&2
-            exit 119
+            exit 185
         fi
 
 
     else
-        echo "script $pkg_script failed
+        echo "$pkg script build failed
 " 1>&2
+        exit 192
     fi
 
 done
