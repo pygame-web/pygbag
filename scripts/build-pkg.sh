@@ -106,7 +106,7 @@ mkdir -p build
 
 for pkg in ${PACKAGES:-pygame}
 do
-    pkg_script=packages.d/$pkg.sh
+    pkg_script=packages.d/${pkg}/${pkg}.sh
 
     #pkg=$(basename $pkg_script .sh)
 
@@ -128,17 +128,18 @@ do
         cat >> build/gen_inittab.h <<END
 // auto generated from build-pkg.sh
 #if defined(PYDK_$pkg)
-#   include "../packages.d/$pkg.h"
+#   include "../packages.d/${pkg}/${pkg}.h"
 #endif
 END
     fi
+
 
     if [ -f packages.d/$pkg.c ]
     then
         cat >> build/gen_inittab.c <<END
 // auto generated from build-pkg.sh
 #if defined(PYDK_$pkg)
-#   include "../packages.d/$pkg.c"
+#   include "../packages.d/${pkg}/${pkg}.c"
 #else
     #pragma message "not linking $pkg"
 #endif
@@ -148,32 +149,32 @@ END
 
     # copy non upstreamed patches to loader source dir
     # even if not rebuilding static
-    if [ -d ./packages.d/${pkg}.overlay ]
+    if [ -d ./packages.d/${pkg}/${pkg}.overlay ]
     then
-        cp -r ./packages.d/${pkg}.overlay/* $PKGDIR/
+        cp -r ./packages.d/${pkg}/${pkg}.overlay/* $PKGDIR/
         echo "
-        * added ./packages.d/${pkg}.overlay to $PKGDIR/
+        * added ./packages.d/${pkg}/${pkg}.overlay to $PKGDIR/
 " 1>&2
     fi
 
-    if [ -d ./packages.d/${pkg}.overlay-$PYBUILD ]
+    if [ -d ./packages.d/${pkg}/${pkg}.overlay-$PYBUILD ]
     then
-        cp -rf ./packages.d/${pkg}.overlay-$PYBUILD/* $PKGDIR/
+        cp -rf ./packages.d/${pkg}/${pkg}.overlay-$PYBUILD/* $PKGDIR/
         echo "
-        * added ./packages.d/${pkg}.overlay-$PYBUILD to $PKGDIR/
+        * added ./packages.d/${pkg}/${pkg}.overlay-$PYBUILD to $PKGDIR/
 " 1>&2
     fi
 
 # TODO make a clean option
     if [ -f ${SDKROOT}/prebuilt/emsdk/lib${pkg}${PYBUILD}.a ]
     then
-        echo " RE USING  ${pkg}
+        echo " RE USING ${pkg} static library
 " 1>&2
         continue
     fi
 
 
-    if ./packages.d/${pkg}.sh
+    if ./packages.d/${pkg}/${pkg}.sh
     then
 
         if [ -f ${SDKROOT}/prebuilt/emsdk/lib${pkg}${PYBUILD}.a ]
