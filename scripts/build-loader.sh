@@ -5,12 +5,7 @@ DIST_DIR=$(pwd)/build/web/archives/$($SYS_PYTHON -c "import pygbag;print(pygbag.
 DIST_DIR=$(echo $DIST_DIR|cut -f1-2 -d.)
 
 
-[ -f vendor.sh ] && . vendor.sh
-export VENDOR=${VENDOR:-pygbag}
-
-
-export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
-
+. scripts/vendoring.sh
 
 . ${CONFIG:-$SDKROOT/config}
 
@@ -27,7 +22,7 @@ export DYNLOAD=${SDKROOT}/prebuilt/emsdk/${PYBUILD}/lib-dynload
 
 
 echo "
-    *   building loader $(pwd)
+    *   building loader $(pwd) for ${VENDOR} / ${PACKAGES}
             PYBUILD=$PYBUILD
             EMFLAVOUR=$EMFLAVOUR
             EMSDK=$EMSDK

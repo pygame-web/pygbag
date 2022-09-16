@@ -3,16 +3,9 @@
 DIST_DIR=$(pwd)/build/web/archives/$($SYS_PYTHON -c "import pygbag;print(pygbag.__version__)")
 DIST_DIR=$(echo $DIST_DIR|cut -f1-2 -d.)
 
-[ -f vendor.sh ] && . vendor.sh
-export VENDOR=${VENDOR:-pygbag}
 
+. scripts/vendoring.sh
 
-export SDK_VERSION=${SDK_VERSION:-3.1.19.0}
-export PYBUILD=${PYBUILD:-3.11}
-
-
-export LC_ALL=C
-export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
 export PYMAJOR=$(echo -n $PYBUILD|cut -d. -f1)
 export PYMINOR=$(echo -n $PYBUILD|cut -d. -f2)
 

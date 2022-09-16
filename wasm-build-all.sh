@@ -1,17 +1,14 @@
 #!/bin/bash
 reset
-[ -f vendor.sh ] && . vendor.sh
-export VENDOR=${VENDOR:-pygbag}
 
-export PACKAGES=${PACKAGES:-pygame}
-export SDK_VERSION=${SDK_VERSION:-3.1.19.1}
-export CYTHON=${CYTHON:-Cython-3.0.0a11-py2.py3-none-any.whl}
+. scripts/vendoring.sh
+
 BUILDS=${BUILDS:-3.12 3.11 3.10}
 
+
 export CI=${CI:-false}
-export LC_ALL=C
-export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
-export SYS_PYTHON=${SYS_PYTHON:-$(which python3)}
+
+
 echo "
 ====================================================
     Building $VENDOR loader

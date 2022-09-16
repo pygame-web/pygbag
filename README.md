@@ -151,14 +151,17 @@ from the repo https://github.com/pygame-web/archives under versionned folders
 
 ADDING STATIC MODULES:
 
-    see in package.d directory and use vendor.sh
+    see in package.d directory and use vendor/vendor.sh
 
 
-SUPPORT :
+SUPPORT FOR STATIC MODULES :
 
-    see in package.d/vendor/README.md for module specific support
+    see in package.d/<vendor>/README.md for module <vendor> specific support
 
-    [for generic help around pygbag](package.d/pygame/README.md)
+GENERIC PYGBAG SUPPORT OR PYGAME MODULE:
+
+[for generic help around pygbag](https://github.com/pygame-web/pygbag/blob/main/packages.d/pygame/README.md)
+
 
 
 

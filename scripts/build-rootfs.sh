@@ -1,9 +1,8 @@
 #!/bin/bash
 
-export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
+. scripts/vendoring.sh
 
 . ${CONFIG:-$SDKROOT/config}
-
 
 
 mkdir -p build
