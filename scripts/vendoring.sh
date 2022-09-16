@@ -11,3 +11,18 @@ export PYBUILD=${PYBUILD:-3.11}
 export LC_ALL=C
 
 export SYS_PYTHON=${SYS_PYTHON:-$(which python3)}
+
+
+
+echo "
+====================================================
+    Building $VENDOR loader
+    ________________________________________
+    statically built modules: $PACKAGES
+    with SDK $SDK_VERSION from $SDKROOT
+    python versions : $BUILDS
+    Cython release: $CYTHON
+    SYS_PYTHON: $SYS_PYTHON
+    CI=$CI
+====================================================
+"

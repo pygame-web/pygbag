@@ -1,25 +1,16 @@
 #!/bin/bash
 reset
 
-. scripts/vendoring.sh
+export CI=${CI:-false}
+
 
 BUILDS=${BUILDS:-3.12 3.11 3.10}
 
 
-export CI=${CI:-false}
+
+. scripts/vendoring.sh
 
 
-echo "
-====================================================
-    Building $VENDOR loader
-    ________________________________________
-    statically built modules: $PACKAGES
-    with SDK $SDK_VERSION
-    python versions : $BUILDS
-    Cython release: $CYTHON
-    CI=$CI
-====================================================
-"
 
 chmod +x *sh scripts/*.sh packages.d/*sh
 
