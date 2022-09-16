@@ -202,7 +202,6 @@ then
 
     echo CPY_LDFLAGS=$CPY_LDFLAGS
 
-
     if emcc $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG\
      -s TOTAL_MEMORY=256MB -s ALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \
      $CF_SDL \
@@ -213,7 +212,7 @@ then
      --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \
      -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \
-     $CPY_LDFLAGS -lffi -lbz2 -lz \
+     $CPY_LDFLAGS $LD_VENDOR -lffi -lbz2 -lz \
      $LD_SDL \
      -ldl -lm
     then

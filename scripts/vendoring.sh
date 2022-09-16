@@ -13,9 +13,8 @@ export LC_ALL=C
 export SYS_PYTHON=${SYS_PYTHON:-$(which python3)}
 
 
-
-DIST_DIR=$(pwd)/build/web/archives/$($SYS_PYTHON -c "import pygbag;print(pygbag.__version__)")
-export DIST_DIR=$(echo $DIST_DIR|cut -f1-2 -d.)
+export PYGBAG_BUILD=$($SYS_PYTHON -c "import pygbag;print(pygbag.__version__)"|cut -f1-2 -d.)
+export DIST_DIR=$(pwd)/build/web/archives/${PYGBAG_BUILD}
 mkdir -p $DIST_DIR
 
 

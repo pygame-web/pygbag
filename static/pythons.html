@@ -160,11 +160,11 @@ if sys.platform in ("emscripten","wasi",):
         async with fopen('/archives/repo/index.json', 'r') as index:
             print(index.read())
 
+        if 0:
 
+            con = AsyncInteractiveConsole(globals())
 
-        con = AsyncInteractiveConsole(globals())
-
-        await con.interact()
+            await con.interact()
 
 
 
