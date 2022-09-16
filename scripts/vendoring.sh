@@ -14,9 +14,16 @@ export SYS_PYTHON=${SYS_PYTHON:-$(which python3)}
 
 
 
+DIST_DIR=$(pwd)/build/web/archives/$($SYS_PYTHON -c "import pygbag;print(pygbag.__version__)")
+export DIST_DIR=$(echo $DIST_DIR|cut -f1-2 -d.)
+
+
 echo "
-====================================================
-    Building $VENDOR loader
+==============================================================================
+    Building $VENDOR loader, target folder :
+
+${DIST_DIR}
+
     ________________________________________
     statically built modules: $PACKAGES
     with SDK $SDK_VERSION from $SDKROOT
@@ -24,5 +31,5 @@ echo "
     Cython release: $CYTHON
     SYS_PYTHON: $SYS_PYTHON
     CI=$CI
-====================================================
+==============================================================================
 "
