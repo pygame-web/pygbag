@@ -444,6 +444,55 @@ function feat_gui(debug_hidden) {
     }
 
     vm.canvas = canvas
+/*
+    var gl
+    const gl_aa = false
+
+    try {
+        gl = canvas.getContext("webgl2")
+    } catch (x) {
+        console.error("FIXME NO WEBGL2:", x)
+        gl = null;
+    }
+
+    if (!gl) {
+        try {
+            gl = canvas.getContext("webgl");
+        } catch (x) {
+            console.error("FIXME WEBGL:", x)
+            gl = null;
+        }
+    }
+
+    if (!gl) {
+        try {
+            gl = canvas.getContext("experimental-webgl");
+        } catch (x) {
+            console.error("FIXME experimental-webgl :", x)
+            gl = null;
+        }
+    }
+
+    console.log("GL :", gl)
+    if (gl) {
+        var ext = gl.getExtension('OES_standard_derivatives');
+        if (!ext)
+            console.log('GL: [OES_standard_derivatives] supported');
+        else
+            console.log('GL: Error [OES_standard_derivatives] derivatives *not* supported');
+
+
+        var antialias = gl.getContextAttributes().antialias;
+        console.log('GL: antialias = '+antialias);
+
+        var aasize = gl.getParameter(gl.SAMPLES);
+        console.log('GL: antialias size = '+aasize );
+    } else  {
+        console.error("Uh, your browser doesn't support WebGL. This application won't work.");
+        return;
+
+    }
+*/
 
 
     // window resize

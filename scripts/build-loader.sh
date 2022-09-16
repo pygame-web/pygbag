@@ -177,30 +177,34 @@ then
     # --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \
     # --preload-file ${ROOT}/support/xterm@/etc/termcap \
 
+
+    LDFLAGS="$LD_VENDOR"
+
     if echo ${PYBUILD}|grep -q 10$
     then
         echo " - no sqlite3 for 3.10 -"
-        CPY_LDFLAGS=""
     else
-        CPY_LDFLAGS="-lsqlite3"
+        LDFLAGS="$LDFLAGS -lsqlite3"
     fi
+
+    LDFLAGS="$LDFLAGS $LD_SDL -lffi -lbz2 -lz -ldl -lm"
 
     for lib in python mpdec expat
     do
         cpylib=${SDKROOT}/prebuilt/emsdk/lib${lib}${PYBUILD}.a
         if [ -f $cpylib ]
         then
-            CPY_LDFLAGS="$CPY_LDFLAGS $cpylib"
+            LDFLAGS="$LDFLAGS $cpylib"
         fi
     done
 
     for lib in $PACKAGES
     do
         cpylib=${SDKROOT}/prebuilt/emsdk/lib${lib}${PYBUILD}.a
-        CPY_LDFLAGS="$CPY_LDFLAGS $cpylib"
+        LDFLAGS="$LDFLAGS $cpylib"
     done
 
-    echo CPY_LDFLAGS=$CPY_LDFLAGS
+    echo LDFLAGS=$LDFLAGS
 
     if emcc $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG\
      -s TOTAL_MEMORY=256MB -s ALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \
@@ -212,9 +216,7 @@ then
      --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \
      -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \
-     $CPY_LDFLAGS $LD_VENDOR -lffi -lbz2 -lz \
-     $LD_SDL \
-     -ldl -lm
+     $LDFLAGS
     then
         rm build/${MODE}.o
         du -hs ${DIST_DIR}/*
