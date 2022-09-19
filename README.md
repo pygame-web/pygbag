@@ -1,24 +1,18 @@
 # pygbag
 
-python wasm for everyone ( packager + test server )
+Python WebAssembly for everyone ( packager + test server )
 
-runs python code directly in modern web browsers, including mobile versions.
+Runs python code directly in modern web browsers, including mobile versions.
 
-
-
-"your.app.folder" must contains a main.py and its loop must be async aware eg :
+"your.app.folder" must contain a main.py and its loop must be async aware eg:
 
 ```py
 import asyncio
 
-# try explicity to declare all your globals at once
-# to faciliate compilation later
+# Try explicitly to declare all your globals at once to facilitate compilation later.
 COUNT_DOWN = 3
 
-# do init here, and load any assets right now to avoid lag
-# at runtime or network errors.
-
-
+# Do init here and load any assets right now to avoid lag at runtime or network errors.
 
 
 async def main():
@@ -28,42 +22,41 @@ async def main():
 
     while True:
 
-        # do your rendering here, note that it is NOT an infinite loop
+        # Do your rendering here, note that it's NOT an infinite loop,
         # and it fired only when VSYNC occurs
-        # usually 1/60 or more times per seconds on dekstop, maybe less
-        # on some mobile devices
+        # Usually 1/60 or more times per seconds on desktop, maybe less on some mobile devices
 
         print(f"""
 
-        Hello[{count}] from Python
+        Hello[{COUNT_DOWN}] from Python
 
 """)
 
-        await asyncio.sleep(0)  # very important, and keep it 0
+        await asyncio.sleep(0)  # Very important, and keep it 0
 
         if not COUNT_DOWN:
             return
 
         COUNT_DOWN = COUNT_DOWN - 1
 
-# this is the program entry point.
+# This is the program entry point:
 asyncio.run(main())
 
-# do not add anything from here
-# asyncio.run is non blocking on pygame-wasm
+# Do not add anything from here
+# asyncio.run is non-blocking on pygame-wasm
 ```
 
-usage:
+Usage:
 
     pip3 install pygbag --user --upgrade
     pygbag your.app.folder
 
-command help:
+Command help:
 
     pygbag --help your.app.folder
 
 
-example :
+Example :
 
 ```
 user@pp /data/git/pygbag $ python3 -m pygbag --help test
@@ -106,13 +99,13 @@ options:
 
 Now navigate to http://localhost:8000 with a modern Browser.
 
-use http://localhost:8000#debug for getting a terminal and a sized down canvas
+Use http://localhost:8000#debug for getting a terminal and a sized down canvas.
 
-for pygame-script go to http://localhost:8000/your.app.folder.html
+For pygame-script go to http://localhost:8000/your.app.folder.html.
 
 
 
-v8 based browsers are preferred ( chromium/brave/chrome ... )
+V8 based browsers are preferred ( chromium/brave/chrome ... )
 starting with 81.0.4044 ( android 4.4 ).
 Because they set baseline restrictions on WebAssembly loading.
 Using them while testing ensure proper operation on all browsers.
@@ -123,7 +116,7 @@ NOTES:
  - first load will be slower, because setting up local cache from cdn to avoid
 useless network transfer for getting pygame and cpython prebuilts.
 
- - each time changing code/template you must restart `pygbag your.app.folder`
+ - each time there's a change in the code or template you must run `pygbag your.app.folder`
    but cache is not destroyed.
 
  - if you want to reset prebuilts cache, remove the build/web-cache folder in
@@ -132,21 +125,19 @@ useless network transfer for getting pygame and cpython prebuilts.
 
 BUILDING:
 
-pygbag is not only a python module, and rebuilding all the toolchain can be quite
-hard
+Pygbag is not only a python module, and rebuilding all the toolchain can be quite hard.
 
 https://github.com/pygame-web/python-wasm-sdk  <= build CPython (not pyodide)
 
+The default is to build only pygame, but feel free to fork and add yours.
 
-The default is to build only pygame, but feel free to fork and add yours
-
-so read/use pygbag CI to see how to build pygame + the C loader (pymain) and
-how it is linked it to libpython + libpygame
+So read/use pygbag CI to see how to build pygame + the C loader (pymain) and
+how it is linked it to libpython + libpygame.
 
 https://github.com/pygame-web/pygbag
 
-default prebuilts (pygame) used by pygbag are stored on github
-from the repo https://github.com/pygame-web/archives under versionned folders
+Default prebuilts (pygame) used by pygbag are stored on github
+from the repo https://github.com/pygame-web/archives under versioned folders.
 
 
 ADDING STATIC MODULES:
@@ -166,9 +157,3 @@ SUPPORT FOR STATIC MODULES :
 GENERIC PYGBAG SUPPORT OR PYGAME MODULE:
 
 [for generic help around pygbag](https://github.com/pygame-web/pygbag/blob/main/packages.d/pygame/README.md)
-
-
-
-
-
-

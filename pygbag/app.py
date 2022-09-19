@@ -1,12 +1,12 @@
 import asyncio
 import sys
-import os
+# import os
 import argparse
 
 
 from pathlib import Path
 import hashlib
-import urllib
+# import urllib
 import shutil
 from datetime import datetime
 
@@ -97,7 +97,7 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
 
     cache_dir.mkdir(exist_ok=True)
 
-    version = "0.0.0"
+    # version = "0.0.0"
 
     sys.argv.pop()
 
@@ -218,7 +218,7 @@ async def main_run(patharg, cdn=DEFAULT_CDN):
 
     args = parser.parse_args()
 
-    app_name = app_folder.name
+    app_name = app_folder.name.lower().replace(" ", ".")
 
     archfile = build_dir.joinpath(f"{app_name}.apk")
 
@@ -350,7 +350,7 @@ now packing application ....
                 print(
                     f"""
         caching icon {icon_url}
-        cached locallly at {icon_file}
+        cached locally at {icon_file}
         """
                 )
             except Exception as e:
