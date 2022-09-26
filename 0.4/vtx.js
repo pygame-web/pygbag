@@ -6,7 +6,7 @@ readline.complete = function (line) {
     if ( readline.history[ readline.history.length -1 ] != line )
         readline.history.push(line);
     readline.index = 0;
-    python.PyRun_SimpleString(line + "\n")
+    python.readline(line + "\n")
 
 }
 

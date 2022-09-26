@@ -135,6 +135,25 @@ async def sitecustomize():
 
     main = appdir / "assets" / "main.py"
 
+
+    if window.python.config.debug:
+
+        from aio.toplevel import AsyncInteractiveConsole
+
+        def importer(want, ex=None, resume=None):
+            print(f"{want=}, {resume=}, {ex=}")
+            return asyncio.sleep(0)
+
+
+
+        aio.create_task( AsyncInteractiveConsole(
+                globals(),
+                shell=shell,
+                importer=importer,
+            ).interact()
+        )
+
+
     # test/wait user media interaction
     if not platform.window.MM.UME:
 
@@ -154,6 +173,11 @@ async def sitecustomize():
         while not platform.window.MM.UME:
             await asyncio.sleep(.1)
 
+        screen.fill( (0,0,0,0) )
+        pygame.display.flip()
+
+
+
 
     print("145: running main and resuming EventTarget in a few seconds")
     aio.defer(execfile, (main,), {} )
@@ -164,10 +188,15 @@ async def sitecustomize():
 
 
     # makes all queued events arrive after program has looped a few cycles
+    # note that you need a call to asyncio.run in your main to continue past
+    # that check
     while not aio.run_called:
         await asyncio.sleep(.1)
 
     aio.create_task(platform.EventTarget.process())
+
+    print("platform event loop started")
+
 
 
 
