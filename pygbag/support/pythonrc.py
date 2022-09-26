@@ -504,53 +504,53 @@ ________________________
                 catch = shell.exec(cmd, *args, **env)
         return catch
 
-    def excepthook(etype, e, tb):
-        global last_fail
-
-        catch = False
-
-        if isinstance(e, NameError):
-            catch = True
-
-        if isinstance(e, KeyboardInterrupt):
-            print("\r\nKeyboardInterrupt")
-            return embed.prompt()
-
-        if catch or isinstance(e, SyntaxError) and (e.filename == "<stdin>"):
-            catch = True
-            cmdline = embed.readline().strip()
-
-            # TODO: far from perfect !
-            if cmdline.find("await ") >= 0:
-                import aio.toplevel
-
-                aio.create_task(
-                    aio.toplevel.retry(
-                        cmdline,
-                        (
-                            etype,
-                            e,
-                            tb,
-                        ),
-                    )
-                )
-                # no prompt we're going async exec on aio now
-                return
-
-            # index = readline.get_current_history_length()
-
-            # asyncio.get_event_loop().create_task(retry(index))
-            # store trace
-            # last_fail.append([etype, e, tb])
-
-            catch = _process_args(cmdline.strip().split(";"), {})
-
-        if not catch:
-            sys.__excepthook__(etype, e, tb)
-        else:
-            embed.prompt()
-
-    sys.excepthook = excepthook
+#    def excepthook(etype, e, tb):
+#        global last_fail
+#
+#        catch = False
+#
+#        if isinstance(e, NameError):
+#            catch = True
+#
+#        if isinstance(e, KeyboardInterrupt):
+#            print("\r\nKeyboardInterrupt")
+#            return embed.prompt()
+#
+#        if catch or isinstance(e, SyntaxError) and (e.filename == "<stdin>"):
+#            catch = True
+#            cmdline = embed.readline().strip()
+#
+#            # TODO: far from perfect !
+#            if cmdline.find("await ") >= 0:
+#                import aio.toplevel
+#
+#                aio.create_task(
+#                    aio.toplevel.retry(
+#                        cmdline,
+#                        (
+#                            etype,
+#                            e,
+#                            tb,
+#                        ),
+#                    )
+#                )
+#                # no prompt we're going async exec on aio now
+#                return
+#
+#            # index = readline.get_current_history_length()
+#
+#            # asyncio.get_event_loop().create_task(retry(index))
+#            # store trace
+#            # last_fail.append([etype, e, tb])
+#
+#            catch = _process_args(cmdline.strip().split(";"), {})
+#
+#        if not catch:
+#            sys.__excepthook__(etype, e, tb)
+#        else:
+#            embed.prompt()
+#
+#    sys.excepthook = excepthook
 
 
 try:

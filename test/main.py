@@ -28,6 +28,12 @@ class Moving_bmp(Thread):
                 way = -way
             screen.blit( bmp, (50+(way*decal), 50 + (-way*decal)) )
 
+# ok model
+
+def color_background(win):
+    while not aio.exit:
+        win.fill( (count % 50, count % 50, count % 50) )
+        yield aio
 
 def moving_bmp(win):
     global count
@@ -42,28 +48,23 @@ def moving_bmp(win):
         yield aio
 
 
-
-
 def moving_png(win):
     global count
     try:
         png = pygame.image.load( "pygc.png" )
-        way = 1
-        while not aio.exit:
-            decal = abs(count) % 100
-            if not decal:
-                way = -way
-
-            win.blit( png, (200+(way*decal), 100 + (way*decal) ) )
-            yield aio
     except:
         print("png support error upgrade SDL_image !")
+        return
 
-
-def color_background(win):
+    way = 1
     while not aio.exit:
-        win.fill( (count % 50, count % 50, count % 50) )
+        decal = abs(count) % 100
+        if not decal:
+            way = -way
+
+        win.blit( png, (200+(way*decal), 100 + (way*decal) ) )
         yield aio
+
 
 
 async def main():
@@ -77,10 +78,17 @@ async def main():
     # still bugs in that thread model
     #mbmp = Moving_bmp()
 
-    mbmp = Thread(target=moving_bmp, args=[win])
-    mpng = Thread(target=moving_png, args=[win])
 
-    mbg = Thread(target=color_background, args=[win])
+    # Green threads are ordered at runtime unlike system threads.
+
+    # erase and fill
+    Thread(target=color_background, args=[win]).start()
+
+    # 1st object to draw
+    Thread(target=moving_png, args=[win]).start()
+
+    # 2nd
+    Thread(target=moving_bmp, args=[win]).start()
 
 
     while True:
@@ -93,29 +101,14 @@ async def main():
 """
         )
 
-        if count == 0:
-            # Green threads are ordered at runtime unlike system threads.
-
-            # erase and fill
-            mbg.start()
-
-            # 1st object to draw
-            mpng.start()
-
-            # 2nd
-            mbmp.start()
-
-
-
-
         pygame.display.update()
         await asyncio.sleep(0)
 
         if count < -60 * 30: # about * seconds
-            pygame.quit()
-            return
+            break
 
         count = count - 1
 
+    pygame.quit()
 
 asyncio.run(main())

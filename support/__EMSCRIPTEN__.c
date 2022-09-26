@@ -199,7 +199,6 @@ embed_run_script(PyObject *self, PyObject *argv) {
     return Py_BuildValue("s", emscripten_run_script_string(code) );
 }
 
-
 static PyObject *
 embed_eval(PyObject *self, PyObject *argv) {
     char *code = NULL;
@@ -220,12 +219,31 @@ embed_flush(PyObject *self, PyObject *_null) {
     Py_RETURN_NONE;
 }
 
+static int sys_ps = 1;
+
+static PyObject *
+embed_set_ps1(PyObject *self, PyObject *_null) {
+    sys_ps = 1;
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+embed_set_ps2(PyObject *self, PyObject *_null) {
+    sys_ps = 2;
+    Py_RETURN_NONE;
+}
+
 static PyObject *
 embed_prompt(PyObject *self, PyObject *_null) {
-    fprintf( stderr, ">>> ");
+    if (sys_ps==1)
+        fprintf( stderr, ">>> ");
+    else
+        fprintf( stderr, "... ");
     embed_flush(self,_null);
     Py_RETURN_NONE;
 }
+
+
 
 static PyObject *
 embed_isatty(PyObject *self, PyObject *argv) {
@@ -249,18 +267,26 @@ embed_get_sdl_version(PyObject *self, PyObject *_null)
 
 static PyMethodDef mod_embed_methods[] = {
     {"run", (PyCFunction)embed_run, METH_VARARGS | METH_KEYWORDS, "start aio stepping"},
+
+    {"preload", (PyCFunction)embed_preload,  METH_VARARGS, "emscripten_run_preload_plugins"},
     {"dlopen", (PyCFunction)embed_dlopen, METH_VARARGS | METH_KEYWORDS, ""},
     {"dlcall", (PyCFunction)embed_dlcall, METH_VARARGS | METH_KEYWORDS, ""},
+
     {"counter", (PyCFunction)embed_counter, METH_VARARGS | METH_KEYWORDS, "read aio loop pass counter"},
-    {"test", (PyCFunction)embed_test, METH_VARARGS | METH_KEYWORDS, "test"},
-    {"preload", (PyCFunction)embed_preload,  METH_VARARGS, "emscripten_run_preload_plugins"},
+
     {"symlink", (PyCFunction)embed_symlink,  METH_VARARGS, "FS.symlink"},
     {"run_script", (PyCFunction)embed_run_script,  METH_VARARGS, "run js"},
     {"eval", (PyCFunction)embed_eval,  METH_VARARGS, "run js eval()"},
     {"readline", (PyCFunction)embed_readline,  METH_NOARGS, "get current line"},
     {"flush", (PyCFunction)embed_flush,  METH_NOARGS, "flush stdio+stderr"},
-    {"prompt", (PyCFunction)embed_prompt,  METH_NOARGS, "output >>> "},
+
+    {"set_ps1", (PyCFunction)embed_set_ps1,  METH_NOARGS, "set prompt output to >>> "},
+    {"set_ps2", (PyCFunction)embed_set_ps2,  METH_NOARGS, "set prompt output to ... "},
+    {"prompt", (PyCFunction)embed_prompt,  METH_NOARGS, "output the prompt"},
+
     {"isatty", (PyCFunction)embed_isatty,  METH_VARARGS, "isatty(int fd)"},
+
+    {"test", (PyCFunction)embed_test, METH_VARARGS | METH_KEYWORDS, "test"},
     {"get_sdl_version", embed_get_sdl_version, METH_NOARGS, "get_sdl_version"},
     {NULL, NULL, 0, NULL}
 };
@@ -311,146 +337,129 @@ struct timeval time_last, time_current, time_lapse;
 #define FD_BUFFER_MAX 2048
 
 
-FILE *io_fd[FD_MAX];
+FILE *io_file[FD_MAX];
 char *io_shm[FD_MAX];
 int io_stdin_filenum;
+int io_raw_filenum;
+int io_rcon_filenum;
+
 int wa_panic = 0;
 
 #define LOG_V puts
 #define wa_break { wa_panic=1;goto panic; }
-#define stdin_cstr io_shm[io_stdin_filenum]
+
+
+#define IO_RAW 3
+#define IO_RCON 4
 
 /*
     io_shm is a raw keyboard buffer
-    io_fd is the readline/file/socket interface
+    io_file is the readline/file/socket interface
 */
+static int embed_readline_bufsize = 0;
+static int embed_readline_cursor = 0;
+
 static PyObject *
 embed_readline(PyObject *self, PyObject *_null) {
-    return Py_BuildValue("s", io_shm[io_stdin_filenum] );
+#   define file io_file[0]
+    char buf[FD_BUFFER_MAX];
+    buf[0]=0;
+
+    fseek(file, embed_readline_cursor, SEEK_SET);
+    fgets(&buf[0], FD_BUFFER_MAX, file);
+
+    embed_readline_cursor += strlen(buf);
+
+    if ( embed_readline_cursor && (embed_readline_cursor == embed_readline_bufsize) ) {
+        rewind(file);
+        ftruncate(fileno(file), 0);
+        embed_readline_cursor = 0;
+        embed_readline_bufsize = ftell(file);
+    }
+#   undef file
+    return Py_BuildValue("s", buf );
 }
+
+int io_file_select(int fdnum) {
+    int datalen = strlen( io_shm[fdnum] );
+
+    if (datalen) {
+#       define file io_file[fdnum]
+        fwrite(io_shm[fdnum], 1, datalen, file);
+
+        if (fdnum == IO_RCON) {
+            rewind(file);
+            ftruncate(fileno(file), datalen);
+        } else {
+            // readline or getc may not consume data each loop
+        }
+#       undef file
+        io_shm[fdnum][0] = 0;
+        io_shm[fdnum][1] = 0;
+    }
+    return datalen;
+}
+
 
 em_callback_func
 main_iteration(void) {
 
+    // fill stdin file with raw keyboard buffer
+    int datalen= 0;
+    int lines = 0;
 
-    if (!wa_panic) {
+    //int silent = 1;
+    int silent = 0;
 
-        // first pass coming back from js
-        // if anything js was planned from main() it should be done by now.
-        if (embed && embed++) {
-            // run a frame.
-            PyRun_SimpleString("aio.step()");
-        }
-
-// REPL + PyRun_SimpleString asked from wasm vm host .
-
-        gettimeofday(&time_current, NULL);
-        timersub(&time_current, &time_last, &time_lapse);
-
-//TODO put a user-def value to get slow func
-        if (time_lapse.tv_usec>1) {
-
-            gettimeofday(&time_last, NULL);
-
-            if ( stdin_cstr[0] ) {
-
-#define file io_fd[0]
-                int silent = 0;
-
-                if ( stdin_cstr[0] == '#' ) {
-                    silent = (stdin_cstr[1] == '!') ;
-                    // special message display it on console
-                    if (!silent)
-                        puts(stdin_cstr);
-                }
-
-// TODO: only redirect keyboard buffer to fd if \n found.
-// and implement getch for raw mode.
-
-                fprintf( file ,"%s", stdin_cstr );
-
-                if ( !fseek(file, 0L, SEEK_END) ) {
-                    if ( ftell(file) ) {
-                        rewind(file);
-                    }
-                }
-
-                int line = 0;
-                char buf[FD_BUFFER_MAX];
-
-                while( fgets(&buf[0], FD_BUFFER_MAX, file) ) {
-                    line++;
-                    //fprintf( stderr, "%d: %s", line, buf );
-                }
-
-                rewind(file);
-
-
-                if (line>1) {
-                    line=0;
-                    while( fgets(&buf[0], FD_BUFFER_MAX, file) ) {
-                        line++;
-                        if (!silent)
-                            fprintf( stderr, "%d: %s", line, buf );
-                    }
-                    rewind(file);
-                    PyRun_SimpleFile( file, "<stdin>");
-                } else {
-                    line = 0;
-                    while( !PyRun_InteractiveOne( file, "<stdin>") ) line++;
-                }
-
-                if (line) {
-                    fprintf( stdout, "%c", 4);
-                    if (!silent)
-                        fprintf( stderr, ">>> %c", 4);
-                }
-
-                // reset stdin
-                stdin_cstr[0] = 0;
-                stdin_cstr[1] = 0;
-                rewind(file);
-                // ? no op ?
-                ftruncate(io_stdin_filenum, 0);
-
+    if ( (datalen =  io_file_select(IO_RCON)) ) {
+#       define file io_file[IO_RCON]
+        char buf[FD_BUFFER_MAX];
+        while( fgets(&buf[0], FD_BUFFER_MAX, file) ) {
+            if (!lines && (strlen(buf)>1)){
+                silent = ( buf[0] == '#' ) && (buf[1] == '!');
             }
-
-        // TODO: raw mode auto flush
-
+            lines++;
+            if (!silent)
+                fprintf( stderr, "%d: %s", lines, buf );
         }
-    } else {
 
-//panic:
-        pymain_free();
-        emscripten_cancel_main_loop();
-        puts(" ---------- done ----------");
+        //printf("rcon data %i lines=%i\n", datalen, lines);
+
+        rewind(file);
+        if (lines>1)  {
+            PyRun_SimpleFile( file, "<stdin>");
+        } else {
+            lines = 0;
+            while( !PyRun_InteractiveOne( file, "<stdin>") ) lines++;
+        }
+        rewind(file);
+#       undef file
+    }
+
+    if ( (datalen =  io_file_select(IO_RAW)) )
+        printf("raw data %i\n", datalen);
+
+    if ( (datalen =  io_file_select(0)) ) {
+        embed_readline_bufsize += datalen;
+        //printf("stdin data q+%i / q=%i dq=%i\n", datalen, embed_readline_bufsize, embed_readline_cursor);
+    }
+
+    // first pass coming back from js
+    // if anything js was planned from main() it should be done by now.
+    if (embed && embed++) {
+        // run a frame.
+        PyRun_SimpleString("aio.step()");
     }
     HOST_RETURN(0);
 }
 
-#undef file
-#undef stdin_cstr
 
 PyStatus status;
-
-/*
-EM_BOOL
-on_keyboard_event(int type, const EmscriptenKeyboardEvent *event, void *user_data) {
-    puts("canvas keyboard event");
-    return false;
-}
-
-SDL_Window *window;
-SDL_Renderer *renderer;
-
-*/
-
 
 int
 main(int argc, char **argv)
 {
     gettimeofday(&time_last, NULL);
-    //LOG_V("---------- SDL2 on #canvas + pygame ---------");
 
     _PyArgv args = {
         .argc = argc,
@@ -482,7 +491,6 @@ main(int argc, char **argv)
     setenv("PYTHONINTMAXSTRDIGITS", "0", 0);
     setenv("LANG", "en_US.UTF-8", 0);
 
-
 // force
     setenv("PYTHONHOME","/usr", 1);
     setenv("PYTHONUNBUFFERED", "1", 1);
@@ -513,49 +521,38 @@ main(int argc, char **argv)
     }
 
     if (!mkdir("dev/fd", 0700)) {
-       LOG_V("no 'dev/fd' directory, creating one ...");
+       //LOG_V("no 'dev/fd' directory, creating one ...");
+    }
+    if (!mkdir("dev/input", 0700)) {
+       LOG_V("no 'dev/input' directory, creating one ...");
     }
 
-/* ????
->>> ls /proc/self/fd
-[Errno 54] Not a directory: '/proc/self/fd'
->>> cat /proc/self/fd
-[Errno 31] Is a directory
->>> cd /proc/self/fd
-[  /proc/self/fd  ]
->>> ls
-[Errno 54] Not a directory: '.'
-
-    if (!mkdir("proc", 0700)) {
-       LOG_V("no 'proc' directory, creating one ...");
-    }
-    if (!mkdir("proc/self", 0700)) {
-       LOG_V("no 'proc/self' directory, creating one ...");
-    }
-    if (!mkdir("proc/self/fd", 0700)) {
-       LOG_V("no 'proc/self/fd' directory, creating one ...");
-    }
-*/
     if (!mkdir("tmp", 0700)) {
        LOG_V("no 'tmp' directory, creating one ...");
     }
 
 
-    io_fd[0] = fopen("dev/fd/0", "w+" );
-    io_stdin_filenum = fileno(io_fd[0]);
-// FD LEAK!
-    io_shm[io_stdin_filenum] =  (char *) malloc(FD_BUFFER_MAX);
+    for (int i=0;i<FD_MAX;i++)
+        io_shm[i]= NULL;
 
-    for (int i=0;i<FD_BUFFER_MAX;i++)
-        io_shm[io_stdin_filenum][i]=0;
+    io_file[0] = fopen("dev/fd/0", "w+" );
+    io_stdin_filenum = fileno(io_file[0]);
 
+    io_file[IO_RAW] = fopen("dev/cons", "w+" );
+    io_raw_filenum = fileno(io_file[IO_RAW]);
 
-//TODO: check if shm is cleared ?
-// https://stackoverflow.com/questions/7507638/any-standard-mechanism-for-detecting-if-a-javascript-is-executing-as-a-webworker
-// https://stackoverflow.com/questions/7931182/reliably-detect-if-the-script-is-executing-in-a-web-worker
+    io_file[IO_RCON] = fopen("dev/rcon", "w+" );
+    io_rcon_filenum = fileno(io_file[IO_RCON]);
+
+    io_shm[0] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
+    io_shm[IO_RAW] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
+    io_shm[IO_RCON] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
 
 EM_ASM({
-    var shm_stdin = $0;
+    const shm_stdin = $1;
+    const shm_rawinput = $2;
+    const shm_rcon = $3;
+
     Module.printErr = Module.print;
     const is_worker = (typeof WorkerGlobalScope !== 'undefined') && self instanceof WorkerGlobalScope;
 
@@ -571,15 +568,31 @@ EM_ASM({
     if (is_worker) {
         console.log("PyMain: running in a worker, setting onCustomMessage");
         function onCustomMessage(event) {
-            stringToUTF8( utf8encode(data), shm_stdin, $1);
+            console.log("onCustomMessage:", event);
+            stringToUTF8( utf8encode(data), shm_rcon, $0);
         };
 
         Module['onCustomMessage'] = onCustomMessage;
 
     } else {
         console.log("PyMain: running in main thread");
-        Module.postMessage = function custom_postMessage(data) {
-            stringToUTF8( data, shm_stdin, $1);
+        Module.postMessage = function custom_postMessage(event) {
+            switch (event.type) {
+                case "raw" :  {
+                    stringToUTF8( event.data, shm_rawinput, $0);
+                    break;
+                }
+
+                case "stdin" :  {
+                    stringToUTF8( event.data, shm_stdin, $0);
+                    break;
+                }
+                case "rcon" :  {
+                    stringToUTF8( event.data, shm_rcon, $0);
+                    break;
+                }
+                default : console.warn("custom_postMessage?", event);
+            }
         };
         window.main_chook = true;
     }
@@ -592,16 +605,17 @@ EM_ASM({
     } else {
         console.error("PyMain: BrowserFS not found");
     }
-    if (0) {
+    if (1) {
         SYSCALLS.getStreamFromFD(0).tty = true;
         SYSCALLS.getStreamFromFD(1).tty = true;
         SYSCALLS.getStreamFromFD(2).tty = true;
     }
-}, io_shm[io_stdin_filenum], FD_BUFFER_MAX);
+}, FD_BUFFER_MAX, io_shm[0], io_shm[IO_RAW], io_shm[IO_RCON]);
 
 
     PyRun_SimpleString("import sys, os, json, builtins, shutil, time;");
 
+/*
     #if 1
         // display a nice six logo python-powered in xterm.js
         #define MAX 132
@@ -626,7 +640,9 @@ EM_ASM({
 
     PyRun_SimpleString("print('CPython',sys.version, '\\n', file=sys.stderr);");
 
-    embed_flush(NULL,NULL);
+    //embed_flush(NULL,NULL);
+*/
+
 
     // SDL2 basic init
     {

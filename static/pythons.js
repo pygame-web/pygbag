@@ -286,6 +286,7 @@ async function _rcp(url, store) {
     }
 }
 
+
 const vm = {
         APK : "org.python",
 
@@ -295,6 +296,8 @@ const vm = {
         sys_argv : [],
 
         script : {},
+
+        is_ready : 0,
 
         DEPRECATED_wget_sync : DEPRECATED_wget_sync,
 
@@ -367,12 +370,32 @@ const vm = {
         },
 
         PyRun_SimpleString : function(code) {
+            const ud = { "type" : "rcon", "data" : code }
             if (window.worker) {
-                window.worker.postMessage({ target: 'custom', userData: code });
+                window.worker.postMessage({ target: 'custom', userData: ud });
             } else {
-                this.postMessage(code);
+                this.postMessage(ud);
             }
         },
+
+        readline : function(line) {
+            const ud = { "type" : "stdin", "data" : line }
+            if (window.worker) {
+                window.worker.postMessage({ target: 'custom', userData: ud });
+            } else {
+                this.postMessage(ud);
+            }
+        },
+
+        rawstdin : function (char) {
+            const ud = { "type" : "raw", "data" : char }
+            if (window.worker) {
+                window.worker.postMessage({ target: 'custom', userData: ud });
+            } else {
+                this.postMessage(ud);
+            }
+        },
+
 
         preRun : [ prerun ],
         postRun : [ function (VM) {
@@ -385,11 +408,11 @@ const vm = {
 async function custom_postrun() {
     console.warn("VM.postrun")
 
-    if (await _rcp(vm.config.cdn + "pythonrc.py","/data/data/pythonrc.py")) {
+    if (await _rcp(vm.config.cdn + "pythonrc.py","/data/data/org.python/assets/pythonrc.py")) {
 
         vm.FS.writeFile( "/data/data/org.python/assets/main.py" , vm.script.blocks[0] )
 
-        var runsite = `#!
+        var runsite = `#!site
 print(" ")
 print("* site.py from pythons.js *")
 import os, sys, json
@@ -400,8 +423,8 @@ if os.path.isdir(PyConfig['prefix']):
     os.chdir(PyConfig['prefix'])
 
 for what,fn in (
-    ["pythonrc", "/data/data/pythonrc.py"],
-    ["pythonstartup/usersite", "/data/data/org.python/assets/main.py"],
+        ["pythonrc", "/data/data/org.python/assets/pythonrc.py"],
+        ["pythonstartup/usersite", "/data/data/org.python/assets/main.py"],
     ):
     print(" ")
     print(f"* {what} from {fn} *")
@@ -409,7 +432,7 @@ for what,fn in (
         exec(open(fn).read(), globals(), globals())
     else:
         print(fn,"not found")
-
+print("* site.py done *")
 #
 `
         python.PyRun_SimpleString(runsite)
@@ -437,7 +460,9 @@ function feat_gui(debug_hidden) {
         canvas.style.top = "0px"
         canvas.style.right = "0px"
         document.body.appendChild(canvas)
-        var ctx = canvas.getContext("2d")
+console.warn("TODO: test 2D/3D reservation")
+
+        //var ctx = canvas.getContext("2d")
     } else {
         // user managed canvas
         config.user_canvas = config.user_canvas || 1
@@ -445,55 +470,57 @@ function feat_gui(debug_hidden) {
 
     vm.canvas = canvas
 /*
-    var gl
-    const gl_aa = false
+    function GL_TEST() {
+        var gl
+        const gl_aa = false
 
-    try {
-        gl = canvas.getContext("webgl2")
-    } catch (x) {
-        console.error("FIXME NO WEBGL2:", x)
-        gl = null;
-    }
-
-    if (!gl) {
         try {
-            gl = canvas.getContext("webgl");
+            gl = canvas.getContext("webgl2")
         } catch (x) {
-            console.error("FIXME WEBGL:", x)
+            console.error("FIXME NO WEBGL2:", x)
             gl = null;
         }
-    }
 
-    if (!gl) {
-        try {
-            gl = canvas.getContext("experimental-webgl");
-        } catch (x) {
-            console.error("FIXME experimental-webgl :", x)
-            gl = null;
+        if (!gl) {
+            try {
+                gl = canvas.getContext("webgl");
+            } catch (x) {
+                console.error("FIXME WEBGL:", x)
+                gl = null;
+            }
+        }
+
+        if (!gl) {
+            try {
+                gl = canvas.getContext("experimental-webgl");
+            } catch (x) {
+                console.error("FIXME experimental-webgl :", x)
+                gl = null;
+            }
+        }
+
+        console.log("GL :", gl)
+        if (gl) {
+            var ext = gl.getExtension('OES_standard_derivatives');
+            if (!ext)
+                console.log('GL: [OES_standard_derivatives] supported');
+            else
+                console.log('GL: Error [OES_standard_derivatives] derivatives *not* supported');
+
+
+            var antialias = gl.getContextAttributes().antialias;
+            console.log('GL: antialias = '+antialias);
+
+            var aasize = gl.getParameter(gl.SAMPLES);
+            console.log('GL: antialias size = '+aasize );
+        } else  {
+            console.error("Uh, your browser doesn't support WebGL. This application won't work.");
+            return;
+
         }
     }
-
-    console.log("GL :", gl)
-    if (gl) {
-        var ext = gl.getExtension('OES_standard_derivatives');
-        if (!ext)
-            console.log('GL: [OES_standard_derivatives] supported');
-        else
-            console.log('GL: Error [OES_standard_derivatives] derivatives *not* supported');
-
-
-        var antialias = gl.getContextAttributes().antialias;
-        console.log('GL: antialias = '+antialias);
-
-        var aasize = gl.getParameter(gl.SAMPLES);
-        console.log('GL: antialias size = '+aasize );
-    } else  {
-        console.error("Uh, your browser doesn't support WebGL. This application won't work.");
-        return;
-
-    }
+    setTimeout(GL_TEST,500);
 */
-
 
     // window resize
     function window_canvas_adjust(divider) {
@@ -1140,7 +1167,7 @@ function queue_event(evname, data) {
     const jsdata = JSON.stringify(data)
     EQ.push( { name : evname, data : jsdata} )
 
-    if (window.python) {
+    if (window.python && window.python.is_ready) {
         while (EQ.length>0) {
             const ev = EQ.shift()
             python.PyRun_SimpleString(`#!
@@ -1246,7 +1273,6 @@ function MM_autoevents(track) {
         return
     }
 
-    media.MM_auto = 1
     media.addEventListener("canplaythrough", (event) => {
         track.ready = true
         if (track.auto)
@@ -1322,6 +1348,7 @@ MM.prepare = function prepare(url, cfg) {
                 "pos"   : 0,
                 "io"    : transport,
                 "ready" : undefined,
+                "auto"  : false,
                 "avail" : undefined,
                 "media" : undefined,
                 "data"  : undefined
@@ -1406,28 +1433,38 @@ MM.load = function load(trackid, loops) {
 
 
 MM.play = function play(trackid, loops, start, fade_ms) {
-//console.log("MM.play",trackid, loops, MM[trackid] )
-            const track = MM[trackid]
-            track.loops = loops
-            if (track.ready)
+    console.log("MM.play",trackid, loops, MM[trackid] )
+    const track = MM[trackid]
+    track.loops = loops
+    if (track.ready)
+        track.media.play()
+    else {
+        console.warn("Cannot play before user interaction, will retry", track )
+        function play_asap() {
+            if (track.ready) {
                 track.media.play()
-            else {
-                console.warn("Cannot play before user interaction, will retry", track )
-                function play_asap() {
-                    if (track.ready) {
-                        track.media.play()
-                    } else {
-                        setTimeout(play_asap, 500)
-                    }
-                }
-                play_asap()
+            } else {
+                setTimeout(play_asap, 500)
             }
+        }
+        play_asap()
+    }
 }
 
-MM.stop = function stop(trackid) {
-//console.log("MM.stop", trackid, MM[trackid] )
-            MM[trackid].media.pause()
+MM.pause = function pause(trackid) {
+    console.log("MM.pause", trackid, MM[trackid] )
+    MM[trackid].media.pause()
 }
+
+MM.set_volume = function set_volume(trackid, vol) {
+    MM[trackid].media.volume = 1 * vol
+}
+
+MM.set_volume = function get_volume(trackid, vol) {
+    return MM[trackid].media.volume
+}
+
+
 
 if (navigator.connection) {
     if ( navigator.connection.type === 'cellular' ) {
@@ -1528,7 +1565,9 @@ window.debug = function () {
                 window[e].hidden = debug_hidden
         }
     }
-    vm.PyRun_SimpleString("shell.uptime()")
+    vm.PyRun_SimpleString(`#!
+shell.uptime()
+`)
     window_resize()
 }
 

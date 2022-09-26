@@ -157,3 +157,7 @@ SUPPORT FOR STATIC MODULES :
 GENERIC PYGBAG SUPPORT OR PYGAME MODULE:
 
 [for generic help around pygbag](https://github.com/pygame-web/pygbag/blob/main/packages.d/pygame/README.md)
+
+GENERIC CPYTHON WASM:
+
+[python.org forum](https://discuss.python.org/c/webassembly/28)

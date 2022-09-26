@@ -37,89 +37,19 @@ def uy(*argv):
         acc += u(HEIGHT, REFY, v)
     return acc
 
-import ast
-import code
-import types
-import inspect
-
-class AsyncInteractiveConsole(code.InteractiveConsole):
-
-    def __init__(self, locals):
-        super().__init__(locals)
-        self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
-        self.test_code = "print('hello');await asyncio.sleep(1);print(' ... ');await asyncio.sleep(5);print('world')"
-        #self.future = None
 
 
-    def runcode(self, code):
-        print("runcode", code)
-        func = types.FunctionType(code, self.locals)
-        try:
-            coro = func()
-        except SystemExit:
-            raise
-        except KeyboardInterrupt as ex:
-            print(self,ex)
-            raise
-        except BaseException as ex:
-            sys.print_execption(ex)
+from aio.toplevel import AsyncInteractiveConsole
 
-        if not inspect.iscoroutine(coro):
-            print("result:", coro)
+def importer(want, ex=None, resume=None):
+    print(f"{want=}, {resume=}, {ex=}")
+    return asyncio.sleep(0)
 
-        print("async result:", coro)
-
-
-
-
-    def raw_input(self, prompt):
-        return self.test_code
-
-    async def interact(self, banner=None, exitmsg=None):
-        try:
-            sys.ps1
-        except AttributeError:
-            sys.ps1 = ">>> "
-        try:
-            sys.ps2
-        except AttributeError:
-            sys.ps2 = "... "
-
-        cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
-
-        if banner is None:
-            self.write("Python %s on %s\n%s\n(%s)\n" %
-                       (sys.version, sys.platform, cprt,
-                        self.__class__.__name__))
-        elif banner:
-            self.write("%s\n" % str(banner))
-        more = 0
-        while not aio.exit:
-            try:
-                if more:
-                    prompt = sys.ps2
-                else:
-                    prompt = sys.ps1
-                try:
-                    line = self.raw_input(prompt)
-                except EOFError:
-                    self.write("\n")
-                    break
-                else:
-                    more = self.push(line)
-            except KeyboardInterrupt:
-                self.write("\nKeyboardInterrupt\n")
-                self.resetbuffer()
-                more = 0
-
-        if exitmsg is None:
-            self.write('now exiting %s...\n' % self.__class__.__name__)
-        elif exitmsg != '':
-            self.write('%s\n' % exitmsg)
 
 
 if sys.platform in ("emscripten","wasi",):
 
+    platform.window.python.is_ready = True
 
     log =  platform.console
 
@@ -142,11 +72,11 @@ if sys.platform in ("emscripten","wasi",):
         global PyConfig, con
 
         # reset term
-        ESC("c")
+        # ESC("c")
 
 
         from types import SimpleNamespace
-        print(json.dumps(PyConfig, sort_keys=True, indent=4))
+        #print(json.dumps(PyConfig, sort_keys=True, indent=4))
         PyConfig = SimpleNamespace(**PyConfig)
 
 
@@ -160,12 +90,12 @@ if sys.platform in ("emscripten","wasi",):
         async with fopen('/archives/repo/index.json', 'r') as index:
             print(index.read())
 
-        if 0:
 
-            con = AsyncInteractiveConsole(globals())
-
-            await con.interact()
-
+        await AsyncInteractiveConsole(
+            globals(),
+            shell=shell,
+            importer=importer,
+        ).interact()
 
 
         if 1: #not pygame:

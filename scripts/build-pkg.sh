@@ -1,9 +1,5 @@
 #!/bin/bash
 
-DIST_DIR=$(pwd)/build/web/archives/$($SYS_PYTHON -c "import pygbag;print(pygbag.__version__)")
-DIST_DIR=$(echo $DIST_DIR|cut -f1-2 -d.)
-
-
 . scripts/vendoring.sh
 
 export PYMAJOR=$(echo -n $PYBUILD|cut -d. -f1)

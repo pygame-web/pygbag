@@ -226,6 +226,8 @@ then
         then
             cp -r static/* ${DIST_DIR}/
             cp pygbag/support/pythonrc.py ${DIST_DIR}/pythonrc.py
+            # for simulator
+            cp pygbag/support/pythonrc.py ${SDKROOT}/support/
         else
             [ -f ${DIST_DIR}/pythonrc.py ] || ln pygbag/support/pythonrc.py ${DIST_DIR}/pythonrc.py
             pushd static
