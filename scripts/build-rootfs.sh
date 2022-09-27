@@ -30,6 +30,7 @@ for mod in (M1+M2).split(', '):
     except:
         pass
 try:
+    sys.stdout.reconfigure(encoding='cp437')
     sys.stdout.reconfigure(encoding='utf-16')
     sys.stdout.reconfigure(encoding='utf-8')
 except:
@@ -50,7 +51,7 @@ import code
 # for wget to overload urlretrieve
 import urllib.request
 
-# intaller "cp437"
+# installer "cp437"
 import compileall, csv, configparser
 
 # micropip

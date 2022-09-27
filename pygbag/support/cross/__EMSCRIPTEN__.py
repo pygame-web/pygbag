@@ -151,33 +151,33 @@ if is_browser:
 
 # =============================  PRELOADING      ==============================
 
+preld_counter = -1
 
 ROOTDIR = f"/data/data/{sys.argv[0]}/assets"
 
 
 def explore(root):
-    global prelist, preloadedWasm, preloadedImages, preloadedAudios, counter
+    global prelist, preld_counter
 
-    if counter < 0:
-        counter = 0
+    if preld_counter < 0:
+        preld_counter = 0
 
     import shutil
 
-    preloads = f"{preloadedImages} {preloadedAudios} {preloadedWasm}".split(" ")
+    preloads = f"so".split(" ")
     print(f"194: preloads {preloads}")
 
     for current, dirnames, filenames in os.walk(root):
         for filename in filenames:
-            if filename.find(".") > 1:
-                ext = filename.rsplit(".", 1)[-1].lower()
-                if ext in preloads:
-                    counter += 1
-                    src = f"{current}/{filename}"
-                    dst = "/tmp/pre" + str(counter).zfill(4) + "." + ext
-                    print(src, "->", dst)
-                    shutil.copyfile(src, dst)
-                    prelist[src] = dst
-                    embed.preload(dst)
+            if filename.endswith(".so"):
+                ext = "so"
+                preld_counter += 1
+                src = f"{current}/{filename}"
+                dst = "/tmp/pre" + str(preld_counter).zfill(4) + "." + ext
+                print(src, "->", dst)
+                shutil.copyfile(src, dst)
+                prelist[src] = dst
+                embed.preload(dst)
 
 
 def fix_preload_table():
@@ -234,7 +234,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
     preloadedAudios = "wav ogg mp4"
 
     def preload_apk(p=None):
-        global counter, prelist, ROOTDIR
+        global preld_counter, prelist, ROOTDIR
         global explore, preloadedWasm, preloadedImages, preloadedAudios
         ROOTDIR = p or ROOTDIR
         if os.path.isdir(ROOTDIR):
@@ -245,19 +245,19 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
 
         ROOTDIR = os.getcwd()
         LSRC = len(ROOTDIR) + 1
-        counter = -1
+        preld_counter = -1
         prelist = {}
 
         sys.path.insert(0, ROOTDIR)
 
         explore(ROOTDIR)
 
-        if counter < 0:
+        if preld_counter < 0:
             pdb(f"{ROOTDIR=}")
             pdb(f"{os.getcwd()=}")
 
-        print(f"assets found :", counter)
-        if not counter:
+        print(f"assets found :", preld_counter)
+        if not preld_counter:
             embed.run()
 
         return True

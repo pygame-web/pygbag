@@ -165,7 +165,7 @@ BUFFERSIZE = 2048
 
 def patch_pygame_mixer_music_set_volume(vol:float):
     if vol<0:return
-    if vold>1:vol=1.0
+    if vol>1:vol=1.0
     trackid = tracks["current"]
     if trackid:
         window.MM.set_volume(trackid, vol)

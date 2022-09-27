@@ -38,11 +38,97 @@ def uy(*argv):
     return acc
 
 
-
+import inspect
+import sysconfig
+import importlib
 from aio.toplevel import AsyncInteractiveConsole
 
+
+async def pv(track, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+
+    # Progress Bar Printing Function
+    def print_pg_bar(total, iteration):
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        filledLength = int(length * iteration // total)
+        bar = fill * filledLength + '-' * (length - filledLength)
+        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+
+    # Update Progress Bar
+    while True:
+        print_pg_bar(track.len or 100, track.pos or 0)
+        if track.avail:
+            break
+        await asyncio.sleep(.5)
+
+    # Print New Line on Complete
+    print()
+
+
+async def get_repo_pkg(repo, pkg, resume , ex):
+    print("-"*40)
+    pkg_url = f"{repo['-CDN-']}{repo[pkg]}"
+    print("getting", pkg_url )
+
+    # get pkg
+
+    pkg_file =  f"/tmp/{repo[pkg].rsplit('/',1)[-1]}"
+
+
+    cfg = {
+        "io": "url",
+        "type":"fs",
+        "path" : pkg_file
+    }
+
+
+    track = platform.window.MM.prepare(pkg_url, json.dumps(cfg))
+    await pv(track)
+
+    platlib = sysconfig.get_paths()["platlib"]
+    if platlib not in sys.path:
+        sys.path.append(platlib)
+    try:
+        aio.toplevel.install(pkg_file)
+    except Exception as rx:
+        pdb(f"failed to install {pkg_file}")
+        sys.print_exception(rx)
+
+    await asyncio.sleep(0)
+
+    try:
+        __EMSCRIPTEN__.explore(platlib)
+        await asyncio.sleep(0)
+        importlib.invalidate_caches()
+        print(f"{pkg_file} installed")
+    except Exception as rx:
+        pdb(f"failed to preload {pkg_file}")
+        sys.print_exception(rx)
+
+
+    if resume and ex:
+        try:
+            if inspect.isawaitable(resume):
+                print(f"{resume=} is an awaitable")
+                return resume()
+            else:
+                print(f"{resume=} is not awaitable")
+                resume()
+                return asyncio.sleep(0)
+        except Exception as resume_ex:
+            sys.print_exception(ex, limit=-1)
+        finally:
+            print("-"*40)
+    return None
+
+
+
 def importer(want, ex=None, resume=None):
-    print(f"{want=}, {resume=}, {ex=}")
+    global PyConfig
+    for repo in PyConfig.pkg_repolist:
+        if want in repo:
+            return get_repo_pkg(repo, want, resume, ex)
+        else:
+            print(f"PKG NOT FOUND : {want=}, {resume=}, {ex=}")
     return asyncio.sleep(0)
 
 
@@ -72,30 +158,46 @@ if sys.platform in ("emscripten","wasi",):
         global PyConfig, con
 
         # reset term
-        # ESC("c")
+        ESC("c")
+
+        sys.argv = PyConfig.pop("argv", [])
 
 
         from types import SimpleNamespace
-        #print(json.dumps(PyConfig, sort_keys=True, indent=4))
-        PyConfig = SimpleNamespace(**PyConfig)
 
+
+        #print(json.dumps(PyConfig, sort_keys=True, indent=4))
+
+
+        PyConfig = SimpleNamespace(**PyConfig)
+        PyConfig.pkg_index = ['https://pygame-web.github.io/archives/repo/']
 
         class VFS:
             from pathlib import Path
-            script = Path(PyConfig.orig_argv[-1])
+            script = Path(PyConfig.run_filename) # or sys.argv[0]
             if script.suffix.lower() == ".py":
                 print("Loading:", script )
 
+        PyConfig.pkg_repolist = []
+        abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+        for repo in PyConfig.pkg_index:
+            async with fopen(f'{repo}index.json', 'r') as index:
+                try:
+                    data = index.read().replace("<abi>",abitag)
+                    repo = json.loads(data)
+                except:
+                    pdb(f"{repo}: malformed json index {data}")
+                    continue
+                PyConfig.pkg_repolist.append( repo )
 
-        async with fopen('/archives/repo/index.json', 'r') as index:
-            print(index.read())
 
+        async_console = AsyncInteractiveConsole(
+                globals(),
+                shell=shell,
+                importer=importer,
+            ).interact()
 
-        await AsyncInteractiveConsole(
-            globals(),
-            shell=shell,
-            importer=importer,
-        ).interact()
+        aio.create_task(async_console)
 
 
         if 1: #not pygame:

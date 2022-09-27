@@ -347,6 +347,16 @@ if defined("embed") and hasattr(embed, "readline"):
             return False
 
         @classmethod
+        def install(cls, *argv, **env):
+            import aio.toplevel
+            for pkg_file in argv:
+                try:
+                    aio.toplevel.install(pkg_file)
+                    yield f"{pkg_file} installed"
+                except Exception as ex:
+                    sys.print_exception(ex)
+
+        @classmethod
         def dll(cls, *argv):
             cdll = __import__("ctypes").CDLL(None)
             print(getattr(cdll, argv[0])(*argv[1:]))
