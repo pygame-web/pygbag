@@ -1171,7 +1171,7 @@ function queue_event(evname, data) {
         while (EQ.length>0) {
             const ev = EQ.shift()
             python.PyRun_SimpleString(`#!
-__EMSCRIPTEN__.EventTarget.build('${ev.name}', """${ev.data}""")
+__EMSCRIPTEN__.EventTarget.build('${ev.name}', '''${ev.data}''')
 `)
         }
     } else {
@@ -1204,7 +1204,10 @@ async function media_prepare(trackid) {
 
     if (track.type === "audio") {
         //console.log(`audio ${trackid}:${track.url} ready`)
-        return trackid
+    }
+
+    if (track.type === "fs") {
+        console.log(`fs ${trackid}:${track.url} => ${track.path} ready`)
     }
 
     if (track.type === "mount") {
@@ -1291,112 +1294,113 @@ function MM_autoevents(track) {
 }
 
 
-
-
-
-
 window.cross_dl = async function cross_dl(trackid, url, autoready) {
     var response = await fetch(url);
 
     const reader = response.body.getReader();
 
     const len = +response.headers.get("Content-Length");
-
-
+    const track = MM[trackid]
 
     // concatenate chunks into single Uint8Array
-    MM[trackid].data = new Uint8Array(len);
-    MM[trackid].pos = 0
-    MM[trackid].len = len
+    track.data = new Uint8Array(len);
+    track.pos = 0
+    track.len = len
 
-    console.warn(url, MM[trackid].len)
+    console.warn(url, track.len)
 
     while(true) {
         const {done, value} = await reader.read()
 
         if (done) {
-            MM[trackid].avail = true
-            return
+            track.avail = true
+            break
         }
 
-        MM[trackid].data.set(value, MM[trackid].pos)
+        track.data.set(value, track.pos)
 
-        MM[trackid].pos += value.length
+        track.pos += value.length
 
-        console.log(`${trackid}:${url} Received ${MM[trackid].pos} of ${MM[trackid].len}`)
+        //console.log(`${trackid}:${url} Received ${track.pos} of ${track.len}`)
     }
+
+    console.log(`${trackid}:${url} Received ${track.pos} of ${track.len} to ${track.path}`)
+    if (track.type === "fs" ) {
+        FS.writeFile(track.path, track.data)
+    }
+
 }
 
 
 MM.prepare = function prepare(url, cfg) {
-        MM.tracks++;
-        const trackid = MM.tracks
-        var audio
+    MM.tracks++;
+    const trackid = MM.tracks
+    var audio
 
-        cfg = JSON.parse(cfg)
+    cfg = JSON.parse(cfg)
 
 
-        const transport = cfg.io || 'packed'
-        const type = cfg.type || 'bin'
+    const transport = cfg.io || 'packed'
+    const type = cfg.type || 'fs'
 
-        MM[trackid] = { ...cfg, ...{
-                "trackid": trackid,
-                "type"  : type,
-                "url"   : url,
-                "error" : false,
-                "len"   : 0,
-                "pos"   : 0,
-                "io"    : transport,
-                "ready" : undefined,
-                "auto"  : false,
-                "avail" : undefined,
-                "media" : undefined,
-                "data"  : undefined
-            }
+    MM[trackid] = { ...cfg, ...{
+            "trackid": trackid,
+            "type"  : type,
+            "url"   : url,
+            "error" : false,
+            "len"   : 0,
+            "pos"   : 0,
+            "io"    : transport,
+            "ready" : undefined,
+            "auto"  : false,
+            "avail" : undefined,
+            "media" : undefined,
+            "data"  : undefined
         }
-        const track = MM[trackid]
+    }
+    const track = MM[trackid]
 
 //console.log("MM.prepare", trackid, transport, type)
 
-        if (transport === 'fs') {
-            if ( type === "audio" ) {
-                const blob = new Blob([FS.readFile(track.url)])
-                audio = new Audio(URL.createObjectURL(blob))
-                track.avail = true
-            } else {
-                console.error("fs transport is only for audio", JSON.stringify(track))
-                track.error = true
-                return track
-            }
+    if (transport === 'fs') {
+        if ( type === "audio" ) {
+            const blob = new Blob([FS.readFile(track.url)])
+            audio = new Audio(URL.createObjectURL(blob))
+            track.avail = true
+        } else {
+            console.error("fs transport is only for audio", JSON.stringify(track))
+            track.error = true
+            return track
         }
+    }
 
-        if (transport === "url" ) {
-            // audio tag can download itself
-            if ( type === "audio" ) {
-                audio = new Audio(url)
-                track.avail = true
-            } else {
+    if (transport === "url" ) {
+        // audio tag can download itself
+        if ( type === "audio" ) {
+            audio = new Audio(url)
+            track.avail = true
+        } else {
 console.log("MM.cross_dl", trackid, transport, type, url )
-                cross_dl(trackid, url)
-            }
+            cross_dl(trackid, url)
         }
+    }
 
 
-        if (audio) {
-            track.media = audio
+    if (audio) {
+        track.media = audio
 
-            track.set_volume = (v) => { track.media.volume = 0.0 + v }
-            track.get_volume = () => { return track.media.volume }
-            track.stop = () => { track.media.pause() }
+        track.set_volume = (v) => { track.media.volume = 0.0 + v }
+        track.get_volume = () => { return track.media.volume }
+        track.stop = () => { track.media.pause() }
 
-            track.play = (loops) => { MM_play( track, loops) }
+        track.play = (loops) => { MM_play( track, loops) }
 
-            MM_autoevents(track)
+        MM_autoevents(track)
 
-        }
+    }
 
 //console.log("MM.prepare", url,"queuing as",trackid)
-        media_prepare(trackid)
+    media_prepare(trackid)
 //console.log("MM.prepare", url,"queued as",trackid)
     return track
 }
@@ -1465,21 +1469,6 @@ MM.set_volume = function get_volume(trackid, vol) {
 }
 
 
-
-if (navigator.connection) {
-    if ( navigator.connection.type === 'cellular' ) {
-        console.warn("Connection:","Cellular")
-        if ( navigator.connection.downlinkMax <= 0.115) {
-            console.warn("Connection:","2G")
-        }
-    } else {
-        console.warn("Connection:","Wired")
-    }
-}
-
-
-
-
 window.chromakey = function(context, r,g,b, tolerance, alpha) {
     context = canvas.getContext('2d');
 
@@ -1533,6 +1522,18 @@ window.mobile = () => {
     }
 
     return mobile_check()
+}
+
+
+if (navigator.connection) {
+    if ( navigator.connection.type === 'cellular' ) {
+        console.warn("Connection:","Cellular")
+        if ( navigator.connection.downlinkMax <= 0.115) {
+            console.warn("Connection:","2G")
+        }
+    } else {
+        console.warn("Connection:","Wired")
+    }
 }
 
 
