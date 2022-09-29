@@ -18,7 +18,7 @@ def breakpointhook(*argv, **kw):
 
 def shed_yield():
     # TODO: coroutine id as pid
-    print("86", time_time() - aio.enter, aio.spent)
+    print("21", time_time() - aio.enter, aio.spent)
     return True
 
 
@@ -120,7 +120,6 @@ if is_browser:
             cli.append(listener)
 
         def build(self, evt_name, jsondata):
-            # print( evt_name, jsondata )
             self.events.append([evt_name, json.loads(jsondata)])
 
         # def dispatchEvent
@@ -135,7 +134,6 @@ if is_browser:
                     discarded = True
                     for client in self.clients.get(evtype, []):
                         is_coro = inspect.iscoroutinefunction(client)
-                        print("    -> ", is_coro, client)
                         discarded = False
                         if is_coro:
                             await client(SimpleNamespace(**evdata))
@@ -152,7 +150,7 @@ if is_browser:
 # =============================  PRELOADING      ==============================
 
 preld_counter = -1
-
+prelist = {}
 ROOTDIR = f"/data/data/{sys.argv[0]}/assets"
 
 
@@ -164,17 +162,13 @@ def explore(root):
 
     import shutil
 
-    preloads = f"so".split(" ")
-    print(f"194: preloads {preloads}")
-
     for current, dirnames, filenames in os.walk(root):
         for filename in filenames:
             if filename.endswith(".so"):
-                ext = "so"
                 preld_counter += 1
                 src = f"{current}/{filename}"
-                dst = "/tmp/pre" + str(preld_counter).zfill(4) + "." + ext
-                print(src, "->", dst)
+                dst = "/tmp/pre" + str(preld_counter).zfill(4) + ".so"
+                print(f"175 {src} -> {dst}")
                 shutil.copyfile(src, dst)
                 prelist[src] = dst
                 embed.preload(dst)
@@ -256,7 +250,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
             pdb(f"{ROOTDIR=}")
             pdb(f"{os.getcwd()=}")
 
-        print(f"assets found :", preld_counter)
+        print(f"269 assets found :", preld_counter)
         if not preld_counter:
             embed.run()
 
@@ -287,7 +281,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
             if loadermain:
                 if os.path.isfile("main.py"):
                     print(
-                        f"283: running {ROOTDIR}/{loadermain} for {sys.argv[0]} (deferred)"
+                        f"290: running {ROOTDIR}/{loadermain} for {sys.argv[0]} (deferred)"
                     )
                     aio.defer(execfile, [f"{ROOTDIR}/{loadermain}"], {})
                 else:
@@ -316,7 +310,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
         aio.started = True
         aio.create_task(EventTarget.process())
     else:
-        print("308: EventTarget delayed by loader")
+        print("319: EventTarget delayed by loader")
 
 
 #

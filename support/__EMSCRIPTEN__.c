@@ -68,25 +68,38 @@ self hosting:
 #endif
 
 #include <unistd.h>
-
+#include <sys/stat.h>  // for umask
 
 #include "../build/gen_inittab.h"
 
 
-static long long embed = 0;
+static int preloads = 0;
+static long long loops = 0;
 
 static PyObject *
 embed_run(PyObject *self, PyObject *argv,  PyObject *kwds)
 {
-    if (!embed)
-        embed++;
-    return Py_BuildValue("L", embed);
+    if (preloads>0)
+        fprintf(stderr, "INFO: %i assets remaining in queue\n", preloads );
+
+    if (!preloads) {
+        // start async looping
+        loops++;
+    }
+
+    return Py_BuildValue("L", loops);
 }
 
 static PyObject *
 embed_counter(PyObject *self, PyObject *argv,  PyObject *kwds)
 {
-    return Py_BuildValue("L", embed);
+    return Py_BuildValue("L", loops);
+}
+
+static PyObject *
+embed_preloading(PyObject *self, PyObject *argv,  PyObject *kwds)
+{
+    return Py_BuildValue("i", preloads);
 }
 
 
@@ -127,30 +140,28 @@ embed_dlcall(PyObject *self, PyObject *argv,  PyObject *kwds)
 static PyObject *
 embed_test(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    SDL_version v;
-
-    SDL_GetVersion(&v);
-    TTF_Init();
-    return Py_BuildValue("iii", v.major, v.minor, v.patch);
-
+    puts("test function : return 1");
+    return Py_BuildValue("i", 1);
 }
+
 
 void
 embed_preload_cb_onload(const char *fn) {
-    //fprintf(stderr, __FILE__": preloaded [%s] ok\n", fn );
+    fprintf(stderr, __FILE__": preloaded [%s] ok\n", fn );
     remove(fn);
-    embed ++ ;
-  //  if (embed<0)
-     //   fprintf(stderr, "INFO: %lli assets remaining in queue\n", -embed );
+    preloads -- ;
+    if (preloads>0)
+        fprintf(stderr, "INFO: %i assets remaining in queue\n", preloads );
 }
 
 void
 embed_preload_cb_onerror(const char *fn) {
-    fprintf(stderr, __FILE__": preload [%s] ERROR\n", "" );
+    fprintf(stderr, __FILE__": preload [%s] ERROR\n", fn );
+    // do not block asyncio for a missing preload.
+    preloads--;
 }
 
 // TODO: use PyUnicode_FSConverter()
-static int embed_preload_assets_count = 0;
 static PyObject *
 embed_preload(PyObject *self, PyObject *argv) {
     char *url=NULL;
@@ -159,10 +170,12 @@ embed_preload(PyObject *self, PyObject *argv) {
     if (!PyArg_ParseTuple(argv, "s|ss", &url, &parent, &name)) {
         return NULL;
     }
-    embed -- ;
+    preloads ++ ;
 
     emscripten_run_preload_plugins(
-        url, (em_str_callback_func)embed_preload_cb_onload, (em_str_callback_func)embed_preload_cb_onerror
+        url,
+        (em_str_callback_func)embed_preload_cb_onload,
+        (em_str_callback_func)embed_preload_cb_onerror
     );
     Py_RETURN_NONE;
 }
@@ -273,6 +286,7 @@ static PyMethodDef mod_embed_methods[] = {
     {"dlcall", (PyCFunction)embed_dlcall, METH_VARARGS | METH_KEYWORDS, ""},
 
     {"counter", (PyCFunction)embed_counter, METH_VARARGS | METH_KEYWORDS, "read aio loop pass counter"},
+    {"preloading", (PyCFunction)embed_preloading, METH_VARARGS | METH_KEYWORDS, "read preloading counter"},
 
     {"symlink", (PyCFunction)embed_symlink,  METH_VARARGS, "FS.symlink"},
     {"run_script", (PyCFunction)embed_run_script,  METH_VARARGS, "run js"},
@@ -286,8 +300,10 @@ static PyMethodDef mod_embed_methods[] = {
 
     {"isatty", (PyCFunction)embed_isatty,  METH_VARARGS, "isatty(int fd)"},
 
-    {"test", (PyCFunction)embed_test, METH_VARARGS | METH_KEYWORDS, "test"},
     {"get_sdl_version", embed_get_sdl_version, METH_NOARGS, "get_sdl_version"},
+
+    {"test", (PyCFunction)embed_test, METH_VARARGS | METH_KEYWORDS, "test"},
+
     {NULL, NULL, 0, NULL}
 };
 
@@ -446,9 +462,10 @@ main_iteration(void) {
 
     // first pass coming back from js
     // if anything js was planned from main() it should be done by now.
-    if (embed && embed++) {
+    if (!preloads && loops) {
         // run a frame.
         PyRun_SimpleString("aio.step()");
+        loops++;
     }
     HOST_RETURN(0);
 }
@@ -514,6 +531,8 @@ main(int argc, char **argv)
         return 1;
     }
 
+    umask(18); // 0022
+
     chdir("/");
 
     if (!mkdir("dev", 0700)) {
@@ -547,6 +566,7 @@ main(int argc, char **argv)
     io_shm[0] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
     io_shm[IO_RAW] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
     io_shm[IO_RCON] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
+
 
 EM_ASM({
     const shm_stdin = $1;

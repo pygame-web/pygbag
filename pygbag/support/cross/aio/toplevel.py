@@ -57,15 +57,14 @@ import code
 import types
 import inspect
 
-def install(pkg_file):
-    import sysconfig
+def install(pkg_file, sconf = None):
     from installer import install
     from installer.destinations import SchemeDictionaryDestination
     from installer.sources import WheelFile
 
     # Handler for installation directories and writing into them.
     destination = SchemeDictionaryDestination(
-        sysconfig.get_paths(),
+        sconf or __import_("sysconfig").get_paths(),
         interpreter=sys.executable,
         script_kind="posix",
     )

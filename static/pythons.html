@@ -42,7 +42,10 @@ import inspect
 import sysconfig
 import importlib
 from aio.toplevel import AsyncInteractiveConsole
+import os
 
+# set correct umask ( emscripten default is 0 )
+os.umask(0o022)
 
 async def pv(track, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
 
@@ -66,7 +69,10 @@ async def pv(track, prefix = '', suffix = '', decimals = 1, length = 100, fill =
 
 async def get_repo_pkg(repo, pkg, resume , ex):
     print("-"*40)
-    pkg_url = f"{repo['-CDN-']}{repo[pkg]}"
+    if PyConfig.dev_mode>0:
+        pkg_url = f"http://localhost:8000/archives/repo/{repo[pkg]}"
+    else:
+        pkg_url = f"{repo['-CDN-']}{repo[pkg]}"
     print("getting", pkg_url )
 
     # get pkg
@@ -84,11 +90,15 @@ async def get_repo_pkg(repo, pkg, resume , ex):
     track = platform.window.MM.prepare(pkg_url, json.dumps(cfg))
     await pv(track)
 
-    platlib = sysconfig.get_paths()["platlib"]
+    sconf = sysconfig.get_paths()
+    #sconf["platlib"] = os.environ.get("HOME","/tmp")
+    sconf["platlib"] = "/tmp"
+    platlib = sconf["platlib"]
+
     if platlib not in sys.path:
         sys.path.append(platlib)
     try:
-        aio.toplevel.install(pkg_file)
+        aio.toplevel.install(pkg_file, sconf)
     except Exception as rx:
         pdb(f"failed to install {pkg_file}")
         sys.print_exception(rx)
@@ -99,7 +109,7 @@ async def get_repo_pkg(repo, pkg, resume , ex):
         __EMSCRIPTEN__.explore(platlib)
         await asyncio.sleep(0)
         importlib.invalidate_caches()
-        print(f"{pkg_file} installed")
+        print(f"{pkg_file} installed, preloading", embed.preloading())
     except Exception as rx:
         pdb(f"failed to preload {pkg_file}")
         sys.print_exception(rx)
@@ -162,15 +172,22 @@ if sys.platform in ("emscripten","wasi",):
 
         sys.argv = PyConfig.pop("argv", [])
 
+        PyConfig["dev_mode"] = 1
 
         from types import SimpleNamespace
 
 
         #print(json.dumps(PyConfig, sort_keys=True, indent=4))
 
+        import builtins
+        builtins.PyConfig = SimpleNamespace(**PyConfig)
+        del PyConfig
 
-        PyConfig = SimpleNamespace(**PyConfig)
-        PyConfig.pkg_index = ['https://pygame-web.github.io/archives/repo/']
+        if PyConfig.dev_mode>0:
+            PyConfig.pkg_index = ['http://localhost:8000/archives/repo/']
+        else:
+            PyConfig.pkg_index = ['https://pygame-web.github.io/archives/repo/']
+
 
         class VFS:
             from pathlib import Path

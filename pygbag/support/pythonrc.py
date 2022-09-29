@@ -347,6 +347,32 @@ if defined("embed") and hasattr(embed, "readline"):
             return False
 
         @classmethod
+        def umask(cls, *argv, **kw):
+            yield oct(os.umask(0))
+            return True
+
+        @classmethod
+        def chmod(cls, *argv, **kw):
+            def _current_umask() -> int:
+                mask = os.umask(0)
+                os.umask(mask)
+                return mask
+            for arg in argv:
+                if arg.startswith('-'):
+                    continue
+                mode = (0o777 & ~_current_umask() | 0o111)
+                print(f"{mode=}")
+                os.chmod(arg, mode)
+
+
+        @classmethod
+        def unzip(cls, *argv,**env):
+            import zipfile
+            for zip in argv:
+                with zipfile.ZipFile(zip,"r") as zip_ref:
+                    zip_ref.extractall(os.getcwd())
+
+        @classmethod
         def install(cls, *argv, **env):
             import aio.toplevel
             for pkg_file in argv:

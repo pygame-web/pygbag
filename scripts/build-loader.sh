@@ -8,6 +8,9 @@
 . ${CONFIG:-$SDKROOT/config}
 
 
+# version independant modules
+cp -rf ${SDKROOT}/prebuilt/emsdk/common/* ${SDKROOT}/prebuilt/emsdk/${PYBUILD}/
+
 # pre populated site-packages
 export REQUIREMENTS=$(realpath ${SDKROOT}/prebuilt/emsdk/${PYBUILD}/site-packages)
 
@@ -35,17 +38,30 @@ echo "
 # CF_SDL="-sUSE_SDL=2 -sUSE_ZLIB=1 -sUSE_BZIP2=1"
 
 
-# /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic/libSDL2.a
-# /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic/libogg.a
-# /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic/libvorbis.a
-# /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic/libSDL2_mixer_ogg.a
+# something triggers sdl2 *full* rebuild.
+# also for SDL2_mixer, ogg and vorbis
+# all pic
+
+
+# /
+# $EMPIC/libSDL2.a
+# $EMPIC/libSDL2_gfx.a
+# $EMPIC/libogg.a
+# $EMPIC/libvorbis.a
+# $EMPIC/libSDL2_mixer_ogg.a
+
+EMPIC=/opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic
 
 CF_SDL="-I${SDKROOT}/devices/emsdk/usr/include/SDL2"
-LD_SDL="-L${SDKROOT}/devices/emsdk/usr/lib -lSDL2_gfx -lSDL2_mixer -lSDL2_image -lwebp -ljpeg -lpng -lSDL2_ttf -lharfbuzz -lfreetype"
+#LD_SDL2="-lSDL2_gfx -lSDL2_mixer -lSDL2_ttf"
+
+LD_SDL2="$EMPIC/libSDL2.a"
+LD_SDL2="$LD_SDL2 $EMPIC/libSDL2_gfx.a $EMPIC/libogg.a $EMPIC/libvorbis.a"
+LD_SDL2="$LD_SDL2 $EMPIC/libSDL2_mixer_ogg.a $EMPIC/libSDL2_ttf.a"
+LD_SDL2="-L${SDKROOT}/devices/emsdk/usr/lib $LD_SDL2 -lSDL2_image -lwebp -ljpeg -lpng -lharfbuzz -lfreetype"
 
 
 SUPPORT_FS=""
-
 
 
 mkdir -p $DIST_DIR/python${PYMAJOR}${PYMINOR}
@@ -187,7 +203,7 @@ then
         LDFLAGS="$LDFLAGS -lsqlite3"
     fi
 
-    LDFLAGS="$LDFLAGS $LD_SDL -lffi -lbz2 -lz -ldl -lm"
+    LDFLAGS="$LDFLAGS $LD_SDL2 -lffi -lbz2 -lz -ldl -lm"
 
     for lib in python mpdec expat
     do
