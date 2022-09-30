@@ -92,8 +92,9 @@ async def get_repo_pkg(repo, pkg, resume , ex):
 
     sconf = sysconfig.get_paths()
     #sconf["platlib"] = os.environ.get("HOME","/tmp")
-    sconf["platlib"] = "/tmp"
     platlib = sconf["platlib"]
+    Path(platlib).mkdir(exist_ok=True)
+    #print(f"{platlib=}")
 
     if platlib not in sys.path:
         sys.path.append(platlib)
