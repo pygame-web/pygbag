@@ -1184,9 +1184,9 @@ __EMSCRIPTEN__.EventTarget.build('${ev.name}', '''${ev.data}''')
 
 function download(diskfile, filename) {
     if (!filename)
-        filename = diskfile.rsplit("/")
+        filename = diskfile.rsplit("/").pop()
 
-    const blob = new Blob([FS.readFile(filename)])
+    const blob = new Blob([FS.readFile(diskfile)])
     const elem = window.document.createElement('a');
     elem.href = window.URL.createObjectURL(blob);
     elem.download = filename;
@@ -1573,4 +1573,29 @@ shell.uptime()
 }
 
 
+window.dltest = (file) => {
+    file = file || "/tmp/wasabigeom.cpython-311-wasm32-emscripten.so";
+
+    function onerror() {
+        console.error(file)
+    }
+
+    function onload() {
+        console.log("ok",file)
+    }
+    var data = FS.analyzePath(file);
+    FS.createPreloadedFile(
+      PATH.dirname(file),
+      PATH.basename(file),
+      new Uint8Array(data.object.contents), true, true,
+      () => {
+        onload()
+      },
+      () => {
+        onerror()
+      },
+      true // don'tCreateFile - it's already there
+    );
+
+}
 

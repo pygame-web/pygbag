@@ -278,10 +278,19 @@ if defined("embed") and hasattr(embed, "readline"):
         @classmethod
         def mkdir(cls, *argv):
             exist_ok = "-p" in argv
-            for arg in argv:
+            for arg in map(str, argv):
                 if arg == "-p":
                     continue
                 os.makedirs(arg, exist_ok=exist_ok)
+
+        @classmethod
+        def rx(cls, *argv, **env):
+            for arg in map(str, argv):
+                if arg.startswith("-"):
+                    continue
+                window.MM.download(arg)
+                yield f"file {arg} sent"
+            return True
 
         @classmethod
         def wget(cls, *argv, **env):
