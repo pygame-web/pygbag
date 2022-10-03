@@ -79,8 +79,8 @@ static long long loops = 0;
 static PyObject *
 embed_run(PyObject *self, PyObject *argv,  PyObject *kwds)
 {
-    if (preloads>0)
-        fprintf(stderr, "INFO: %i assets remaining in queue\n", preloads );
+    //if (preloads>0)
+      //  fprintf(stderr, "INFO: %i assets remaining in queue\n", preloads );
 
     if (!preloads) {
         // start async looping
@@ -147,12 +147,9 @@ embed_test(PyObject *self, PyObject *args, PyObject *kwds)
 
 void
 embed_preload_cb_onload(const char *fn) {
-    //fprintf(stderr, __FILE__": preloaded [%s] ok\n", fn );
-    // still needed for file now it is preloaded.
-
     preloads -- ;
-    if (preloads>0)
-        fprintf(stderr, "INFO: %i assets remaining in queue\n", preloads );
+    //if (preloads>0)
+      //  fprintf(stderr, "INFO: %i assets remaining in queue\n", preloads );
 }
 
 void

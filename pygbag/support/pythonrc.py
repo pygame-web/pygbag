@@ -625,13 +625,6 @@ random.seed(1)
 if not aio.cross.simulator:
     import __EMSCRIPTEN__ as platform
 
-    """
-
-embed.preload("/usr/lib/python3.10/site-packages/numpy/core/_multiarray_umath.cpython-310-wasm32-emscripten.so")
-
-https://pypi.org/pypi/pygbag/0.1.3/json
-
-"""
 
     class importer:
 
