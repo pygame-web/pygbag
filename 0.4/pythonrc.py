@@ -314,7 +314,8 @@ if defined("embed") and hasattr(embed, "readline"):
         @classmethod
         async def pip(cls, *argv):
             if argv[0] == "install":
-                await importer.async_imports(argv[1])
+                import aio.toplevel
+                await aio.toplevel.importer.async_imports(argv[1])
 
         @classmethod
         def cd(cls, *argv):
@@ -625,179 +626,6 @@ random.seed(1)
 if not aio.cross.simulator:
     import __EMSCRIPTEN__ as platform
 
-
-    class importer:
-
-        repos = []
-        mapping = {}
-        may_need = []
-        ignore = ["sys", "os", "asyncio", "pathlib", "platform", "pygame", "json"]
-        ignore += ["distutils", "installer", "sysconfig", "sys"]
-
-        from pathlib import Path
-
-        if 1:
-            if platform.window.location.hostname == "localhost":
-                cdn = Path(platform.window.location.origin)
-                dl_cdn = cdn
-                repodata = "pip.json"
-            else:
-                cdn = Path("https://pygame-web.github.io/archives/0.2.0")
-                dl_cdn = Path("https://cdn.jsdelivr.net/pyodide/v0.20.0/full")
-                repodata = "packages.json"
-        else:
-            dl_cdn = Path("https://cdn.jsdelivr.net/pyodide/dev/full")
-            cdn = dl_cdn
-            repodata = "repodata.json"
-
-        print(f"552 CDN: {cdn}")
-
-        @classmethod
-        def code_imports(cls, code=""):
-
-            import platform
-            import json
-
-            def scan_imports(code, filename):
-                nonlocal cls
-                ast = __import__("ast")
-                root = ast.parse(code, filename)
-                required = []
-                for node in ast.walk(root):
-                    if isinstance(node, ast.Import):
-                        module = []
-                    elif isinstance(node, ast.ImportFrom):
-                        module = node.module.split(".")
-                    else:
-                        continue
-
-                    for n in node.names:
-                        if len(module):
-                            mod = module[0] or n.name.split(".")[0]
-                        else:
-                            mod = n.name.split(".")[0]
-
-                        if mod in cls.ignore:
-                            continue
-
-                        try:
-                            __import__(mod)
-                        except (ModuleNotFoundError, ImportError):
-                            required.append(mod)
-                return required
-
-            if code == "":
-                with open(__file__) as fcode:
-                    # assert code == fcode.read()
-                    cls.may_need.extend(scan_imports(fcode.read(), __file__))
-            else:
-                cls.may_need.extend(scan_imports(code, "<stdin>"))
-
-        @classmethod
-        async def async_imports(cls, *wanted):
-            def imports(*mods, lvl=0, wants=[]):
-                nonlocal cls
-                unseen = False
-                for mod in mods:
-                    for dep in cls.repos[0]["packages"][mod].get("depends", []):
-                        if (not dep in wants) and (not dep in cls.ignore):
-                            unseen = True
-                            wants.insert(0, dep)
-                if lvl < 3 and unseen:
-                    imports(*wants, lvl=lvl + 1, wants=wants)
-
-                if not lvl:
-                    for dep in mods:
-                        if (not dep in wants) and (not dep in cls.ignore):
-                            wants.append(dep)
-                return wants
-
-            async def pkg_install(*packages):
-                nonlocal cls
-                import sys
-                import sysconfig
-                import importlib
-
-                refresh = False
-                for pkg in packages:
-                    pkg_info = cls.repos[0]["packages"].get(pkg, None)
-
-                    if pkg_info is None:
-                        pdb(f'144: package "{pkg}" not found in repodata')
-                        continue
-
-                    file_name = pkg_info.get("file_name", "")
-                    valid = False
-                    if file_name:
-                        pkg_file = f"/tmp/{file_name}"
-
-                        async with platform.fopen(
-                            cls.dl_cdn / file_name, "rb"
-                        ) as source:
-                            source.rename_to(pkg_file)
-                            for hex in shell.sha256sum(pkg_file):
-                                expected = hex.split(" ", 1)[0].lower()
-                                maybe = pkg_info.get("sha256", "").lower()
-                                if maybe and (maybe != expected):
-                                    pdb(
-                                        f"158: {pkg} download to {pkg_file} corrupt",
-                                        pkg_info.get("sha256", ""),
-                                        expected,
-                                    )
-                                    break
-                            else:
-                                valid = True
-                                refresh = True
-                    else:
-                        pdb(f'144: package "{pkg}" invalid in repodata')
-                        continue
-
-                    if valid:
-
-                        from installer import install
-                        from installer.destinations import SchemeDictionaryDestination
-                        from installer.sources import WheelFile
-
-                        # Handler for installation directories and writing into them.
-                        destination = SchemeDictionaryDestination(
-                            sysconfig.get_paths(),
-                            interpreter=sys.executable,
-                            script_kind="posix",
-                        )
-
-                        with WheelFile.open(pkg_file) as source:
-                            install(
-                                source=source,
-                                destination=destination,
-                                # Additional metadata that is generated by the installation tool.
-                                additional_metadata={
-                                    "INSTALLER": b"pygbag",
-                                },
-                            )
-                if refresh:
-                    await asyncio.sleep(0)
-                    importlib.invalidate_caches()
-                    await asyncio.sleep(0)
-                    print("preload cnt", __EMSCRIPTEN__.counter)
-                    __EMSCRIPTEN__.explore(sysconfig.get_paths()["platlib"])
-                    print("preload cnt", __EMSCRIPTEN__.counter)
-
-            # init importer
-
-            import sysconfig
-
-            if not sysconfig.get_paths()["platlib"] in sys.path:
-                sys.path.append(sysconfig.get_paths()["platlib"])
-
-            if not len(cls.repos):
-                async with platform.fopen(cdn / cls.repodata) as source:
-                    cls.repos.append(json.loads(source.read()))
-
-            # print(json.dumps(cls.repo[0]["packages"], sort_keys=True, indent=4))
-            print("packages :", len(cls.repos[0]["packages"]))
-
-            await pkg_install(*imports(*wanted))
-
     def fix_url(maybe_url):
         url = str(maybe_url)
         if url.startswith("http://"):
@@ -874,7 +702,8 @@ if not aio.cross.simulator:
             async def __aenter__(self):
                 import platform
 
-                print(f'572: Download start: "{self.url}"')
+                #print(f'572: Download start: "{self.url}"')
+
                 if "b" in self.mode:
                     self.__class__.ticks += 1
                     self.tmpfile = f"/tmp/cf-{self.ticks}"

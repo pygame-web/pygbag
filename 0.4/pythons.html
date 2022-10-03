@@ -4,6 +4,284 @@ import platform
 import asyncio
 from pathlib import Path
 
+sys.argv = PyConfig.pop("argv", [])
+
+if window.location.href.find('localhost')>0:
+    PyConfig["dev_mode"] = 1
+
+#print(json.dumps(PyConfig, sort_keys=True, indent=4))
+
+
+
+from types import SimpleNamespace
+import builtins
+builtins.PyConfig = SimpleNamespace(**PyConfig)
+del PyConfig
+
+if PyConfig.dev_mode>0:
+    PyConfig.pkg_indexes = ['http://localhost:8000/archives/repo/']
+else:
+    PyConfig.pkg_indexes = ['https://pygame-web.github.io/archives/repo/']
+
+
+
+
+import inspect
+import sysconfig
+import importlib
+
+
+import os
+# set correct umask ( emscripten default is 0 )
+os.umask(0o022) # already done in aio.toplevel
+
+# ok
+# import packaging, pyparsing, cycler, kiwisolver, PIL, dateutil, pytz, numpy, matplotlib
+
+async def pv(track, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+
+    # Progress Bar Printing Function
+    def print_pg_bar(total, iteration):
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        filledLength = int(length * iteration // total)
+        bar = fill * filledLength + '-' * (length - filledLength)
+        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+
+    # Update Progress Bar
+    while True:
+        print_pg_bar(track.len or 100, track.pos or 0)
+        if track.avail:
+            break
+        await asyncio.sleep(.02)
+
+    # Print New Line on Complete
+    print()
+
+
+from aio.toplevel import AsyncInteractiveConsole, get_repo_pkg
+
+def importer(want, ex=None, resume=None):
+    global PyConfig
+
+    #print("getting from repo : ", PyConfig.pkg_indexes )
+
+    for repo in PyConfig.pkg_repolist:
+        if want in repo:
+            if PyConfig.dev_mode>0:
+                pkg_url = f"{PyConfig.pkg_indexes[0]}{repo[want]}"
+            else:
+                pkg_url = f"{repo['-CDN-']}{repo[want]}"
+
+
+            pkg_file =  f"/tmp/{repo[want].rsplit('/',1)[-1]}"
+
+            cfg = {
+                "io": "url",
+                "type":"fs",
+                "path" : pkg_file
+            }
+            print("pkg :", pkg_url, "=>", pkg_file)
+
+            track = platform.window.MM.prepare(pkg_url, json.dumps(cfg))
+
+            async def get_pkg(track):
+                await pv(track)
+
+                return await get_repo_pkg(pkg_file, want, resume, ex)
+
+            return get_pkg(track)
+        else:
+            print(f"PKG NOT FOUND : {want=}, {resume=}, {ex=}")
+    return asyncio.sleep(0)
+
+
+
+
+
+
+class tl_importer:
+
+    repos = []
+    mapping = {}
+    may_need = []
+    ignore = ["distutils", "installer", "sysconfig"]
+    ignore += ["python-dateutil", "matplotlib-pyodide"]
+    # ???
+    ignore += [ "pillow", "fonttools"]
+
+
+    from pathlib import Path
+
+    dl_cdn = Path(PyConfig.pkg_indexes[0])
+    cdn = Path(dl_cdn)
+
+    repodata = "repodata.json"
+
+    print(f"121 CDN: {cdn}")
+
+    @classmethod
+    def code_imports(cls, code=""):
+
+        import platform
+        import json
+
+        def scan_imports(code, filename):
+            nonlocal cls
+            ast = __import__("ast")
+            root = ast.parse(code, filename)
+            required = []
+            for node in ast.walk(root):
+                if isinstance(node, ast.Import):
+                    module = []
+                elif isinstance(node, ast.ImportFrom):
+                    module = node.module.split(".")
+                else:
+                    continue
+
+                for n in node.names:
+                    if len(module):
+                        mod = module[0] or n.name.split(".")[0]
+                    else:
+                        mod = n.name.split(".")[0]
+
+                    if mod in cls.ignore:
+                        continue
+
+                    if mod in sys.modules:
+                        continue
+
+                    try:
+                        __import__(mod)
+                    except (ModuleNotFoundError, ImportError):
+                        required.append(mod)
+            return required
+
+        if code == "":
+            with open(__file__) as fcode:
+                # assert code == fcode.read()
+                cls.may_need.extend(scan_imports(fcode.read(), __file__))
+        else:
+            cls.may_need.extend(scan_imports(code, "<stdin>"))
+
+    @classmethod
+    def imports(cls, *mods, lvl=0, wants=[]):
+        unseen = False
+        for mod in mods:
+            for dep in cls.repos[0]["packages"].get(mod, {}).get("depends", []):
+                if mod in sys.modules:
+                    continue
+
+                if (not dep in wants) and (not dep in cls.ignore):
+                    unseen = True
+                    wants.insert(0, dep)
+
+        if lvl < 3 and unseen:
+            cls.imports(*wants, lvl=lvl + 1, wants=wants)
+
+        if not lvl:
+            for dep in mods:
+                if mod in sys.modules:
+                    continue
+
+                if (not dep in wants) and (not dep in cls.ignore):
+                    wants.append(dep)
+        return wants
+
+
+
+    @classmethod
+    async def async_imports(cls, *wanted):
+#        # using pyodide repodata
+#        async def pkg_install(*packages):
+#            nonlocal cls
+#            import sys
+#            import sysconfig
+#            import importlib
+
+#            refresh = False
+#            for pkg in packages:
+#                pkg_info = cls.repos[0]["packages"].get(pkg, None)
+
+#                if pkg_info is None:
+#                    pdb(f'144: package "{pkg}" not found in repodata')
+#                    continue
+
+#                file_name = pkg_info.get("file_name", "")
+#                valid = False
+#                if file_name:
+#                    pkg_file = f"/tmp/{file_name}"
+
+#                    async with platform.fopen(
+#                        cls.dl_cdn / file_name, "rb"
+#                    ) as source:
+#                        source.rename_to(pkg_file)
+#                        for hex in shell.sha256sum(pkg_file):
+#                            expected = hex.split(" ", 1)[0].lower()
+#                            maybe = pkg_info.get("sha256", "").lower()
+#                            if maybe and (maybe != expected):
+#                                pdb(
+#                                    f"158: {pkg} download to {pkg_file} corrupt",
+#                                    pkg_info.get("sha256", ""),
+#                                    expected,
+#                                )
+#                                break
+#                        else:
+#                            valid = True
+#                            refresh = True
+#                else:
+#                    pdb(f'144: package "{pkg}" invalid in repodata')
+#                    continue
+
+#            # call aio.toplevel.install
+#            aio.toplevel.install(pkg_file, sysconfig.get_paths() )
+
+
+
+        # init dep solver.
+
+        if not len(cls.repos):
+            for cdn in PyConfig.pkg_indexes:
+                async with platform.fopen(Path(cdn) / cls.repodata) as source:
+                    cls.repos.append(json.loads(source.read()))
+
+            #print(json.dumps(cls.repos[0]["packages"], sort_keys=True, indent=4))
+
+            print("referenced packages :", len(cls.repos[0]["packages"]))
+
+        all = cls.imports(*wanted)
+        if 'numpy' in all:
+            print("254: importing numpy first")
+            await importer('numpy')
+            import numpy
+            all.remove('numpy')
+
+
+        for req in all:
+            if req == "python-dateutil":
+                req= "dateutil"
+
+            if req == "pillow":
+                req= "PIL"
+
+            if req in cls.ignore or req in sys.modules:
+                continue
+            #await asyncio.sleep(0.02)
+            await importer(req)
+            #sys.modules[req] = __import__(req)
+
+
+        #await pkg_install(*imports(*wanted))
+
+
+
+
+
+
+
+
+
+
+
 
 
 # screen pixels (real, hardware)
@@ -38,70 +316,8 @@ def uy(*argv):
     return acc
 
 
-import inspect
-import sysconfig
-import importlib
-from aio.toplevel import AsyncInteractiveConsole, get_repo_pkg
-import os
-
-# import packaging, pyparsing, cycler, kiwisolver, numpy, PIL, dateutil, matplotlib
-
-async def pv(track, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
-
-    # Progress Bar Printing Function
-    def print_pg_bar(total, iteration):
-        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-        filledLength = int(length * iteration // total)
-        bar = fill * filledLength + '-' * (length - filledLength)
-        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
-
-    # Update Progress Bar
-    while True:
-        print_pg_bar(track.len or 100, track.pos or 0)
-        if track.avail:
-            break
-        await asyncio.sleep(.02)
-
-    # Print New Line on Complete
-    print()
 
 
-
-def importer(want, ex=None, resume=None):
-    global PyConfig
-
-    print("getting from repo : ", PyConfig.pkg_index )
-
-    for repo in PyConfig.pkg_repolist:
-        if want in repo:
-            if PyConfig.dev_mode>0:
-                pkg_url = f"{PyConfig.pkg_index[0]}{repo[want]}"
-            else:
-                pkg_url = f"{repo['-CDN-']}{repo[want]}"
-
-
-            pkg_file =  f"/tmp/{repo[want].rsplit('/',1)[-1]}"
-
-            cfg = {
-                "io": "url",
-                "type":"fs",
-                "path" : pkg_file
-            }
-            print("pkg :", pkg_url, "=>", pkg_file)
-
-            track = platform.window.MM.prepare(pkg_url, json.dumps(cfg))
-
-            async def get_pkg(track):
-                await pv(track)
-#                while not track.avail:
-#                    await asyncio.sleep(.02)
-
-                return await get_repo_pkg(pkg_file, want, resume, ex)
-
-            return get_pkg(track)
-        else:
-            print(f"PKG NOT FOUND : {want=}, {resume=}, {ex=}")
-    return asyncio.sleep(0)
 
 
 
@@ -130,27 +346,8 @@ if sys.platform in ("emscripten","wasi",):
         global PyConfig, con
 
         # reset term
-        ESC("c")
+        # ESC("c")
 
-        sys.argv = PyConfig.pop("argv", [])
-
-        if window.location.href.find('localhost')>0:
-            PyConfig["dev_mode"] = 1
-
-
-        from types import SimpleNamespace
-
-
-        #print(json.dumps(PyConfig, sort_keys=True, indent=4))
-
-        import builtins
-        builtins.PyConfig = SimpleNamespace(**PyConfig)
-        del PyConfig
-
-        if PyConfig.dev_mode>0:
-            PyConfig.pkg_index = ['http://localhost:8000/archives/repo/']
-        else:
-            PyConfig.pkg_index = ['https://pygame-web.github.io/archives/repo/']
 
 
         class VFS:
@@ -161,7 +358,8 @@ if sys.platform in ("emscripten","wasi",):
 
         PyConfig.pkg_repolist = []
         abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
-        for repo in PyConfig.pkg_index:
+
+        for repo in PyConfig.pkg_indexes:
             async with fopen(f'{repo}index.json', 'r') as index:
                 try:
                     data = index.read().replace("<abi>",abitag)
@@ -179,6 +377,17 @@ if sys.platform in ("emscripten","wasi",):
             ).interact()
 
         aio.create_task(async_console)
+
+
+        #wants = "packaging, pyparsing, cycler, kiwisolver, PIL, dateutil, pytz, numpy".split(', ')
+        wants = ["numpy"]
+        if 0:
+            await tl_importer.async_imports(*wants)
+            import numpy
+
+        if 1:
+            await asyncio.sleep(1)
+            await tl_importer.async_imports("matplotlib")
 
 
         if 1: #not pygame:
