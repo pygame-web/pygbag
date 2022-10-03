@@ -4,12 +4,6 @@ import aio
 # https://bugs.python.org/issue34616
 # https://github.com/ipython/ipython/blob/320d21bf56804541b27deb488871e488eb96929f/IPython/core/interactiveshell.py#L121-L150
 
-import os
-# set correct umask ( emscripten default is 0 )
-os.umask(0o022)
-
-
-
 import asyncio
 import ast
 import code
@@ -72,7 +66,7 @@ async def get_repo_pkg(pkg_file, pkg, resume , ex):
         platform.explore(platlib)
         await asyncio.sleep(0)
         importlib.invalidate_caches()
-        print(f"{pkg_file} installed, preloading", embed.preloading())
+        #print(f"{pkg_file} installed, preloading", embed.preloading())
     except Exception as rx:
         pdb(f"failed to preload {pkg_file}")
         sys.print_exception(rx)
