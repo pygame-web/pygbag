@@ -279,19 +279,28 @@ function prerun(VM) {
 
 async function _rcp(url, store) {
     var content
-    try {
-        content = await fetch(url, FETCH_FLAGS)
-    } catch (x) { return false }
 
     store = store || ( "/data/data/" + url )
-    console.info(__FILE__,`rcp ${url} => ${store}`)
+
+
+    try {
+        content = await fetch(url, {mode:"no-cors"})
+    } catch (x) {
+        console.error(__FILE__,`can't rcp ${url} to ${store}`, x)
+        return false
+    }
+
+    console.info(__FILE__,`rcp ${url} => ${store}`, content.status)
+
     if (content.ok) {
         const text= await content.text()
         await vm.FS.writeFile( store, text);
         return true;
     } else {
-        console.error(__FILE__,`can't rcp ${url} to ${store}`)
-        return false;
+        const text= await content.text()
+        console.error(__FILE__,`can't rcp ${url} to ${store}`, text.length)
+        await vm.FS.writeFile( store, text);
+        return false
     }
 }
 
@@ -416,8 +425,18 @@ const vm = {
 
 async function custom_postrun() {
     console.warn("VM.postrun")
+    const pyrc_url = vm.config.cdn + "pythonrc.py"
+    const pyrc_file = "/data/data/org.python/assets/pythonrc.py"
+    const pyrc = await _rcp(pyrc_url, pyrc_file)
 
-    if (await _rcp(vm.config.cdn + "pythonrc.py","/data/data/org.python/assets/pythonrc.py")) {
+    if (!pyrc) {
+        console.warn("431 rcp failed?")
+        for (const yielded of  cross_dl(pyrc_url, pyrc_file)) {
+        }
+    }
+
+    if (1)
+     {
 
         vm.FS.writeFile( "/data/data/org.python/assets/main.py" , vm.script.blocks[0] )
 
