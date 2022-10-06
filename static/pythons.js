@@ -297,9 +297,7 @@ async function _rcp(url, store) {
         await vm.FS.writeFile( store, text);
         return true;
     } else {
-        const text= await content.text()
-        console.error(__FILE__,`can't rcp ${url} to ${store}`, text.length)
-        await vm.FS.writeFile( store, text);
+        console.error(__FILE__,`can't rcp ${url} to ${store}`)
         return false
     }
 }
@@ -430,8 +428,8 @@ async function custom_postrun() {
     const pyrc = await _rcp(pyrc_url, pyrc_file)
 
     if (!pyrc) {
-        console.warn("431 rcp failed?")
-        for (const yielded of  cross_dl(pyrc_url, pyrc_file)) {
+        console.warn("431 rcp failed?",pyrc_url,"=>",pyrc_file)
+        for (const yielded of cross_file(pyrc_url, pyrc_file)) {
         }
     }
 
