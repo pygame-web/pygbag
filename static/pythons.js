@@ -286,7 +286,7 @@ async function _rcp(url, store) {
     try {
         content = await fetch(url, {mode:"no-cors"})
     } catch (x) {
-        console.error(__FILE__,`can't rcp ${url} to ${store}`, x)
+        console.error(__FILE__,`cannot rcp ${url} to ${store}`, x)
         return false
     }
 
@@ -297,7 +297,7 @@ async function _rcp(url, store) {
         await vm.FS.writeFile( store, text);
         return true;
     } else {
-        console.error(__FILE__,`can't rcp ${url} to ${store}`)
+        console.error(__FILE__,`cannot rcp ${url} to ${store}`)
         return false
     }
 }
@@ -421,17 +421,9 @@ const vm = {
 }
 
 
-async function custom_postrun() {
-    console.warn("VM.postrun")
-    const pyrc_url = vm.config.cdn + "pythonrc.py"
-    const pyrc_file = "/data/data/org.python/assets/pythonrc.py"
-    const pyrc = await _rcp(pyrc_url, pyrc_file)
-
-    if (!pyrc) {
-        console.warn("431 rcp failed?",pyrc_url,"=>",pyrc_file)
-        for (const yielded of cross_file(pyrc_url, pyrc_file)) {
-        }
-    }
+function run_pyrc(content, store) {
+    FS.writeFile(store, content )
+    console.log("cross_file.fetch",store,"r/w=", content.byteLength )
 
     if (1)
      {
@@ -465,7 +457,20 @@ print("* site.py done *")
 
     }
 
+}
 
+
+async function custom_postrun() {
+    console.warn("VM.postrun Begin")
+    const pyrc_url = vm.config.cdn + "pythonrc.py"
+    const pyrc_file = "/data/data/org.python/assets/pythonrc.py"
+    var content = 0
+    console.log("cross_file.fetch", pyrc_url )
+    fetch(pyrc_url, FETCH_FLAGS)
+        .then( response => checkStatus(response) && response.arrayBuffer() )
+        .then( buffer => run_pyrc(new Uint8Array(buffer), pyrc_file)  )
+        .catch(x => console.error(x))
+    console.warn("VM.postrun End")
 }
 
 
