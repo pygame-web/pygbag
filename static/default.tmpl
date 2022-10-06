@@ -97,9 +97,10 @@ async def sitecustomize():
         "mount" : {
             "point" : appdir.as_posix(),
             "path" : "/",
-        }
-
+        },
+        "path" : f"/ => {appdir.as_posix()}",
     }
+
 
     track = platform.window.MM.prepare(apk, json.dumps(cfg))
 
@@ -257,9 +258,9 @@ config = {
 
     <link rel="prefetch" href="{{cookiecutter.cdn}}pythonrc.py">
     <link rel="prefetch" href="{{cookiecutter.cdn}}browserfs.min.js">
-    <link rel="prefetch" href="{{cookiecutter.cdn}}xtermjssixel/xterm.js">
-    <link rel="prefetch" href="{{cookiecutter.cdn}}xtermjssixel/xterm-addon-image.js">
-    <link rel="prefetch" href="{{cookiecutter.cdn}}xtermjssixel/xterm-addon-image-worker.js">
+    <link rel="prefetch" href="{{cookiecutter.cdn}}xtermjsixel/xterm.js">
+    <link rel="prefetch" href="{{cookiecutter.cdn}}xtermjsixel/xterm-addon-image.js">
+    <link rel="prefetch" href="{{cookiecutter.cdn}}xtermjsixel/xterm-addon-image-worker.js">
 
 
     <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">

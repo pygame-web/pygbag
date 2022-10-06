@@ -276,33 +276,6 @@ function prerun(VM) {
     VM.FS.init(stdin, stdout, stderr);
 }
 
-/*
-async function _rcp(url, store) {
-    var content
-
-    store = store || ( "/data/data/" + url )
-
-
-    try {
-        content = await fetch(url, {})
-    } catch (x) {
-        console.error(__FILE__,`cannot rcp ${url} to ${store}`, x)
-        return false
-    }
-
-    console.info(__FILE__,`rcp ${url} => ${store}`, content.status)
-
-    if (content.ok) {
-        const text= await content.text()
-        await vm.FS.writeFile( store, text);
-        return true;
-    } else {
-        console.error(__FILE__,`cannot rcp ${url} to ${store}`)
-        return false
-    }
-}
-
-*/
 
 const vm = {
         APK : "org.python",
@@ -763,7 +736,7 @@ async function feat_vtx(debug_hidden) {
     const { WasmTerminal } = await import("./vtx.js")
 
     vm.vt = new WasmTerminal("terminal", 132, 42, [
-            { url : "./xtermjsixel/xterm-addon-image-worker.js", sixelSupport:true }
+            { url : config.cdn+"xtermjsixel/xterm-addon-image-worker.js", sixelSupport:true }
     ] )
 }
 
@@ -1318,8 +1291,10 @@ function MM_autoevents(track) {
 }
 
 
-window.cross_dl = async function cross_dl(trackid, url, autoready) {
-    var response = await fetch(url, FETCH_FLAGS);
+window.cross_dl = async function cross_dl(trackid, url, flags) {
+    var response = await fetch(url, flags || FETCH_FLAGS);
+
+    checkStatus(response)
 
     const reader = response.body.getReader();
 
@@ -1409,7 +1384,7 @@ MM.prepare = function prepare(url, cfg) {
             track.avail = true
         } else {
 console.log("MM.cross_dl", trackid, transport, type, url )
-            cross_dl(trackid, url)
+            cross_dl(trackid, url, {} )
         }
     }
 
