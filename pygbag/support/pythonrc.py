@@ -11,7 +11,6 @@ import time
 PYCONFIG_PKG_INDEXES_DEV =['http://localhost:<port>/archives/repo/']
 PYCONFIG_PKG_INDEXES = ['https://pygame-web.github.io/archives/repo/']
 
-
 # the sim does not preload assets and cannot access currentline
 # unless using https://github.com/pmp-p/aioprompt/blob/master/aioprompt/__init__.py
 
