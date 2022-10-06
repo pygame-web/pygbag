@@ -9,8 +9,10 @@ import ast
 import code
 import types
 import inspect
+import zipfile
 
-def install(pkg_file, sconf = None):
+
+def install(pkg_file, sconf=None):
     from installer import install
     from installer.destinations import SchemeDictionaryDestination
     from installer.sources import WheelFile
@@ -21,6 +23,7 @@ def install(pkg_file, sconf = None):
         interpreter=sys.executable,
         script_kind="posix",
     )
+
     try:
         with WheelFile.open(pkg_file) as source:
             install(
@@ -37,20 +40,19 @@ def install(pkg_file, sconf = None):
 
 
 
-async def get_repo_pkg(pkg_file, pkg, resume , ex):
-    #print("-"*40)
+async def get_repo_pkg(pkg_file, pkg, resume, ex):
+    # print("-"*40)
     import platform
     import json
     import sysconfig
     import importlib
     from pathlib import Path
 
-
     sconf = sysconfig.get_paths()
-    #sconf["platlib"] = os.environ.get("HOME","/tmp")
+    # sconf["platlib"] = os.environ.get("HOME","/tmp")
     platlib = sconf["platlib"]
     Path(platlib).mkdir(exist_ok=True)
-    #print(f"{platlib=}")
+    # print(f"{platlib=}")
 
     if platlib not in sys.path:
         sys.path.append(platlib)
@@ -66,11 +68,10 @@ async def get_repo_pkg(pkg_file, pkg, resume , ex):
         platform.explore(platlib)
         await asyncio.sleep(0)
         importlib.invalidate_caches()
-        #print(f"{pkg_file} installed, preloading", embed.preloading())
+        # print(f"{pkg_file} installed, preloading", embed.preloading())
     except Exception as rx:
         pdb(f"failed to preload {pkg_file}")
         sys.print_exception(rx)
-
 
     if resume and ex:
         try:
@@ -83,14 +84,13 @@ async def get_repo_pkg(pkg_file, pkg, resume , ex):
                 return asyncio.sleep(0)
         except Exception as resume_ex:
             sys.print_exception(ex, limit=-1)
-#        finally:
-#            print("-"*40)
+    #        finally:
+    #            print("-"*40)
     return None
 
 
-
-
 class AsyncInteractiveConsole(code.InteractiveConsole):
+    instance = None
 
     def __init__(self, locals, **kw):
         super().__init__(locals)
@@ -100,6 +100,10 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         self.opts = kw
         self.coro = None
         self.rv = None
+
+    # need to subclass
+    # @staticmethod
+    # def get_pkg(want, ex=None, resume=None):
 
     def process_shell(self, shell, line, **env):
         catch = True
@@ -139,7 +143,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
             code = self.compile(source, filename, symbol)
         except SyntaxError:
             if self.one_liner:
-                shell = self.opts.get('shell', None)
+                shell = self.opts.get("shell", None)
                 if shell and self.process_shell(shell, self.line):
                     return
             self.showsyntaxerror(filename)
@@ -173,19 +177,17 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
             raise
 
         except ModuleNotFoundError as ex:
-            importer = self.opts.get('importer', None)
-            if importer:
+            get_pkg = self.opts.get("get_pkg", self.get_pkg)
+            if get_pkg:
                 want = str(ex).split("'")[1]
-                self.coro = importer(want, ex, bc)
+                self.coro = get_pkg(want, ex, bc)
 
         except BaseException as ex:
             if self.one_liner:
-                shell = self.opts.get('shell', None)
+                shell = self.opts.get("shell", None)
                 if shell and self.process_shell(shell, self.line):
                     return
             sys.print_exception(ex, limit=-1)
-
-
 
     def raw_input(self, prompt):
         maybe = embed.readline()
@@ -193,8 +195,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
             return maybe
         else:
             return None
-        #raise EOFError
-
+        # raise EOFError
 
     async def interact(self):
         try:
@@ -209,10 +210,10 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
 
-
-        self.write("Python %s on %s\n%s\n(%s)\n" %
-                   (sys.version, sys.platform, cprt,
-                    self.__class__.__name__))
+        self.write(
+            "Python %s on %s\n%s\n(%s)\n"
+            % (sys.version, sys.platform, cprt, self.__class__.__name__)
+        )
 
         prompt = sys.ps1
 
@@ -251,4 +252,28 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
             embed.prompt()
 
-        self.write('now exiting %s...\n' % self.__class__.__name__)
+        self.write("now exiting %s...\n" % self.__class__.__name__)
+
+    @classmethod
+    def start_console(cls, shell):
+        """will only start a console, not async import system"""
+        if cls.instance is None:
+            cls.instance = cls(
+                globals(),
+                shell=shell,
+            )
+
+        asyncio.create_task(cls.instance.interact())
+
+    @classmethod
+    async def start_toplevel(cls, shell, console=True):
+        """start async import system with optionnal async console"""
+        cls.instance = cls(
+            globals(),
+            shell=shell,
+        )
+
+        await cls.instance.async_repos()
+
+        if console:
+            cls.start_console(shell)

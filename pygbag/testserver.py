@@ -41,6 +41,7 @@ except:
 
 class CodeHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
+        self.send_header("access-control-allow-origin", "*")
         self.send_header("cross-origin-resource-policy:", "cross-origin")
         self.send_header("cross-origin-opener-policy", "cross-origin")
         self.send_header("cross-origin-embedder-policy", "require-corp")
@@ -91,7 +92,11 @@ class CodeHandler(SimpleHTTPRequestHandler):
         f = None
 
         if not os.path.isfile(path) and not path.endswith(".map"):
-            remote_url = CDN + self.path
+            if path.find('/archives/repo/')>= 0:
+                print("\n\n96:", CDN.rsplit('/',3)[0] , '+', self.path )
+                remote_url = CDN.rsplit('/',3)[0]+self.path
+            else:
+                remote_url = CDN + self.path
             cache = hashlib.md5(remote_url.encode()).hexdigest()
             d_cache = CACHE.joinpath(cache + ".data")
             h_cache = CACHE.joinpath(cache + ".head")
@@ -187,6 +192,10 @@ class CodeHandler(SimpleHTTPRequestHandler):
 
                 file_size = len(content)
                 f = io.BytesIO(content)
+            elif self.path.endswith(".json"):
+                print()
+                print(self.path)
+                print()
 
             elif path.endswith(".html"):
                 print("REPLACING", path, CDN, PROXY)

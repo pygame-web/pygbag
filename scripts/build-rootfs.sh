@@ -38,6 +38,8 @@ except:
 
 import pathlib
 
+import multiprocessing
+
 # for dom event subscriptions and js interface
 import webbrowser
 import platform
