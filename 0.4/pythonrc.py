@@ -1011,7 +1011,7 @@ if not aio.cross.simulator:
         def get_pkg(cls, want, ex=None, resume=None):
             return cls.async_get_pkg(want, ex, resume)
 
-        async def pv(track, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+        async def pv(track, prefix = '', suffix = '', decimals = 1, length = 100, fill = 'X', printEnd = "\r"):
 
             # Progress Bar Printing Function
             def print_pg_bar(total, iteration):

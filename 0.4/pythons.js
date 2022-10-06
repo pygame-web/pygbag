@@ -5,7 +5,7 @@ var config
 const FETCH_FLAGS = {
     mode:"no-cors",
     redirect: 'follow',
-    referrerPolicy: 'no-referrer',
+//    referrerPolicy: 'no-referrer', or HTTP error 0 on pythonrc.py
     credentials: 'omit'
 }
 
@@ -276,7 +276,7 @@ function prerun(VM) {
     VM.FS.init(stdin, stdout, stderr);
 }
 
-
+/*
 async function _rcp(url, store) {
     var content
 
@@ -284,9 +284,9 @@ async function _rcp(url, store) {
 
 
     try {
-        content = await fetch(url, {mode:"no-cors"})
+        content = await fetch(url, {})
     } catch (x) {
-        console.error(__FILE__,`can't rcp ${url} to ${store}`, x)
+        console.error(__FILE__,`cannot rcp ${url} to ${store}`, x)
         return false
     }
 
@@ -297,11 +297,12 @@ async function _rcp(url, store) {
         await vm.FS.writeFile( store, text);
         return true;
     } else {
-        console.error(__FILE__,`can't rcp ${url} to ${store}`)
+        console.error(__FILE__,`cannot rcp ${url} to ${store}`)
         return false
     }
 }
 
+*/
 
 const vm = {
         APK : "org.python",
@@ -421,24 +422,13 @@ const vm = {
 }
 
 
-async function custom_postrun() {
-    console.warn("VM.postrun")
-    const pyrc_url = vm.config.cdn + "pythonrc.py"
+function run_pyrc(content) {
     const pyrc_file = "/data/data/org.python/assets/pythonrc.py"
-    const pyrc = await _rcp(pyrc_url, pyrc_file)
+    FS.writeFile(pyrc_file, content )
 
-    if (!pyrc) {
-        console.warn("431 rcp failed?",pyrc_url,"=>",pyrc_file)
-        for (const yielded of cross_file(pyrc_url, pyrc_file)) {
-        }
-    }
+    vm.FS.writeFile( "/data/data/org.python/assets/main.py" , vm.script.blocks[0] )
 
-    if (1)
-     {
-
-        vm.FS.writeFile( "/data/data/org.python/assets/main.py" , vm.script.blocks[0] )
-
-        var runsite = `#!site
+    python.PyRun_SimpleString(`#!site
 print(" ")
 print("* site.py from pythons.js *")
 import os, sys, json
@@ -449,7 +439,7 @@ if os.path.isdir(PyConfig['prefix']):
     os.chdir(PyConfig['prefix'])
 
 for what,fn in (
-        ["pythonrc", "/data/data/org.python/assets/pythonrc.py"],
+        ["pythonrc", "${pyrc_file}"],
         ["pythonstartup/usersite", "/data/data/org.python/assets/main.py"],
     ):
     print(" ")
@@ -460,12 +450,20 @@ for what,fn in (
         print(fn,"not found")
 print("* site.py done *")
 #
-`
-        python.PyRun_SimpleString(runsite)
-
-    }
+`)
+}
 
 
+async function custom_postrun() {
+    console.warn("VM.postrun Begin")
+    const pyrc_url = vm.config.cdn + "pythonrc.py"
+    var content = 0
+    console.log("cross_file.fetch", pyrc_url )
+    fetch(pyrc_url, {})
+        .then( response => checkStatus(response) && response.arrayBuffer() )
+        .then( buffer => run_pyrc(new Uint8Array(buffer)) )
+        .catch(x => console.error(x))
+    console.warn("VM.postrun End")
 }
 
 
