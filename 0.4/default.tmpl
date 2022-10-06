@@ -55,6 +55,7 @@ def uy(*argv):
 
 # do not rename
 async def sitecustomize():
+    global __file__
     import embed
 
     platform.document.body.style.background = "#7f7f7f"
@@ -138,22 +139,10 @@ async def sitecustomize():
     main = appdir / "assets" / "main.py"
 
 
-    if window.python.config.debug:
+    await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
 
-        from aio.toplevel import AsyncInteractiveConsole
-
-        def importer(want, ex=None, resume=None):
-            print(f"{want=}, {resume=}, {ex=}")
-            return asyncio.sleep(0)
-
-
-
-        aio.create_task( AsyncInteractiveConsole(
-                globals(),
-                shell=shell,
-                importer=importer,
-            ).interact()
-        )
+    __file__ = main
+    await TopLevel_async_handler.async_imports(*TopLevel_async_handler.list_imports(None, main))
 
 
     # test/wait user media interaction

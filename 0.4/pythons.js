@@ -2,6 +2,15 @@
 
 var config
 
+const FETCH_FLAGS = {
+    mode:"no-cors",
+    redirect: 'follow',
+    referrerPolicy: 'no-referrer',
+    credentials: 'omit'
+}
+
+
+
 if (window.config) {
    config = window.config
 } else {
@@ -114,7 +123,7 @@ function checkStatus(response) {
 window.cross_file = function * cross_file(url, store) {
     var content = 0
     console.log("cross_file.fetch", url )
-    fetch(url,{})
+    fetch(url, FETCH_FLAGS)
         .then( response => checkStatus(response) && response.arrayBuffer() )
         .then( buffer => content = new Uint8Array(buffer) )
         .catch(x => console.error(x))
@@ -271,7 +280,7 @@ function prerun(VM) {
 async function _rcp(url, store) {
     var content
     try {
-        content = await fetch(url)
+        content = await fetch(url, FETCH_FLAGS)
     } catch (x) { return false }
 
     store = store || ( "/data/data/" + url )
@@ -1295,7 +1304,7 @@ function MM_autoevents(track) {
 
 
 window.cross_dl = async function cross_dl(trackid, url, autoready) {
-    var response = await fetch(url);
+    var response = await fetch(url, FETCH_FLAGS);
 
     const reader = response.body.getReader();
 
@@ -1316,8 +1325,12 @@ window.cross_dl = async function cross_dl(trackid, url, autoready) {
             track.avail = true
             break
         }
-
-        track.data.set(value, track.pos)
+        try {
+            track.data.set(value, track.pos)
+        } catch (x) {
+            track.pos = -1
+            console.error("1323: cannot download", url)
+        }
 
         track.pos += value.length
 
