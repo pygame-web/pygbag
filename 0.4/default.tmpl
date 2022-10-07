@@ -139,12 +139,21 @@ async def sitecustomize():
 
     main = appdir / "assets" / "main.py"
 
-
+    # start async top level machinery and add a console.
     await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
 
+    # get a relevant list of modules to import
     __file__ = main
-    await TopLevel_async_handler.async_imports(*TopLevel_async_handler.list_imports(None, main))
 
+    imports_ready = False
+
+    async def imports():
+        nonlocal imports_ready
+        await TopLevel_async_handler.async_imports(*TopLevel_async_handler.list_imports(None, main))
+        imports_ready = True
+
+
+    await imports()
 
     # test/wait user media interaction
     if not platform.window.MM.UME:
@@ -165,8 +174,8 @@ async def sitecustomize():
         while not platform.window.MM.UME:
             await asyncio.sleep(.1)
 
-        screen.fill( (0,0,0,0) )
-        pygame.display.flip()
+    screen.fill( (0,0,0,0) )
+    pygame.display.flip()
 
 
 
