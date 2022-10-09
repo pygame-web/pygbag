@@ -14,10 +14,10 @@ readline.complete = function (line) {
 if (!window.Terminal) {
     var xterm_cdn
     if (window.Module.config && window.Module.config.cdn) {
-        xterm_cdn = window.Module.config.cdn+"xtermjsixel/"
+        xterm_cdn = window.Module.config.cdn+"vt/"
         console.log("Terminal+ImageAddon importing from CDN :", xterm_cdn)
     } else {
-        xterm_cdn = xterm_cdn || "https://pygame-web.github.io/archives/0.2.0/xtermjsixel/"
+        xterm_cdn = xterm_cdn || "https://pygame-web.github.io/archives/vt/"
         console.warn("Terminal+ImageAddon importing from fallback ", xterm_cdn)
     }
 
@@ -51,6 +51,7 @@ export class WasmTerminal {
         this.xterm = new Terminal(
             {
 //                allowTransparency: true,
+                    allowProposedApi : true ,
                 scrollback: 10000,
                 fontSize: 14,
                 theme: { background: '#1a1c1f' },

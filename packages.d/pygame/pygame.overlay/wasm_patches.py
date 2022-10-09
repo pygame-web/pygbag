@@ -100,7 +100,7 @@ tracks = { "current": 0 }
 def patch_pygame_mixer_music_stop_pause_unload():
     last = tracks["current"]
     if last:
-        window.MM.pause(last)
+        window.MM.stop(last)
         tracks["current"] = 0
 
 pygame.mixer.music.unload = patch_pygame_mixer_music_stop_pause_unload
@@ -194,18 +194,20 @@ def patch_pygame_mixer_music_pause():
     if last:
         window.MM.pause(last)
 
-pygame.mixer.music.stop = patch_pygame_mixer_music_pause
+
+def patch_pygame_mixer_music_stop():
+    last = tracks["current"]
+    if last:
+        window.MM.stop(last)
+
+pygame.mixer.music.stop = patch_pygame_mixer_music_stop
 pygame.mixer.music.pause = patch_pygame_mixer_music_pause
-
-
 
 # TODO:
 # https://www.pygame.org/docs/ref/music.html#pygame.mixer.music.fadeout
 
 #=======================================================================
 # pygame.mixer.Sound
-
-
 
 
 

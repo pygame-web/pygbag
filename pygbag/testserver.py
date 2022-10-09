@@ -92,8 +92,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
         f = None
 
         if not os.path.isfile(path) and not path.endswith(".map"):
-            if path.find('/archives/repo/')>= 0:
-                remote_url = CDN.rsplit('/',3)[0]+self.path
+            if path.find("/archives/repo/") >= 0:
+                remote_url = CDN.rsplit("/", 3)[0] + self.path
             else:
                 remote_url = CDN + self.path
             cache = hashlib.md5(remote_url.encode()).hexdigest()

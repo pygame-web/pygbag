@@ -39,7 +39,6 @@ def install(pkg_file, sconf=None):
         sys.print_exception(ex)
 
 
-
 async def get_repo_pkg(pkg_file, pkg, resume, ex):
     # print("-"*40)
     import platform

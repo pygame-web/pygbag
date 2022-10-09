@@ -167,10 +167,10 @@ def explore(root):
             if filename.endswith(".so"):
                 preld_counter += 1
                 src = f"{current}/{filename}"
-#                dst = "/tmp/pre" + str(preld_counter).zfill(4) + ".so"
-#                print(f"175 {src} -> {dst}")
-#                shutil.copyfile(src, dst)
-#                prelist[src] = dst
+                #                dst = "/tmp/pre" + str(preld_counter).zfill(4) + ".so"
+                #                print(f"175 {src} -> {dst}")
+                #                shutil.copyfile(src, dst)
+                #                prelist[src] = dst
                 embed.preload(src)
 
 

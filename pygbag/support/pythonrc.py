@@ -8,8 +8,8 @@ import aio.cross
 
 import time
 
-PYCONFIG_PKG_INDEXES_DEV =['http://localhost:<port>/archives/repo/']
-PYCONFIG_PKG_INDEXES = ['https://pygame-web.github.io/archives/repo/']
+PYCONFIG_PKG_INDEXES_DEV = ["http://localhost:<port>/archives/repo/"]
+PYCONFIG_PKG_INDEXES = ["https://pygame-web.github.io/archives/repo/"]
 
 # the sim does not preload assets and cannot access currentline
 # unless using https://github.com/pmp-p/aioprompt/blob/master/aioprompt/__init__.py
@@ -322,6 +322,7 @@ if defined("embed") and hasattr(embed, "readline"):
         async def pip(cls, *argv):
             if argv[0] == "install":
                 import aio.toplevel
+
                 await aio.toplevel.importer.async_imports(argv[1])
 
         @classmethod
@@ -374,29 +375,31 @@ if defined("embed") and hasattr(embed, "readline"):
                 mask = os.umask(0)
                 os.umask(mask)
                 return mask
+
             for arg in argv:
-                if arg.startswith('-'):
+                if arg.startswith("-"):
                     continue
-                mode = (0o777 & ~_current_umask() | 0o111)
+                mode = 0o777 & ~_current_umask() | 0o111
                 print(f"{mode=}")
                 os.chmod(arg, mode)
 
-
         @classmethod
-        def unzip(cls, *argv,**env):
+        def unzip(cls, *argv, **env):
             import zipfile
+
             for zip in argv:
-                with zipfile.ZipFile(zip,"r") as zip_ref:
+                with zipfile.ZipFile(zip, "r") as zip_ref:
                     zip_ref.extractall(os.getcwd())
 
         @classmethod
         def install(cls, *argv, **env):
             import aio.toplevel
+
             for pkg_file in argv:
                 try:
                     aio.toplevel.install(pkg_file)
                     yield f"{pkg_file} installed"
-                except  (IOError, zipfile.BadZipFile):
+                except (IOError, zipfile.BadZipFile):
                     pdb("397: invalid package", pkg_file)
                 except Exception as ex:
                     sys.print_exception(ex)
@@ -503,6 +506,7 @@ ________________________
             import asyncio, platform
 
             if platform.is_browser:
+
                 def load_display(ft):
                     avg = sum(ft) / len(ft)
                     try:
@@ -562,6 +566,7 @@ ________________________
                 catch = shell.exec(cmd, *args, **env)
         return catch
 
+
 try:
     PyConfig
     PyConfig["pkg_repolist"] = []
@@ -571,17 +576,21 @@ try:
 
 except Exception as e:
     sys.print_exception(e)
-# TODO: build a pyconfig extracted from C here
+    # TODO: build a pyconfig extracted from C here
     PyConfig = {}
-    PyConfig["dev_mode"]=1
-    PyConfig["run_filename"]="main.py"
+    PyConfig["dev_mode"] = 1
+    PyConfig["run_filename"] = "main.py"
     PyConfig["executable"] = sys.executable
     PyConfig["interactive"] = 1
     print(" - running in wasm simulator - ")
     aio.cross.simulator = True
 
+PyConfig["imports_ready"] = false
+
+
 from types import SimpleNamespace
 import builtins
+
 builtins.PyConfig = SimpleNamespace(**PyConfig)
 del PyConfig
 
@@ -662,16 +671,22 @@ if not aio.cross.simulator:
     if (__WASM__ and __EMSCRIPTEN__) or platform.is_browser:
         port = "443"
 
-        if platform.window.location.href.find('localhost')>0:
-            PyConfig.dev_mode = 1
-            print(sys._emscripten_info)
+        # pygbag mode
+        if platform.window.location.href.find("localhost") > 0:
             port = str(platform.window.location.port)
 
-        if PyConfig.dev_mode>0: #and (port !="8666"):
+            # pygbag developer mode
+            if port == "8666":
+                PyConfig.dev_mode = 1
+            print(sys._emscripten_info)
+
+        if PyConfig.dev_mode > 0:
+            # in pygbag dev mode use local repo
             PyConfig.pkg_indexes = []
             for idx in PYCONFIG_PKG_INDEXES_DEV:
-                PyConfig.pkg_indexes.append( idx.replace("<port>", port) )
+                PyConfig.pkg_indexes.append(idx.replace("<port>", port))
         else:
+            # address cdn
             PyConfig.pkg_indexes = PYCONFIG_PKG_INDEXES
 
         from platform import window, document
@@ -687,7 +702,7 @@ if not aio.cross.simulator:
             async def __aenter__(self):
                 import platform
 
-                #print(f'572: Download start: "{self.url}"')
+                # print(f'572: Download start: "{self.url}"')
 
                 if "b" in self.mode:
                     self.__class__.ticks += 1
@@ -761,17 +776,17 @@ if not aio.cross.simulator:
 
     del apply_patches
 
-# =================== async import , async console ===================================
+    # =================== async import , async console ===================================
 
     import os
-    # set correct umask ( emscripten default is 0 )
-    os.umask(0o022) # already done in aio.toplevel
 
+    # set correct umask ( emscripten default is 0 )
+    os.umask(0o022)  # already done in aio.toplevel
 
     import zipfile
     import aio.toplevel
     import ast
-
+    from pathlib import Path
 
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
 
@@ -781,8 +796,7 @@ if not aio.cross.simulator:
         ignore = ["distutils", "installer", "sysconfig"]
         ignore += ["python-dateutil", "matplotlib-pyodide"]
         # ???
-        ignore += [ "pillow", "fonttools"]
-
+        ignore += ["pillow", "fonttools"]
 
         from pathlib import Path
 
@@ -825,7 +839,6 @@ if not aio.cross.simulator:
                     required.append(mod)
             return required
 
-
         @classmethod
         def list_imports(cls, code=None, file=None):
             import platform
@@ -847,7 +860,6 @@ if not aio.cross.simulator:
                         cls.may_need.append(want)
                         yield want
                         break
-
 
         @classmethod
         def imports(cls, *mods, lvl=0, wants=[]):
@@ -873,53 +885,51 @@ if not aio.cross.simulator:
                         wants.append(dep)
             return wants
 
-
-
         @classmethod
         async def async_imports(cls, *wanted):
-    #        # using pyodide repodata
-    #        async def pkg_install(*packages):
-    #            nonlocal cls
-    #            import sys
-    #            import sysconfig
-    #            import importlib
+            #        # using pyodide repodata
+            #        async def pkg_install(*packages):
+            #            nonlocal cls
+            #            import sys
+            #            import sysconfig
+            #            import importlib
 
-    #            refresh = False
-    #            for pkg in packages:
-    #                pkg_info = cls.repos[0]["packages"].get(pkg, None)
+            #            refresh = False
+            #            for pkg in packages:
+            #                pkg_info = cls.repos[0]["packages"].get(pkg, None)
 
-    #                if pkg_info is None:
-    #                    pdb(f'144: package "{pkg}" not found in repodata')
-    #                    continue
+            #                if pkg_info is None:
+            #                    pdb(f'144: package "{pkg}" not found in repodata')
+            #                    continue
 
-    #                file_name = pkg_info.get("file_name", "")
-    #                valid = False
-    #                if file_name:
-    #                    pkg_file = f"/tmp/{file_name}"
+            #                file_name = pkg_info.get("file_name", "")
+            #                valid = False
+            #                if file_name:
+            #                    pkg_file = f"/tmp/{file_name}"
 
-    #                    async with platform.fopen(
-    #                        cls.dl_cdn / file_name, "rb"
-    #                    ) as source:
-    #                        source.rename_to(pkg_file)
-    #                        for hex in shell.sha256sum(pkg_file):
-    #                            expected = hex.split(" ", 1)[0].lower()
-    #                            maybe = pkg_info.get("sha256", "").lower()
-    #                            if maybe and (maybe != expected):
-    #                                pdb(
-    #                                    f"158: {pkg} download to {pkg_file} corrupt",
-    #                                    pkg_info.get("sha256", ""),
-    #                                    expected,
-    #                                )
-    #                                break
-    #                        else:
-    #                            valid = True
-    #                            refresh = True
-    #                else:
-    #                    pdb(f'144: package "{pkg}" invalid in repodata')
-    #                    continue
+            #                    async with platform.fopen(
+            #                        cls.dl_cdn / file_name, "rb"
+            #                    ) as source:
+            #                        source.rename_to(pkg_file)
+            #                        for hex in shell.sha256sum(pkg_file):
+            #                            expected = hex.split(" ", 1)[0].lower()
+            #                            maybe = pkg_info.get("sha256", "").lower()
+            #                            if maybe and (maybe != expected):
+            #                                pdb(
+            #                                    f"158: {pkg} download to {pkg_file} corrupt",
+            #                                    pkg_info.get("sha256", ""),
+            #                                    expected,
+            #                                )
+            #                                break
+            #                        else:
+            #                            valid = True
+            #                            refresh = True
+            #                else:
+            #                    pdb(f'144: package "{pkg}" invalid in repodata')
+            #                    continue
 
-    #            # call aio.toplevel.install
-    #            aio.toplevel.install(pkg_file, sysconfig.get_paths() )
+            #            # call aio.toplevel.install
+            #            aio.toplevel.install(pkg_file, sysconfig.get_paths() )
             # init dep solver.
 
             if not len(cls.repos):
@@ -927,46 +937,36 @@ if not aio.cross.simulator:
                     async with platform.fopen(Path(cdn) / cls.repodata) as source:
                         cls.repos.append(json.loads(source.read()))
 
-                #print(json.dumps(cls.repos[0]["packages"], sort_keys=True, indent=4))
+                # print(json.dumps(cls.repos[0]["packages"], sort_keys=True, indent=4))
 
                 print("referenced packages :", len(cls.repos[0]["packages"]))
 
             if not len(PyConfig.pkg_repolist):
                 await cls.async_repos()
 
-            if PyConfig.dev_mode>0:
+            if PyConfig.dev_mode > 0:
                 for idx, repo in enumerate(PyConfig.pkg_repolist):
-                    print( repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
+                    print(repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
                     repo["-CDN-"] = PyConfig.pkg_indexes[idx]
 
-
-
-
-
-
-
-
-
-
-
-
             all = cls.imports(*wanted)
-            if 'numpy' in all:
+            if "numpy" in all:
                 print("254: importing numpy first")
                 try:
-                    await cls.get_pkg('numpy')
+                    await cls.get_pkg("numpy")
                     import numpy
-                    all.remove('numpy')
+
+                    all.remove("numpy")
                 except (IOError, zipfile.BadZipFile):
                     pdb("914: cannot load numpy")
                     return
 
             for req in all:
                 if req == "python-dateutil":
-                    req= "dateutil"
+                    req = "dateutil"
 
                 if req == "pillow":
-                    req= "PIL"
+                    req = "PIL"
 
                 if req in cls.ignore or req in sys.modules:
                     continue
@@ -975,24 +975,27 @@ if not aio.cross.simulator:
                 except (IOError, zipfile.BadZipFile):
                     pdb(f"928: cannot download {req} pkg")
 
+        # TODO: re order repo on failures
+        # TODO: try to download from pypi with
+        # https://github.com/brettcannon/mousebender/blob/main/mousebender/simple.py
+        # https://peps.python.org/pep-0503/
+        # https://wiki.python.org/moin/PyPIJSON
 
-#TODO: re order repo on failures
+        # TODO: gets deps from pygbag
+        # https://github.com/thebjorn/pydeps
+
         @classmethod
         async def async_get_pkg(cls, want, ex, resume):
             pkg_file = ""
             for repo in PyConfig.pkg_repolist:
-                print("954:", want, want in repo)
+                # print("954:", want, want in repo)
                 if want in repo:
                     pkg_url = f"{repo['-CDN-']}{repo[want]}"
 
-                    pkg_file =  f"/tmp/{repo[want].rsplit('/',1)[-1]}"
+                    pkg_file = f"/tmp/{repo[want].rsplit('/',1)[-1]}"
 
-                    cfg = {
-                        "io": "url",
-                        "type":"fs",
-                        "path" : pkg_file
-                    }
-                    print("pkg :", pkg_url, "=>", pkg_file)
+                    cfg = {"io": "url", "type": "fs", "path": pkg_file}
+                    print("pkg :", pkg_url, "\n\t=>", pkg_file)
 
                     track = platform.window.MM.prepare(pkg_url, json.dumps(cfg))
 
@@ -1000,8 +1003,10 @@ if not aio.cross.simulator:
                         await cls.pv(track)
                         zipfile.ZipFile(pkg_file).close()
                         break
-                    except (IOError,zipfile.BadZipFile):
-                        pdb(f"960: network error on {repo['-CDN-']}, cannot install {pkg_file}")
+                    except (IOError, zipfile.BadZipFile):
+                        pdb(
+                            f"960: network error on {repo['-CDN-']}, cannot install {pkg_file}"
+                        )
             else:
                 print(f"PKG NOT FOUND : {want=}, {resume=}, {ex=}")
                 return None
@@ -1011,16 +1016,20 @@ if not aio.cross.simulator:
         def get_pkg(cls, want, ex=None, resume=None):
             return cls.async_get_pkg(want, ex, resume)
 
-        async def pv(track, prefix = '', suffix = '', decimals = 1, length = 100, fill = 'X', printEnd = "\r"):
+        async def pv(
+            track, prefix="", suffix="", decimals=1, length=70, fill="X", printEnd="\r"
+        ):
 
             # Progress Bar Printing Function
             def print_pg_bar(total, iteration):
-                if iteration>total:
+                if iteration > total:
                     iteration = total
-                percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+                percent = ("{0:." + str(decimals) + "f}").format(
+                    100 * (iteration / float(total))
+                )
                 filledLength = int(length * iteration // total)
-                bar = fill * filledLength + '-' * (length - filledLength)
-                print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+                bar = fill * filledLength + "-" * (length - filledLength)
+                print(f"\r{prefix} |{bar}| {percent}% {suffix}", end=printEnd)
 
             # Update Progress Bar
             while True:
@@ -1029,7 +1038,7 @@ if not aio.cross.simulator:
                 print_pg_bar(track.len or 100, track.pos or 0)
                 if track.avail:
                     break
-                await asyncio.sleep(.02)
+                await asyncio.sleep(0.02)
 
             # Print New Line on Complete
             print()
@@ -1038,19 +1047,14 @@ if not aio.cross.simulator:
         async def async_repos(cls):
             abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
             for repo in PyConfig.pkg_indexes:
-                async with fopen(f'{repo}index.json', 'r') as index:
+                async with fopen(f"{repo}index.json", "r") as index:
                     try:
-                        data = index.read().replace("<abi>",abitag)
+                        data = index.read().replace("<abi>", abitag)
                         repo = json.loads(data)
                     except:
                         pdb(f"{repo}: malformed json index {data}")
                         continue
-                    PyConfig.pkg_repolist.append( repo )
-
-
-
-
-
+                    PyConfig.pkg_repolist.append(repo)
 
 else:
     pdb("TODO: js simulator")
@@ -1081,21 +1085,3 @@ import aio.recycle
 
 
 #
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

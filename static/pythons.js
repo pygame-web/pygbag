@@ -112,11 +112,19 @@ window.iterator = function * iterator(oprom) {
 
 
 function checkStatus(response) {
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} - ${response.statusText}`);
-  }
-  return response;
+    if (!response.ok) {
+        response.error =  new Error(`HTTP ${response.status} - ${response.statusText}`);
+        return null
+    }
+    return response;
 }
+
+
+window.addEventListener('unhandledrejection', function(event) {
+  console.error("uncaught :",event.promise); // the promise that generated the error
+  console.error("uncaught :",event.reason); // the unhandled error object
+})
+
 
 
 //fileretrieve (binary). TODO: wasm compilation
@@ -124,12 +132,21 @@ window.cross_file = function * cross_file(url, store) {
     var content = 0
     console.log("cross_file.fetch", url )
     fetch(url, FETCH_FLAGS)
-        .then( response => checkStatus(response) && response.arrayBuffer() )
+        .then( response => {
+                if (response)
+                    response.arrayBuffer()
+                else
+                    content = "error"
+            })
         .then( buffer => content = new Uint8Array(buffer) )
-        .catch(x => console.error(x))
+        .catch(x => console.error("cross_file :",x))
 
     while (!content)
         yield content
+
+    if ( content == "error" )
+        return response.error
+
     FS.writeFile(store, content )
     console.log("cross_file.fetch",store,"r/w=", content.byteLength )
     yield store
@@ -736,7 +753,7 @@ async function feat_vtx(debug_hidden) {
     const { WasmTerminal } = await import("./vtx.js")
 
     vm.vt = new WasmTerminal("terminal", 132, 42, [
-            { url : (config.cdn || "./") + "xtermjsixel/xterm-addon-image-worker.js", sixelSupport:true }
+            { url : (config.cdn || "./") + "xtermjsixel/xterm-addon-image-worker.js", sixelSupport:true}
     ] )
 }
 
@@ -1029,7 +1046,7 @@ console.log("pythons found at", url , elems)
             }
 
             if (vm.cpy_argv.length)
-                vm.script.interpreter = vm.cpy_argv[0]
+                vm.script.interpreter = vm.cpy_argv[0] || script.dataset.python || "cpython"
             else {
                 vm.script.interpreter = "cpython"
                 console.log("no python implementation specified, using default :",vm.script.interpreter)
@@ -1126,6 +1143,7 @@ config.interactive = config.interactive || (location.search.search("-i")>=0) //?
             console.log('url=', url)
             console.log('src=', script.src)
             console.log('data-src=', script.dataset.src)
+            console.log('data-python=', script.dataset.python)
             console.log('script: id=', script.id)
             console.log('code : ' , code.length, ` as ${script.id}.py`)
             vm.config = config
@@ -1457,6 +1475,13 @@ MM.play = function play(trackid, loops, start, fade_ms) {
         play_asap()
     }
 }
+
+MM.stop = function stop(trackid) {
+    console.log("MM.stop", trackid, MM[trackid] )
+    MM[trackid].media.currentTime = 0
+    MM[trackid].media.pause()
+}
+
 
 MM.pause = function pause(trackid) {
     console.log("MM.pause", trackid, MM[trackid] )

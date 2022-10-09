@@ -6,7 +6,7 @@ import pygbag
 def stringify(blob):
     c = 0
     for b in blob:
-        yield chr( int(b) + 248)
+        yield chr(int(b) + 248)
         c += 1
         if c > 78:
             yield "\n"
