@@ -21,7 +21,7 @@ if (!window.Terminal) {
         console.warn("Terminal+ImageAddon importing from fallback ", xterm_cdn)
     }
 
-    for (const css of ["xterm.css","style.css"]) {
+    for (const css of ["xterm.css"]) { //,"style.css"]) {
             const cssref = document.createElement('link')
             cssref.setAttribute("rel", "stylesheet")
             cssref.setAttribute("type", "text/css")
@@ -51,11 +51,11 @@ export class WasmTerminal {
         this.xterm = new Terminal(
             {
 //                allowTransparency: true,
-                    allowProposedApi : true ,
+                allowProposedApi : true ,   // xterm 0.5 + sixel
                 scrollback: 10000,
                 fontSize: 14,
                 theme: { background: '#1a1c1f' },
-                cols: (cols || 100), rows: (rows || 25)
+                cols: (cols || 132), rows: (rows || 30)
             }
         );
 

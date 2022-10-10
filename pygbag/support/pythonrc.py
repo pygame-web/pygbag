@@ -886,14 +886,17 @@ if not aio.cross.simulator:
             return wants
 
         @classmethod
-        async def async_imports(cls, *wanted):
-            #        # using pyodide repodata
-            #        async def pkg_install(*packages):
-            #            nonlocal cls
-            #            import sys
-            #            import sysconfig
-            #            import importlib
+        async def async_imports(cls, *wanted, **kw):
+            def default_cb(pkg, error=None):
+                if error:
+                    pdb(msg)
+                else:
+                    print(f"\tinstalling {pkg}")
 
+            kw.setdefault('callback',default_cb)
+
+
+            #        # using pyodide repodata
             #            refresh = False
             #            for pkg in packages:
             #                pkg_info = cls.repos[0]["packages"].get(pkg, None)
@@ -928,10 +931,8 @@ if not aio.cross.simulator:
             #                    pdb(f'144: package "{pkg}" invalid in repodata')
             #                    continue
 
-            #            # call aio.toplevel.install
-            #            aio.toplevel.install(pkg_file, sysconfig.get_paths() )
-            # init dep solver.
 
+            # init dep solver.
             if not len(cls.repos):
                 for cdn in PyConfig.pkg_indexes:
                     async with platform.fopen(Path(cdn) / cls.repodata) as source:
@@ -951,11 +952,10 @@ if not aio.cross.simulator:
 
             all = cls.imports(*wanted)
             if "numpy" in all:
-                print("254: importing numpy first")
+                kw['callback']('numpy')
                 try:
                     await cls.get_pkg("numpy")
                     import numpy
-
                     all.remove("numpy")
                 except (IOError, zipfile.BadZipFile):
                     pdb("914: cannot load numpy")
@@ -970,10 +970,14 @@ if not aio.cross.simulator:
 
                 if req in cls.ignore or req in sys.modules:
                     continue
+                kw['callback'](req)
                 try:
                     await cls.get_pkg(req)
                 except (IOError, zipfile.BadZipFile):
-                    pdb(f"928: cannot download {req} pkg")
+                    msg=f"928: cannot download {req} pkg"
+                    kw['callback'](req,error=msg)
+
+
 
         # TODO: re order repo on failures
         # TODO: try to download from pypi with

@@ -92,10 +92,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
         f = None
 
         if not os.path.isfile(path) and not path.endswith(".map"):
-            if path.find("/archives/repo/") >= 0:
-                remote_url = CDN.rsplit("/", 3)[0] + self.path
-            else:
-                remote_url = CDN + self.path
+            remote_url = CDN + self.path
             cache = hashlib.md5(remote_url.encode()).hexdigest()
             d_cache = CACHE.joinpath(cache + ".data")
             h_cache = CACHE.joinpath(cache + ".head")
@@ -290,7 +287,7 @@ if not ".wasm" in CodeHandler.extensions_map:
 def run_code_server(args, cc):
     global CACHE, CDN, PROXY, BCDN, BPROXY
     CACHE = Path(args.cache)
-    CDN = args.cdn
+    CDN = '/'.join( args.cdn.split('/')[0:3] )
     PROXY = cc["proxy"]
 
     BCDN = CDN.encode("utf-8")
