@@ -86,11 +86,68 @@ if sys.platform in ("emscripten","wasi",):
             if await TopLevel_async_handler.async_imports(*wants):
                 import numpy
 
-        if 1:
+        if 0:
             await asyncio.sleep(1)
             if await TopLevel_async_handler.async_imports("matplotlib"):
                 import matplotlib
+        if 1:
+            platform.window.eval("""
+() => {
+window.Fetch = {}
 
+// generator functions for async fetch API
+// script is meant to be run at runtime in an emscripten environment
+
+// Fetch API allows data to be posted along with a POST request
+window.Fetch.POST = function * POST (url, data)
+{
+    // post info about the request
+    console.log("POST: " + url + "\nData: " + data);
+    var request = new Request(url, {method: 'POST', body: JSON.stringify(data)})
+    var content = 'undefined';
+    fetch(request)
+   .then(resp => resp.text())
+   .then((resp) => {
+        console.log(resp);
+        content = resp;
+   })
+   .catch(err => {
+         // handle errors
+         console.log("An Error Occurred:")
+         console.log(err);
+    });
+
+    while(content == 'undefined'){
+        yield content;
+    }
+}
+
+// Only URL to be passed
+// when called from python code, use urllib.parse.urlencode to get the query string
+window.Fetch.GET = function * GET (url)
+{
+    console.log("GET: " + url);
+    var request = new Request(url, { method: 'GET' })
+    var content = 'undefined';
+    fetch(request)
+   .then(resp => resp.text())
+   .then((resp) => {
+        console.log(resp);
+        content = resp;
+   })
+   .catch(err => {
+         // handle errors
+         console.log("An Error Occurred:");
+         console.log(err);
+    });
+
+    while(content == 'undefined'){
+        // generator
+        yield content;
+    }
+}
+}()
+""")
 
 
         if 1: #not pygame:
