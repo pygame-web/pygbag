@@ -9,14 +9,22 @@ DEBUG = True
 builtins.aio = sys.modules[__name__]
 
 # try to acquire syslog early
+
+# TODO: use PyConfig debug flag
 try:
     import embed
 
-    builtins.pdb = embed.log
+    def pdb(*argv):
+        #print(*argv, file=sys.__stderr__)
+        pass
+
+    #builtins.pdb = embed.log
+    builtins.pdb = pdb
 except:
 
     def pdb(*argv):
-        print(*argv, file=sys.__stderr__)
+        #print(*argv, file=sys.__stderr__)
+        pass
 
     builtins.pdb = pdb
 
@@ -207,8 +215,7 @@ def step(*argv):
 
         if paused is not last_state:
             if not exit:
-                # print(f' - aio is {(paused and "paused") or "resuming"}')
-                print(f" - aio is {'paused' if paused else 'resuming'} -")
+                pdb(f" - aio is {'paused' if paused else 'resuming'} -")
             else:
                 print(f" - aio is exiting -")
             last_state = paused

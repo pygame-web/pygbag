@@ -67,7 +67,7 @@ if hasattr(sys, "getandroidapilevel"):
 if sys.platform == "emscripten":
     platform_impl = defined("__EMSCRIPTEN__")
     if not platform_impl:
-        print("importing platform_impl __EMSCRIPTEN__")
+        #pdb("importing platform_impl __EMSCRIPTEN__")
         try:
             import __EMSCRIPTEN__ as platform_impl
         except Exception as e:
@@ -88,8 +88,6 @@ driver = defined("embed")
 try:
     if not driver:
         import embed as driver
-
-        print("platform_impl embedding module driver :", driver)
 except:
     # use the simulator defined platform_impl value as the embed.
     driver = platform_impl

@@ -43,8 +43,12 @@ if hasattr(sys, "_emscripten_info"):
         from embed import *
         from platform import *
         from embed_emscripten import *
-        from embed_browser import window, document, navigator, Object
+        from embed_browser import window, document, navigator
+        from embed_browser import Audio, File, Object
         from embed_browser import fetch, console, prompt, alert, confirm
+
+        # pyodide compat
+        sys.modules["js"] = sys.modules["embed_browser"]
 
         Object_type = type(Object())
     except Exception as e:
@@ -110,6 +114,14 @@ def init_platform(embed):
 # ========================================== DOM EVENTS ===============
 
 if is_browser:
+    # implement "new"
+
+    def new(oclass, *argv):
+        from embed_browser import Reflect, Array
+        return Reflect.construct(oclass, Array(*argv) )
+    builtins.new = new
+
+
     # dom events
     class EventTarget:
         clients = {}
@@ -123,14 +135,34 @@ if is_browser:
             self.events.append([evt_name, json.loads(jsondata)])
 
         # def dispatchEvent
+        async def rpc(self, method, *argv ):
+            import inspect
+# TODO resolve whole path
+            if hasattr(__import__('__main__') , method):
+                client = getattr( __import__('__main__') , method)
+                is_coro = inspect.iscoroutinefunction(client)
+                if is_coro:
+                    await client(*argv)
+                else:
+                    client(*argv)
+            else:
+                print(f"RPC not found: {method}{argv}")
 
         async def process(self):
             import inspect
             from types import SimpleNamespace
 
+            # notify event queue we are ready to process
+            window.python.is_ready = 1
+
             while not aio.exit:
                 if len(self.events):
                     evtype, evdata = self.events.pop(0)
+                    if evtype == 'rpc':
+                        print("rpc.id", evdata.pop('rpcid') )
+                        await self.rpc(evdata.pop('call'), *evdata.pop('argv') )
+                        continue
+
                     discarded = True
                     for client in self.clients.get(evtype, []):
                         is_coro = inspect.iscoroutinefunction(client)

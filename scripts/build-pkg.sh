@@ -10,6 +10,7 @@ export PYMINOR=$(echo -n $PYBUILD|cut -d. -f2)
 export DISTRIB="${DISTRIB_ID}-${DISTRIB_RELEASE}"
 export CONFIG=${CONFIG:-$SDKROOT/config}
 
+export EMSDK_QUIET=1
 
 export CIVER=${CIVER:-$DISTRIB}
 
@@ -93,20 +94,35 @@ mkdir -p build
 > build/gen_inittab.c
 
 
-for pkg in ${PACKAGES:-pygame}
+for pkg in ${PACKAGES}
 do
-    pkg_script=${PKG_PATH}.sh
 
     PKG_PATH=packages.d/${pkg}/${pkg}
 
+    pkg_script=${PKG_PATH}.sh
 
-    #pkg=$(basename $pkg_script .sh)
-
-    echo "
+    if [ -f $pkg_script ]
+    then
+        echo "
 
     * processing build script $pkg_script for $pkg from $PKG_PATH
 
 " 1>&2
+    else
+        echo "
+
+
+
+    PACKAGE $pkg HAS NO BUILD FILE
+
+    it must provide ${SDKROOT}/prebuilt/emsdk/lib${pkg}${PYBUILD}.a
+
+
+"
+        continue
+    fi
+
+
 
     export PKGDIR=$REQUIREMENTS/$pkg
 
@@ -167,6 +183,7 @@ END
         continue
     fi
 
+    export pkg
 
     if ./${PKG_PATH}.sh
     then

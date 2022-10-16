@@ -427,9 +427,6 @@ if sys.platform in ("wasi", "emscripten"):
     if pygame_static:
         import pygame.wasm_patches
 
-        print(sys._emscripten_info)
-
-
 # Thanks for supporting pygame. Without support now, there won't be pygame later.
 if "PYGAME_HIDE_SUPPORT_PROMPT" not in os.environ:
     print(
@@ -437,6 +434,8 @@ if "PYGAME_HIDE_SUPPORT_PROMPT" not in os.environ:
             ver, *get_sdl_version() + sys.version_info[0:3]
         )
     )
+    if sys.platform in ("wasi", "emscripten"):
+        print(sys._emscripten_info)
     print("Hello from the pygame community. https://www.pygame.org/contribute.html")
 
 # cleanup namespace

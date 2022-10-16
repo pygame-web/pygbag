@@ -14,11 +14,6 @@ Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
 
 """)
 
-import sys
-import asyncio
-import platform
-import json
-from pathlib import Path
 
 # screen pixels (real, hardware)
 WIDTH=1024  # {{cookiecutter.width}}
@@ -55,8 +50,17 @@ def uy(*argv):
 
 # do not rename
 async def sitecustomize():
-    global __file__
+
+    import sys
+    import asyncio
+    import platform
+    import json
+    from pathlib import Path
+
+
+
     import embed
+
 
     platform.document.body.style.background = "#7f7f7f"
 
@@ -189,8 +193,10 @@ async def sitecustomize():
     screen.fill( (0,0,0,0) )
     pygame.display.flip()
 
+    code = ""
 
     def check_code(file_name):
+        nonlocal code
         maybe_sync = False
         has_pygame = False
         with open(file_name,"r") as code_file:
@@ -226,6 +232,11 @@ async def sitecustomize():
 
 
     else:
+        for base in ('pygame','pg'):
+            for func in ('flip','update'):
+                block =  f'{base}.display.{func}()'
+                code = code.replace( block, ff'{block};await asyncio.sleep(0)')
+
         pdb(" -> won't run synchronous code with a pygame loop")
         #if await TopLevel_async_handler.async_imports("matplotlib"):
         #    import matplotlib
@@ -395,7 +406,6 @@ config = {
             <progress value="0" max="100" id="progress"></progress>
         </div>
     </div>
-
 
 
     <canvas class="emscripten" id="canvas"

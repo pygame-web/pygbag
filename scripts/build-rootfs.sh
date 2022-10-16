@@ -111,8 +111,8 @@ if 0:
     ffi = FFI()
 END
 
-echo "=============================="
-$HPY -u -B <<END
+echo "-----------------------------------------------------------"
+$HPY -u -I -B <<END
 import sys, os
 stdlp=""
 with open("build/stdlib.list","w") as tarlist:
@@ -122,8 +122,16 @@ with open("build/stdlib.list","w") as tarlist:
             #print( l.strip() )
             if l.find('/')<0:
                 continue
+
             _,trail = l.strip().split('/',1)
-            stdlp, name = trail.rsplit('usr/lib/',1)
+
+            try:
+                stdlp, name = trail.rsplit('usr/lib/',1)
+            except Exception as x:
+                print(f"ERROR {l=}", x, file=sys.stderr)
+                print(sys.path, file=sys.stderr)
+                continue
+
 
             #print (stdlp, name)
             #if name.find('asyncio/unix_events.py')>0:
@@ -148,10 +156,9 @@ with open("build/stdlib.list","w") as tarlist:
 os.system(tarcmd)
 END
 
-
-echo "=============================="
+echo "*******************************************"
 grep -v ^import log |grep -v ^#
-echo "=============================="
+echo "*******************************************"
 mkdir -p build/stdlib-rootfs
 tar xvf build/stdl.tar -C build/stdlib-rootfs | wc -l
 rm build/stdl.tar

@@ -305,12 +305,15 @@ if defined("embed") and hasattr(embed, "readline"):
 
             filename = None
             for arg in map(str, argv):
-
                 if arg.startswith("-O"):
                     filename = arg[2:].lstrip()
-                    continue
-                filename, _ = urllib.request.urlretrieve(arg, filename=filename)
-                filename = None
+                    yield f'saving to "{filename}"'
+                    break
+
+            for arg in map(str, argv):
+                fn = filename or str(argv[0]).rsplit('/')[-1]
+                filename, _ = urllib.request.urlretrieve(str(arg), filename=fn)
+
             return True
 
         @classmethod
@@ -624,6 +627,25 @@ if not aio.cross.simulator:
 
     def apply_patches():
 
+
+        # use shell generators instead of subprocesses
+        # ==========================================================
+
+        import os
+
+        def popen(iterator, **kw):
+            import io
+            kw.setdefault("file", io.StringIO(newline="\r\n"))
+            for line in iterator:
+                print(line,**kw)
+            kw['file'].seek(0)
+            return kw['file']
+
+        os.popen = popen
+
+        # add real browser functions
+        # ===========================================================
+
         import webbrowser
 
         def browser_open(url, new=0, autoraise=True):
@@ -653,7 +675,9 @@ if not aio.cross.simulator:
         # https://rdb.name/panda3d-webgl.md.html#supplementalmodules/asynchronousloading
         #
 
-        # bad and deprecated use of sync XHR
+
+        # use bad and deprecated sync XHR for urllib
+        # ============================================================
 
         import urllib
         import urllib.request
@@ -678,9 +702,9 @@ if not aio.cross.simulator:
             # pygbag developer mode
             if port == "8666":
                 PyConfig.dev_mode = 1
-            print(sys._emscripten_info)
 
         if PyConfig.dev_mode > 0:
+            print(sys._emscripten_info)
             # in pygbag dev mode use local repo
             PyConfig.pkg_indexes = []
             for idx in PYCONFIG_PKG_INDEXES_DEV:
@@ -787,6 +811,8 @@ if not aio.cross.simulator:
     import aio.toplevel
     import ast
     from pathlib import Path
+
+
 
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
 
@@ -999,7 +1025,7 @@ if not aio.cross.simulator:
                     pkg_file = f"/tmp/{repo[want].rsplit('/',1)[-1]}"
 
                     cfg = {"io": "url", "type": "fs", "path": pkg_file}
-                    print("pkg :", pkg_url, "\n\t=>", pkg_file)
+                    print("pkg :", pkg_url)
 
                     track = platform.window.MM.prepare(pkg_url, json.dumps(cfg))
 
@@ -1059,6 +1085,12 @@ if not aio.cross.simulator:
                         pdb(f"{repo}: malformed json index {data}")
                         continue
                     PyConfig.pkg_repolist.append(repo)
+
+
+    # convert a emscripten FS path to a blob url
+    # TODO: weakmap and GC collect
+    def File(path):
+        return platform.window.blob(str(path))
 
 else:
     pdb("TODO: js simulator")

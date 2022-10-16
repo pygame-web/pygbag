@@ -41,7 +41,6 @@ self hosting:
 
 */
 
-
 #if __EMSCRIPTEN__
     #define EMIFACE
     #include <emscripten/html5.h>
@@ -54,14 +53,14 @@ self hosting:
 
     #define HOST_RETURN(value)  return value
 
-#if defined(EMIFACE)
-    PyObject *sysmod;
-    PyObject *sysdict;
+#   if defined(EMIFACE)
+        PyObject *sysmod;
+        PyObject *sysdict;
 
-    #include "__EMSCRIPTEN__.embed/emscriptenmodule.c"
-    #include "__EMSCRIPTEN__.embed/browsermodule.c"
-    #include "__EMSCRIPTEN__.embed/sysmodule.c"
-#endif
+        #include "__EMSCRIPTEN__.embed/emscriptenmodule.c"
+        #include "__EMSCRIPTEN__.embed/browsermodule.c"
+        #include "__EMSCRIPTEN__.embed/sysmodule.c"
+#   endif
 
 #else
     #error "wasi unsupported yet"
@@ -540,14 +539,10 @@ main(int argc, char **argv)
     if (!mkdir("dev/fd", 0700)) {
        //LOG_V("no 'dev/fd' directory, creating one ...");
     }
-    if (!mkdir("dev/input", 0700)) {
-       LOG_V("no 'dev/input' directory, creating one ...");
-    }
 
     if (!mkdir("tmp", 0700)) {
        LOG_V("no 'tmp' directory, creating one ...");
     }
-
 
     for (int i=0;i<FD_MAX;i++)
         io_shm[i]= NULL;

@@ -16,6 +16,7 @@ def stringify(blob):
 def dump_fs(html, target_folder, packlist):
     html.write(
         f"""PYGBAG_FS={len(packlist)}
+# fmt: off
 __import__('os').chdir(__import__('tempfile').gettempdir())
 def fs_decode(fsname, o248):
     from pathlib import Path
@@ -55,7 +56,7 @@ with open("{vfs_name}","w") as fs:fs.write("""\\
                 html.write(text)
             html.write("''')\n")
 
-    html.write("\ndel fs_decode, PYGBAG_FS\n")
+    html.write("\n# fmt:on\ndel fs_decode, PYGBAG_FS\n")
 
 
 def make_header(html, line):
