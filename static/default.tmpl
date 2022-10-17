@@ -235,7 +235,7 @@ async def sitecustomize():
         for base in ('pygame','pg'):
             for func in ('flip','update'):
                 block =  f'{base}.display.{func}()'
-                code = code.replace( block, ff'{block};await asyncio.sleep(0)')
+                code = code.replace( block, f'{block};await asyncio.sleep(0)')
 
         pdb(" -> won't run synchronous code with a pygame loop")
         #if await TopLevel_async_handler.async_imports("matplotlib"):

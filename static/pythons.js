@@ -483,6 +483,7 @@ function feat_gui(debug_hidden) {
         document.body.appendChild(canvas)
 console.warn("TODO: test 2D/3D reservation")
 
+
         //var ctx = canvas.getContext("2d")
     } else {
         // user managed canvas
@@ -491,6 +492,25 @@ console.warn("TODO: test 2D/3D reservation")
 
     vm.canvas = canvas
 /*
+
+
+    function event_canvas_regain(event) {
+        console.log("entering canvas")
+        canvas.focus();
+    }
+
+    canvas.addEventListener('mouseenter', event_canvas_regain, false);
+
+    function event_fullscreen(event){
+        if (!event.target.hasAttribute('fullscreen')) return;
+        if (document.fullscreenElement) {
+            document.exitFullscreen()
+        } else {
+            document.documentElement.requestFullscreen()
+        }
+    }
+    document.addEventListener('click', event_fullscreen, false);
+
     function GL_TEST() {
         var gl
         const gl_aa = false
@@ -1056,10 +1076,14 @@ console.log("pythons found at", url , elems)
                 console.warn("888: no inlined code found")
             }
 
-            if (vm.cpy_argv.length)
-                vm.script.interpreter = vm.cpy_argv[0] || script.dataset.python || "cpython"
-            else {
-                vm.script.interpreter = "cpython"
+            // default
+            vm.script.interpreter = "cpython"
+
+            if (vm.cpy_argv.length) {
+                var orig_argv_py
+                if ( vm.cpy_argv[0].search('cpython3')>=0 || vm.cpy_argv[0].search('wapy')>=0 )
+                    orig_argv_py = vm.script.interpreter
+                vm.script.interpreter = orig_argv_py || script.dataset.python || vm.script.interpreter
                 console.log("no python implementation specified, using default :",vm.script.interpreter)
             }
 
@@ -1089,6 +1113,7 @@ config.interactive = config.interactive || (location.search.search("-i")>=0) //?
             config.can_close = config.can_close || 0
             config.autorun  = config.autorun || 0 //??=
             config.features = config.features || script.dataset.src.split(",") //??=
+// TODO wapy is not versionned
             config.PYBUILD  = config.PYBUILD || vm.script.interpreter.substr(7) || "3.11" //??=
             config._sdl2    = config._sdl2 || "canvas" //??=
 
