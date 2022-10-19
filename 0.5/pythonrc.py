@@ -199,6 +199,11 @@ except:
     define("execfile", execfile)
 
 if defined("embed") and hasattr(embed, "readline"):
+    import inspect
+    from pathlib import Path
+    import json
+    # import urllib.request
+    # import aio.toplevel
 
     class shell:
         out = []
@@ -534,6 +539,29 @@ ________________________
                 aio.create_task(perf_index())
             else:
                 print(f"last frame : {aio.spent / 0.016666666666666666:.4f}")
+
+        @classmethod
+        async def exec(cls, sub, *args):
+            if inspect.isgeneratorfunction(sub):
+                for _ in sub(*args):
+                    print(_)
+                return
+            elif inspect.iscoroutinefunction(sub):
+                await sub(*args)
+                return
+
+            from collections.abc import Iterator
+            if isinstance(object, Iterator):
+                for _ in sub:
+                    print(_)
+                return
+            elif isinstance(sub, [str, Path]):
+                # subprocess
+                print("N/I", stb)
+
+            else:
+                await sub
+
 
     def _process_args(argv, env):
         import inspect
