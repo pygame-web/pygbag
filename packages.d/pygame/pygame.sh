@@ -31,7 +31,7 @@ else
     fi
 
     # update cython
-    TEST_CYTHON=$($SYS_PYTHON -m cython -V 2>&1)
+    TEST_CYTHON=$($HPY -m cython -V 2>&1)
     if echo $TEST_CYTHON| grep -q 3.0.0a11$
     then
         echo "  * not upgrading cython $TEST_CYTHON
@@ -43,7 +43,7 @@ else
         CYTHON=${CYTHON:-Cython-3.0.0a11-py2.py3-none-any.whl}
         pushd build
         wget -q -c https://github.com/cython/cython/releases/download/3.0.0a11/${CYTHON}
-        $SYS_PYTHON -m pip install $CYTHON
+        $HPY -m pip install $CYTHON
         popd
 
     fi
@@ -80,9 +80,11 @@ else
     pushd $(pwd)/pygame-wasm
 fi
 
+pwd
+env|grep PY
 
 touch $(find | grep pxd$)
-if $SYS_PYTHON setup.py cython_only
+if $HPY setup.py cython_only
 then
     # do not link -lSDL2 some emmc versions will think .so will use EM_ASM
     #SDL_IMAGE="-s USE_SDL=2 -lfreetype -lwebp"
