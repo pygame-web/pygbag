@@ -49,7 +49,7 @@ def uy(*argv):
 
 
 # do not rename
-async def sitecustomize():
+async def custom_site():
 
     import sys
     import asyncio
@@ -154,25 +154,18 @@ async def sitecustomize():
     # now make a prompt
     fnt = pygame.sysfont.SysFont("freesans",  uy(80) )
 
-
-    # get a relevant list of modules likely to be imported
-    # and prefetch them if found in repo trees
-    async def prepare_imports():
+    def ui_callback(pkg, error=None):
         nonlocal fnt
-        def ui_callback(pkg, error=None):
-            if error:
-                prompt = fnt.render(f"{error}", True, "black")
-            else:
-                prompt = fnt.render(f"Setting [{pkg}] up", True, "black")
-            pg_bar(track.len)
-            screen.blit(prompt, ( marginx+ ux(80), marginy - uy(10) ) )
-            compose()
+        if error:
+            prompt = fnt.render(f"{error}", True, "black")
+        else:
+            prompt = fnt.render(f"Setting [{pkg}] up", True, "black")
+        pg_bar(track.len)
+        screen.blit(prompt, ( marginx+ ux(80), marginy - uy(10) ) )
+        compose()
 
-        await TopLevel_async_handler.async_imports(*TopLevel_async_handler.list_imports(None, main), callback=ui_callback)
-        PyConfig.imports_ready = True
+    await shell.preload(main, callback=ui_callback)
 
-    # download pkg, install them but don't import them.
-    await prepare_imports()
 
     # test/wait if user media interaction required
     if not platform.window.MM.UME:
@@ -193,60 +186,13 @@ async def sitecustomize():
     screen.fill( (0,0,0,0) )
     pygame.display.flip()
 
-    code = ""
+    await shell.source(main)
 
-    def check_code(file_name):
-        nonlocal code
-        maybe_sync = False
-        has_pygame = False
-        with open(file_name,"r") as code_file:
-            code = code_file.read()
-            if code.find('asyncio.run')<0:
-                print("possibly synchronous code found")
-                maybe_sync = True
-
-            has_pygame =  code.find('display.flip(')>0 or code.find('display.update(')>0
-
-            if maybe_sync and has_pygame:
-                return False
-        return True
-
-    if check_code(main):
-        print("145: running main and resuming EventTarget in a few seconds")
-        aio.defer(execfile, (main,), {} )
-
-        # if you don't reach that step
-        # your main.py has an infinite sync loop somewhere !
-        print("150: ready")
-
-
-        # makes all queued events arrive after program has looped a few cycles
-        # note that you need a call to asyncio.run in your main to continue past
-        # that check
-        while not aio.run_called:
-            await asyncio.sleep(.1)
-
-        aio.create_task(platform.EventTarget.process())
-
-        pdb("platform event loop started")
-
-
-    else:
-        for base in ('pygame','pg'):
-            for func in ('flip','update'):
-                block =  f'{base}.display.{func}()'
-                code = code.replace( block, f'{block};await asyncio.sleep(0)')
-
-        pdb(" -> won't run synchronous code with a pygame loop")
-        #if await TopLevel_async_handler.async_imports("matplotlib"):
-        #    import matplotlib
-
-        shell.debug()
 
 
 import asyncio
 
-asyncio.run( sitecustomize() )
+asyncio.run( custom_site() )
 
 
 

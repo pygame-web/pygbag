@@ -90,11 +90,14 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
 
 class AsyncInteractiveConsole(code.InteractiveConsole):
     instance = None
+    console = None
+
 
     def __init__(self, locals, **kw):
         super().__init__(locals)
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
         self.line = ""
+        self.buffer = []
         self.one_liner = None
         self.opts = kw
         self.coro = None
@@ -138,6 +141,9 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         return catch
 
     def runsource(self, source, filename="<stdin>", symbol="single"):
+        if len(self.buffer):
+            symbol = "exec"
+
         try:
             code = self.compile(source, filename, symbol)
         except SyntaxError:
@@ -188,13 +194,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                     return
             sys.print_exception(ex, limit=-1)
 
-    def raw_input(self, prompt):
-        maybe = embed.readline()
-        if len(maybe):
-            return maybe
-        else:
-            return None
-        # raise EOFError
+
 
     async def interact(self):
         try:
@@ -262,7 +262,9 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 shell=shell,
             )
 
-        asyncio.create_task(cls.instance.interact())
+        if cls.console is None:
+            asyncio.create_task(cls.instance.interact())
+            cls.console = cls.instance
 
     @classmethod
     async def start_toplevel(cls, shell, console=True):
@@ -276,3 +278,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
         if console:
             cls.start_console(shell)
+
+
+
+

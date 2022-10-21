@@ -350,8 +350,8 @@ def run(coro, *, debug=False):
         # the stepper when called from  window.requestAnimationFrame()
         # https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame
         elif __EMSCRIPTEN__ or __wasi__:
-            # handle special sitecustomize() case
-            if coro.__name__ == "sitecustomize":
+            # handle special custom_site() case
+            if coro.__name__ == "custom_site":
                 embed.run()
                 run_called = False
             else:
@@ -364,9 +364,9 @@ def run(coro, *, debug=False):
     elif run_called:
         pdb("273: aio.run called twice !!!")
 
-    # run called after a sitecustomize() completion
-    elif coro.__name__ != "sitecustomize":
-        pdb("360: * sitecustomize done *")
+    # run called after a custom_site() completion
+    elif coro.__name__ != "custom_site":
+        pdb("360: * custom_site done *")
     else:
         pdb("364: aio.run", coro.__name__)
 
