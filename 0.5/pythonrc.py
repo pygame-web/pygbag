@@ -557,10 +557,73 @@ ________________________
                 return
             elif isinstance(sub, [str, Path]):
                 # subprocess
-                print("N/I", stb)
-
+                print("N/I", sub)
             else:
                 await sub
+
+
+        @classmethod
+        async def preload(cls, main, callback=None):
+            # get a relevant list of modules likely to be imported
+            # and prefetch them if found in repo trees
+            await TopLevel_async_handler.async_imports(*TopLevel_async_handler.list_imports(None, main), callback=callback)
+            PyConfig.imports_ready = True
+
+
+        @classmethod
+        async def source(cls, main, *args):
+            code = ""
+
+            def check_code(file_name):
+                nonlocal code
+                maybe_sync = False
+                has_pygame = False
+                with open(file_name,"r") as code_file:
+                    code = code_file.read()
+                    if code.find('asyncio.run')<0:
+                        print("575 possibly synchronous code found")
+                        maybe_sync = True
+
+                    has_pygame =  code.find('display.flip(')>0 or code.find('display.update(')>0
+
+                    if maybe_sync and has_pygame:
+                        return False
+                return True
+
+            if check_code(main):
+                print("585: running main and resuming EventTarget in a few seconds")
+                aio.defer(execfile, (main,), {} )
+
+                # makes all queued events arrive after program has looped a few cycles
+                # note that you need a call to asyncio.run in your main to continue past
+                # that check
+                while not aio.run_called:
+                    await asyncio.sleep(.1)
+
+
+                # if you don't reach that step
+                # your main.py has an infinite sync loop somewhere !
+                print("590: ready")
+
+
+                aio.create_task(platform.EventTarget.process())
+
+                pdb("platform event loop started")
+
+
+            else:
+                for base in ('pygame','pg'):
+                    for func in ('flip','update'):
+                        block =  f'{base}.display.{func}()'
+                        code = code.replace( block, f'{block};await asyncio.sleep(0)')
+
+                #print(" -> won't run synchronous code with a pygame loop")
+                shell.debug()
+
+                TopLevel_async_handler.instance.eval(code)
+                TopLevel_async_handler.instance.start_console(shell)
+
+
 
 
     def _process_args(argv, env):
@@ -856,6 +919,27 @@ if not aio.cross.simulator:
 
         repodata = "repodata.json"
 
+
+
+        def raw_input(self, prompt):
+            if len(self.buffer):
+                return self.buffer.pop(0)
+
+            maybe = embed.readline()
+
+            if len(maybe):
+                return maybe
+            else:
+                return None
+            # raise EOFError
+
+
+        def eval(self, source):
+            for line in source.split('\n'):
+                self.buffer.append( line )
+            self.buffer.append("")
+            print(f"917 {len(self.buffer)} lines queued for async eval")
+
         @classmethod
         def scan_imports(cls, code, filename, load_try=False):
             root = ast.parse(code, filename)
@@ -954,11 +1038,6 @@ if not aio.cross.simulator:
             #            refresh = False
             #            for pkg in packages:
             #                pkg_info = cls.repos[0]["packages"].get(pkg, None)
-
-            #                if pkg_info is None:
-            #                    pdb(f'144: package "{pkg}" not found in repodata')
-            #                    continue
-
             #                file_name = pkg_info.get("file_name", "")
             #                valid = False
             #                if file_name:

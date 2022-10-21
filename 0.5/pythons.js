@@ -440,9 +440,9 @@ if os.path.isfile(fn):
     def async_exec(filename):
         exec(open(filename).read(), globals(), globals())
         import asyncio
-        async def sitecustomize():
+        async def custom_site():
             aio.create_task(platform.EventTarget.process())
-        asyncio.run( sitecustomize() )
+        asyncio.run( custom_site() )
     async_exec("/data/data/org.python/assets/main.py")
 else:
     print(fn,"not found")
