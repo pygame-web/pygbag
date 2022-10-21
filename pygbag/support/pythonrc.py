@@ -311,13 +311,18 @@ if defined("embed") and hasattr(embed, "readline"):
             filename = None
             for arg in map(str, argv):
                 if arg.startswith("-O"):
-                    filename = arg[2:].lstrip()
+                    filename = arg[2:].strip()
                     yield f'saving to "{filename}"'
                     break
 
             for arg in map(str, argv):
+                if arg.startswith("-O"):
+                    continue
                 fn = filename or str(argv[0]).rsplit('/')[-1]
-                filename, _ = urllib.request.urlretrieve(str(arg), filename=fn)
+                try:
+                    filename, _ = urllib.request.urlretrieve(str(arg), filename=fn)
+                except Exception as e:
+                    yield e
 
             return True
 
@@ -355,7 +360,7 @@ if defined("embed") and hasattr(embed, "readline"):
                     yield f"{hx}  {arg}"
 
         @classmethod
-        def exec(cls, cmd, *argv, **env):
+        def spawn(cls, cmd, *argv, **env):
             global pgzrun
             # TODO extract env from __main__ snapshot
             if cmd.endswith(".py"):
@@ -365,7 +370,7 @@ if defined("embed") and hasattr(embed, "readline"):
                     )
                     cls.stop()
                     pgzrun = None
-                    aio.defer(cls.exec, (cmd, *argv), env, delay=500)
+                    aio.defer(cls.spawn, (cmd, *argv), env, delay=500)
 
                 else:
                     execfile(cmd)
@@ -541,9 +546,13 @@ ________________________
                 print(f"last frame : {aio.spent / 0.016666666666666666:.4f}")
 
         @classmethod
-        async def exec(cls, sub, *args):
-            if inspect.isgeneratorfunction(sub):
-                for _ in sub(*args):
+        async def exec(cls, sub, *argv):
+            if inspect.isgenerator(sub):
+                for _ in sub:
+                    print(_)
+                return
+            elif inspect.isgeneratorfunction(sub):
+                for _ in sub(*argv):
                     print(_)
                 return
             elif inspect.iscoroutinefunction(sub):
@@ -551,11 +560,11 @@ ________________________
                 return
 
             from collections.abc import Iterator
-            if isinstance(object, Iterator):
+            if isinstance(sub, Iterator):
                 for _ in sub:
                     print(_)
                 return
-            elif isinstance(sub, [str, Path]):
+            elif isinstance(sub, (str, Path,) ):
                 # subprocess
                 print("N/I", sub)
             else:
@@ -566,9 +575,11 @@ ________________________
         async def preload(cls, main, callback=None):
             # get a relevant list of modules likely to be imported
             # and prefetch them if found in repo trees
-            await TopLevel_async_handler.async_imports(*TopLevel_async_handler.list_imports(None, main), callback=callback)
+            imports = TopLevel_async_handler.list_imports(code=None, file=main)
+            print(f"579: {list(imports)}")
+            await TopLevel_async_handler.async_imports(*imports, callback=callback)
             PyConfig.imports_ready = True
-
+            return True
 
         @classmethod
         async def source(cls, main, *args):

@@ -114,12 +114,11 @@ def init_platform(embed):
 # ========================================== DOM EVENTS ===============
 
 if is_browser:
-    # implement "new"
+    # implement "js.new"
 
     def new(oclass, *argv):
         from embed_browser import Reflect, Array
         return Reflect.construct(oclass, Array(*argv) )
-    builtins.new = new
 
 
     # dom events
