@@ -64,7 +64,7 @@ if sys.platform in ("emscripten","wasi",):
 
 
 
-    async def sitecustomize():
+    async def custom_site():
         global PyConfig, con
 
         # reset term
@@ -90,7 +90,7 @@ if sys.platform in ("emscripten","wasi",):
             await asyncio.sleep(1)
             if await TopLevel_async_handler.async_imports("matplotlib"):
                 import matplotlib
-        if 1:
+        if 0:
             import sys
             from urllib.parse import urlencode
             import asyncio
@@ -180,13 +180,14 @@ if sys.platform in ("emscripten","wasi",):
                 # def post(self, url, data=None):
                 #     return await self._post(url, data)
 
-        if 1: #not pygame:
+        if not pygame:
             return
 
         rng = 10 # resolution of progress bar
         slot = ux(.060)/rng # 60%
 
         async def compose(delay=0):
+            import asyncio
             global screen
             pygame.display.update()
             platform.window.chromakey(None, *screen.get_colorkey(), 40)
@@ -200,8 +201,9 @@ if sys.platform in ("emscripten","wasi",):
             await compose(1)
 
 
+        embed.prompt()
 
-    asyncio.run(sitecustomize())
+    asyncio.run(custom_site())
 
 
 

@@ -30,7 +30,8 @@ echo "
             SDKROOT=$SDKROOT
             PYTHONPYCACHEPREFIX=$PYTHONPYCACHEPREFIX
             HPY=$HPY
-"
+            LD_VENDOR=$LD_VENDOR
+" 1>&2
 
 
 # SDL2_image turned off : -ltiff
@@ -220,7 +221,11 @@ then
         LDFLAGS="$LDFLAGS $cpylib"
     done
 
-    echo LDFLAGS=$LDFLAGS
+    echo "
+
+     LDFLAGS=$LDFLAGS
+
+    " 1>&2
 
     if emcc $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG\
      -s TOTAL_MEMORY=256MB -s ALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \

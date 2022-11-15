@@ -23,12 +23,12 @@ async def main():
     while True:
 
         # Do your rendering here, note that it's NOT an infinite loop,
-        # and it fired only when VSYNC occurs
+        # and it is fired only when VSYNC occurs
         # Usually 1/60 or more times per seconds on desktop, maybe less on some mobile devices
 
         print(f"""
 
-        Hello[{COUNT_DOWN}] from Python
+            Hello[{COUNT_DOWN}] from Python
 
 """)
 
@@ -60,16 +60,13 @@ Example :
 
 ```
 user@pp /data/git/pygbag $ python3 -m pygbag --help test
- *pygbag 0.4.0*
+ *pygbag 0.5.0*
 
 Serving python files from [/data/git/pygbag/test/build/web]
 
 with no security/performance in mind, i'm just a test tool : don't rely on me
-usage: __main__.py [-h] [--bind ADDRESS] [--directory DIRECTORY]
- [--PYBUILD PYBUILD] [--app_name APP_NAME] [--ume_block UME_BLOCK]
- [--can_close CAN_CLOSE] [--cache CACHE] [--package PACKAGE] [--title TITLE]
- [--version VERSION] [--build] [--html] [--no_opt] [--archive] [--icon ICON]
- [--cdn CDN] [--template TEMPLATE] [--ssl SSL] [--port [PORT]]
+usage: __main__.py [-h] [--bind ADDRESS] [--directory DIRECTORY] [--PYBUILD PYBUILD] [--app_name APP_NAME] [--ume_block UME_BLOCK] [--can_close CAN_CLOSE] [--cache CACHE] [--package PACKAGE] [--title TITLE] [--version VERSION] [--build] [--html] [--no_opt]
+                   [--archive] [--icon ICON] [--cdn CDN] [--template TEMPLATE] [--ssl SSL] [--port [PORT]]
 
 options:
   -h, --help            show this help message and exit
@@ -85,13 +82,13 @@ options:
   --cache CACHE         md5 based url cache directory
   --package PACKAGE     package name, better make it unique
   --title TITLE         App nice looking name
-  --version VERSION     override prebuilt version path [default:0.4.0]
+  --version VERSION     override prebuilt version path [default:0.5.0]
   --build               build only, do not run test server
   --html                build as html with embedded assets (pygame-script)
   --no_opt              turn off assets optimizer
   --archive             make build/web.zip archive for itch.io
   --icon ICON           icon png file 32x32 min should be favicon.png
-  --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/archives/0.4/]
+  --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/archives/0.5/]
   --template TEMPLATE   index.html template [default:default.tmpl]
   --ssl SSL             enable ssl with server.pem and key.pem
   --port [PORT]         Specify alternate port [default: 8000]
@@ -101,7 +98,7 @@ Now navigate to http://localhost:8000 with a modern Browser.
 
 Use http://localhost:8000#debug for getting a terminal and a sized down canvas.
 
-For pygame-script go to http://localhost:8000/your.app.folder.html.
+For pygame-script go to http://localhost:8000/test.html for a game folder named "test".
 
 
 
@@ -138,6 +135,10 @@ https://github.com/pygame-web/pygbag
 
 Default prebuilts (pygame) used by pygbag are stored on github
 from the repo https://github.com/pygame-web/archives under versioned folders.
+
+TEST REPL:
+
+    [interactive repl](http://pygame-web.github.io/showroom/python310.html?-d&noapp#pygame-scripts/hello.py%20arg1%20arg2)
 
 
 ADDING STATIC MODULES:
