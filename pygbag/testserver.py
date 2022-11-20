@@ -287,7 +287,7 @@ if not ".wasm" in CodeHandler.extensions_map:
 def run_code_server(args, cc):
     global CACHE, CDN, PROXY, BCDN, BPROXY
     CACHE = Path(args.cache)
-    CDN = '/'.join( args.cdn.split('/')[0:3] )
+    CDN = "/".join(args.cdn.split("/")[0:3])
     PROXY = cc["proxy"]
 
     BCDN = CDN.encode("utf-8")

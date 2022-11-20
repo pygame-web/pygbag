@@ -92,7 +92,6 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
     instance = None
     console = None
 
-
     def __init__(self, locals, **kw):
         super().__init__(locals)
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
@@ -135,9 +134,10 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
                 except Exception as cmderror:
                     print(cmderror, file=sys.stderr)
+            elif cmd.endswith('.py'):
+                self.coro = shell.source(cmd, *args, **env)
             else:
-                catch = shell.exec(cmd, *args, **env)
-
+                catch = undefined
         return catch
 
     def runsource(self, source, filename="<stdin>", symbol="single"):
@@ -170,7 +170,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
     def runcode(self, code):
         embed.set_ps1()
         self.one_liner = True
-        self.rv = None
+        self.rv = undefined
         bc = types.FunctionType(code, self.locals)
         try:
             self.rv = bc()
@@ -190,10 +190,11 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         except BaseException as ex:
             if self.one_liner:
                 shell = self.opts.get("shell", None)
-                if shell and self.process_shell(shell, self.line):
-                    return
+                if shell:
+                    # coro maybe be filler by shell exec
+                    if self.process_shell(shell, self.line):
+                        return
             sys.print_exception(ex, limit=-1)
-
 
 
     async def interact(self):
@@ -244,7 +245,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 if self.coro is not None:
                     self.rv = await self.coro
 
-                if self.rv is not None:
+                if self.rv not in [undefined, None, False, True]:
                     await self.rv
             except Exception as ex:
                 sys.print_exception(ex)
@@ -261,10 +262,12 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 globals(),
                 shell=shell,
             )
+            PyConfig.aio = cls.instance
 
         if cls.console is None:
             asyncio.create_task(cls.instance.interact())
             cls.console = cls.instance
+
 
     @classmethod
     async def start_toplevel(cls, shell, console=True):

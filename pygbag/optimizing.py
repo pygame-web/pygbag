@@ -88,7 +88,7 @@ else:
                         else:
                             print("ERROR", osexec, "for", opt)
 
-            elif fp.suffix in [".mp3", ".wav", ".ogg"]:
+            elif fp.suffix in [".mp3", ".wav", ".ogg", ".flac"]:
                 if fp.stem.endswith("-pygbag"):
                     pass  # yield that file
                 else:

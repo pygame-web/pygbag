@@ -333,10 +333,12 @@ if defined("embed") and hasattr(embed, "readline"):
         # only work if pkg name == dist name
         @classmethod
         async def pip(cls, *argv):
-            if argv[0] == "install":
+            for arg in argv:
+                if arg == "install":
+                    continue
                 import aio.toplevel
-
-                await aio.toplevel.importer.async_imports(argv[1])
+                #yield f"attempting to install {arg}"
+                await PyConfig.importer.async_imports(arg)
 
         @classmethod
         def cd(cls, *argv):
@@ -634,6 +636,8 @@ ________________________
                 TopLevel_async_handler.instance.eval(code)
                 TopLevel_async_handler.instance.start_console(shell)
 
+    PyConfig["shell"] = shell
+    # end shell
 
 
 
@@ -798,7 +802,7 @@ if not aio.cross.simulator:
         port = "443"
 
         # pygbag mode
-        if platform.window.location.href.find("localhost") > 0:
+        if platform.window.location.href.find("//localhost:") > 0:
             port = str(platform.window.location.port)
 
             # pygbag developer mode
@@ -811,6 +815,8 @@ if not aio.cross.simulator:
             PyConfig.pkg_indexes = []
             for idx in PYCONFIG_PKG_INDEXES_DEV:
                 PyConfig.pkg_indexes.append(idx.replace("<port>", port))
+
+            print("807: DEV MODE ON", PyConfig.pkg_indexes)
         else:
             # address cdn
             PyConfig.pkg_indexes = PYCONFIG_PKG_INDEXES
@@ -1044,38 +1050,6 @@ if not aio.cross.simulator:
 
             kw.setdefault('callback',default_cb)
 
-
-            #        # using pyodide repodata
-            #            refresh = False
-            #            for pkg in packages:
-            #                pkg_info = cls.repos[0]["packages"].get(pkg, None)
-            #                file_name = pkg_info.get("file_name", "")
-            #                valid = False
-            #                if file_name:
-            #                    pkg_file = f"/tmp/{file_name}"
-
-            #                    async with platform.fopen(
-            #                        cls.dl_cdn / file_name, "rb"
-            #                    ) as source:
-            #                        source.rename_to(pkg_file)
-            #                        for hex in shell.sha256sum(pkg_file):
-            #                            expected = hex.split(" ", 1)[0].lower()
-            #                            maybe = pkg_info.get("sha256", "").lower()
-            #                            if maybe and (maybe != expected):
-            #                                pdb(
-            #                                    f"158: {pkg} download to {pkg_file} corrupt",
-            #                                    pkg_info.get("sha256", ""),
-            #                                    expected,
-            #                                )
-            #                                break
-            #                        else:
-            #                            valid = True
-            #                            refresh = True
-            #                else:
-            #                    pdb(f'144: package "{pkg}" invalid in repodata')
-            #                    continue
-
-
             # init dep solver.
             if not len(cls.repos):
                 for cdn in PyConfig.pkg_indexes:
@@ -1089,6 +1063,7 @@ if not aio.cross.simulator:
             if not len(PyConfig.pkg_repolist):
                 await cls.async_repos()
 
+            print("1092: remapping ?", PyConfig.dev_mode)
             if PyConfig.dev_mode > 0:
                 for idx, repo in enumerate(PyConfig.pkg_repolist):
                     print(repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
@@ -1203,6 +1178,14 @@ if not aio.cross.simulator:
                         pdb(f"{repo}: malformed json index {data}")
                         continue
                     PyConfig.pkg_repolist.append(repo)
+
+            print("1102 : remapping ?", PyConfig.dev_mode)
+            if PyConfig.dev_mode > 0:
+                for idx, repo in enumerate(PyConfig.pkg_repolist):
+                    print(repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
+                    repo["-CDN-"] = PyConfig.pkg_indexes[idx]
+
+    # end TopLevel_async_handler
 
 
     # convert a emscripten FS path to a blob url

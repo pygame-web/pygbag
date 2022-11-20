@@ -1535,7 +1535,7 @@ MM.set_volume = function get_volume(trackid, vol) {
 
 
 window.chromakey = function(context, r,g,b, tolerance, alpha) {
-    context = canvas.getContext('2d');
+    context = canvas.getContext('2d', { willReadFrequently: true } );
 
     var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
     var data = imageData.data;
