@@ -97,7 +97,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
         self.line = ""
         self.buffer = []
-        self.one_liner = None
+        self.one_liner = True
         self.opts = kw
         self.coro = None
         self.rv = None
@@ -141,7 +141,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         return catch
 
     def runsource(self, source, filename="<stdin>", symbol="single"):
-        if len(self.buffer):
+        if len(self.buffer)>1:
             symbol = "exec"
 
         try:
@@ -169,8 +169,8 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
     def runcode(self, code):
         embed.set_ps1()
-        self.one_liner = True
         self.rv = undefined
+
         bc = types.FunctionType(code, self.locals)
         try:
             self.rv = bc()
@@ -196,6 +196,8 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                         return
             sys.print_exception(ex, limit=-1)
 
+        finally:
+            self.one_liner = True
 
     async def interact(self):
         try:

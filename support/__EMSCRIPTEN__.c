@@ -349,7 +349,6 @@ struct timeval time_last, time_current, time_lapse;
 #define FD_MAX 64
 #define FD_BUFFER_MAX 2048
 
-
 FILE *io_file[FD_MAX];
 char *io_shm[FD_MAX];
 int io_stdin_filenum;
