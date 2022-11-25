@@ -130,7 +130,7 @@ window.addEventListener('unhandledrejection', function(event) {
 //fileretrieve (binary). TODO: wasm compilation
 window.cross_file = function * cross_file(url, store) {
     var content = 0
-    var response
+    var response = null
     console.log("cross_file.fetch", url )
     fetch(url, FETCH_FLAGS)
         .then( resp => {
@@ -141,7 +141,10 @@ window.cross_file = function * cross_file(url, store) {
         .then( buffer => content = new Uint8Array(buffer) )
         .catch(x => response.error = new Error(x) )
 
-    while (!content && !response.error)
+    while (response === null)
+        yield content
+
+    while (!content && !response.error )
         yield content
 
     if (response.error)
