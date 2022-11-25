@@ -806,7 +806,7 @@ if not aio.cross.simulator:
             port = str(platform.window.location.port)
 
             # pygbag developer mode
-            if port == "8666":
+            if ('-d' in PyConfig.orig_argv) or (port == "8666"):
                 PyConfig.dev_mode = 1
 
         if PyConfig.dev_mode > 0:
