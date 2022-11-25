@@ -80,6 +80,32 @@ else
     pushd $(pwd)/pygame-wasm
 fi
 
+patch -p1 <<END
+--- pygame-wasm-snapshot/src_c/static.c	2022-11-25 02:23:33.417172457 +0100
++++ pygame-wasm/src_c/static.c	2022-11-25 02:25:50.590841575 +0100
+@@ -15,7 +15,6 @@
+
+ #if defined(__EMSCRIPTEN__)
+ #undef WITH_THREAD
+-#include "emscripten.h"
+ #endif
+
+ #if defined(BUILD_STATIC)
+@@ -287,11 +286,6 @@
+     return PyModule_Create(&mod_pygame_static);
+ }
+
+-void EMSCRIPTEN_KEEPALIVE
+-pygame_Inittab()
+-{
+-    PyImport_AppendInittab("pygame_static", PyInit_pygame_static);
+-}
+
+ #endif  // defined(BUILD_STATIC)
+END
+
+
+
 pwd
 env|grep PY
 
@@ -90,7 +116,7 @@ then
     #SDL_IMAGE="-s USE_SDL=2 -lfreetype -lwebp"
     SDL_IMAGE="-lSDL2 -lfreetype -lwebp"
 
-    export CFLAGS="-DHAVE_STDARG_PROTOTYPES -DBUILD_STATIC -DSDL_NO_COMPAT $SDL_IMAGE"
+    export CFLAGS="-DSDL_NO_COMPAT $SDL_IMAGE"
 
     EMCC_CFLAGS="-I${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/include/freetype2"
     EMCC_CFLAGS="$EMCC_CFLAGS -I$PREFIX/include/SDL2"
@@ -99,7 +125,7 @@ then
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unreachable-code"
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-parentheses-equality"
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unknown-pragmas"
-    export EMCC_CFLAGS="$EMCC_CFLAGS -ferror-limit=1 -fpic"
+    export EMCC_CFLAGS="$EMCC_CFLAGS -DHAVE_STDARG_PROTOTYPES -DBUILD_STATIC -ferror-limit=1 -fpic"
 
     export CC=emcc
 
