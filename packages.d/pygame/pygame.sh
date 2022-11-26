@@ -82,19 +82,9 @@ fi
 
 # test patches go here
 # ===================
-patch -p1 <<END
---- pygame-wasm-git/src_c/static.c	2022-11-25 13:03:36.145631884 +0100
-+++ pygame-wasm/src_c/static.c	2022-11-26 04:00:16.276045085 +0100
-@@ -167,7 +167,7 @@
 
-     PyObject *pmod = PyDict_GetItemString(modules, parent);
-
--    if (!mod) {
-+    if (!pmod) {
-         snprintf(fqn, sizeof(fqn), "ERROR: %s.%s", parent, alias);
-         puts(fqn);
-         PyErr_Print();
-END
+# patch -p1 <<END
+# END
 
 # ===================
 
