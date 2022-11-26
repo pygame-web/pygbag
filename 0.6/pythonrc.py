@@ -1070,11 +1070,14 @@ if not aio.cross.simulator:
                     repo["-CDN-"] = PyConfig.pkg_indexes[idx]
 
             all = cls.imports(*wanted)
+
+            # FIXME: numpy must be loaded first for some modules.
+
             if "numpy" in all:
                 kw['callback']('numpy')
                 try:
                     await cls.get_pkg("numpy")
-                    import numpy
+                    __import__("numpy")
                     all.remove("numpy")
                 except (IOError, zipfile.BadZipFile):
                     pdb("914: cannot load numpy")
