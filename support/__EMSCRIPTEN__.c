@@ -41,8 +41,11 @@ self hosting:
 
 */
 
-#if __EMSCRIPTEN__
-    #define EMIFACE
+
+#include <unistd.h>
+
+
+#if PYDK_emsdk
     #include <emscripten/html5.h>
     #include <emscripten/key_codes.h>
     #include "emscripten.h"
@@ -53,21 +56,14 @@ self hosting:
 
     #define HOST_RETURN(value)  return value
 
-#   if defined(EMIFACE)
-        PyObject *sysmod;
-        PyObject *sysdict;
+    PyObject *sysmod;
+    PyObject *sysdict;
+#   include "__EMSCRIPTEN__.embed/sysmodule.c"
 
-        #include "__EMSCRIPTEN__.embed/emscriptenmodule.c"
-        #include "__EMSCRIPTEN__.embed/browsermodule.c"
-        #include "__EMSCRIPTEN__.embed/sysmodule.c"
-#   endif
 
 #else
     #error "wasi unsupported yet"
 #endif
-
-#include <unistd.h>
-#include <sys/stat.h>  // for umask
 
 #include "../build/gen_inittab.h"
 
@@ -316,7 +312,7 @@ static PyObject *embed_dict;
 
 PyMODINIT_FUNC init_embed(void) {
 
-#if defined(EMIFACE)
+#if defined(PYDK_emsdk)
     int res;
     sysmod = PyImport_ImportModule("sys"); // must call Py_DECREF when finished
     sysdict = PyModule_GetDict(sysmod); // borrowed ref, no need to delete
@@ -484,15 +480,7 @@ main(int argc, char **argv)
 
     PyImport_AppendInittab("embed", init_embed);
 
-#if defined(EMIFACE)
-    PyImport_AppendInittab("embed_emscripten", PyInit_emscripten);
-    PyImport_AppendInittab("embed_browser", PyInit_browser);
-#else
-    #pragma message "not linking emscripten/browser support"
-#endif
-
-
-#include "../build/gen_inittab.c"
+#   include "../build/gen_inittab.c"
 
 // defaults
     setenv("LC_ALL", "C.UTF-8", 0);

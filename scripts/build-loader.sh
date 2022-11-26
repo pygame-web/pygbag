@@ -174,6 +174,16 @@ PYDIR=${SDKROOT}/devices/emsdk/usr/include/python${PYBUILD}
 
 # gnu99 not c99 for EM_ASM() js calls functions.
 
+if $STATIC
+then
+    echo "building static loader"
+else
+    echo "building dynamic loader"
+    export PACKAGES="emsdk"
+    export LD_VENDOR="-sUSE_WEBGL2"
+fi
+
+
 for lib in $PACKAGES
 do
     CPY_CFLAGS="$CPY_CFLAGS -DPYDK_$lib=1"

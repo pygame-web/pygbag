@@ -6,9 +6,10 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.27.0
+        SDK_VERSION: 3.1.27.1
         SYS_PYTHON: /usr/bin/python3
-        PACKAGES: pygame
+        PACKAGES: emsdk pygame
+        STATIC: true
         BUILDS: 3.12 3.11 3.10
         CYTHON: Cython-3.0.0a11-py2.py3-none-any.whl
 

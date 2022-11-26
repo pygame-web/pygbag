@@ -6,7 +6,7 @@ export CI=${CI:-false}
 
 BUILDS=${BUILDS:-3.12 3.11 3.10}
 
-
+export STATIC=${STATIC:-true}
 
 . scripts/vendoring.sh
 

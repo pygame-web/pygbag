@@ -151,7 +151,7 @@ END
 #if defined(PYDK_$pkg)
 #   include "../${PKG_PATH}.c"
 #else
-    #pragma message "not linking $pkg"
+    #pragma message "$pkg is not statically linked"
 #endif
 END
     fi

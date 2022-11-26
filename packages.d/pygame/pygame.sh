@@ -82,6 +82,19 @@ fi
 
 # test patches go here
 # ===================
+patch -p1 <<END
+--- pygame-wasm-git/src_c/static.c	2022-11-25 13:03:36.145631884 +0100
++++ pygame-wasm/src_c/static.c	2022-11-26 04:00:16.276045085 +0100
+@@ -167,7 +167,7 @@
+
+     PyObject *pmod = PyDict_GetItemString(modules, parent);
+
+-    if (!mod) {
++    if (!pmod) {
+         snprintf(fqn, sizeof(fqn), "ERROR: %s.%s", parent, alias);
+         puts(fqn);
+         PyErr_Print();
+END
 
 # ===================
 
@@ -132,7 +145,6 @@ then
         # to install python part (unpatched)
         cp -r src_py/. ${PKGDIR:-${SDKROOT}/prebuilt/emsdk/${PYBUILD}/site-packages/pygame/}
 
-
     else
         echo "ERROR: pygame configuration failed" 1>&2
         exit 109
@@ -146,7 +158,17 @@ fi
 popd
 popd
 
+TAG=${PYMAJOR}${PYMINOR}
 
+if [ -d testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten ]
+then
+
+    . ${SDKROOT}/emsdk/emsdk_env.sh
+
+    emcc -Os -g0 -shared -fpic -o \
+     testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/pygame_static.cpython-${TAG}-wasm32-emscripten.so \
+     $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a
+fi
 
 
 

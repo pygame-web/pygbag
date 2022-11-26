@@ -213,8 +213,8 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
 
         self.write(
-            "Python %s on %s\n%s\n(%s)\n"
-            % (sys.version, sys.platform, cprt, self.__class__.__name__)
+            "Python %s on %s\n%s\n%s "
+            % (sys.version, sys.platform, cprt, '>>>')
         )
 
         prompt = sys.ps1
