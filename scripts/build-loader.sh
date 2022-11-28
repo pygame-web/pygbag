@@ -180,7 +180,6 @@ then
 else
     echo "building dynamic loader"
     export PACKAGES="emsdk"
-    export LD_VENDOR="-sUSE_WEBGL2"
 fi
 
 
@@ -237,7 +236,7 @@ then
 
     " 1>&2
 
-    if emcc $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG\
+    if emcc -m32 $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG\
      -s TOTAL_MEMORY=256MB -s ALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \
      $CF_SDL \
      --use-preload-plugins \

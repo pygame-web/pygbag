@@ -139,6 +139,23 @@ embed_test(PyObject *self, PyObject *args, PyObject *kwds)
     return Py_BuildValue("i", 1);
 }
 
+#include <emscripten/html5.h>
+#include <GLES2/gl2.h>
+static PyObject *
+embed_webgl(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    	// setting up EmscriptenWebGLContextAttributes
+	EmscriptenWebGLContextAttributes attr;
+	emscripten_webgl_init_context_attributes(&attr);
+	attr.alpha = 0;
+
+	// target the canvas selector
+	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#canvas", &attr);
+	emscripten_webgl_make_context_current(ctx);
+    glClearColor(0.984, 0.4627, 0.502, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+    return Py_BuildValue("i", emscripten_webgl_get_current_context() );
+}
 
 void
 embed_preload_cb_onload(const char *fn) {
@@ -296,6 +313,8 @@ static PyMethodDef mod_embed_methods[] = {
     {"get_sdl_version", embed_get_sdl_version, METH_NOARGS, "get_sdl_version"},
 
     {"test", (PyCFunction)embed_test, METH_VARARGS | METH_KEYWORDS, "test"},
+
+    {"webgl", (PyCFunction)embed_webgl, METH_VARARGS | METH_KEYWORDS, "test"},
 
     {NULL, NULL, 0, NULL}
 };

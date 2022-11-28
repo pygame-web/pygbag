@@ -62,6 +62,8 @@ except:
 
         imports = []
 
+        # this buggy parser is for implementations that do not have ast module.
+        # and should not be used with cpython
         with __import__("tokenize").open(str(filename)) as f:
             __prepro = []
             myglobs = ["setup", "loop", "main"]
@@ -86,11 +88,17 @@ except:
 
                 elif testline.startswith("import "):
                     testline = testline.replace("import ", "").strip()
-                    imports.extend(map(str.strip, testline.split(",")))
+                    for elem in map(str.strip, testline.split(",")):
+                        elem = elem.split(' as ')[0]
+                        if not elem in imports:
+                            imports.append(elem)
 
                 elif testline.startswith("from "):
                     testline = testline.replace("from ", "").strip()
-                    imports.append(testline.split(" import ")[0].strip())
+                    elem = testline.split(" import ")[0].strip()
+                    if not elem in imports:
+                        imports.append(elem)
+
 
                 __prepro.append(l)
 
@@ -186,9 +194,7 @@ except:
                     import pgzero.runner
 
                     pgzero.runner.prepare_mod(__main__)
-                print("*" * 40)
-                print(imports)
-                print("*" * 40)
+                print(f"190: imports: {imports}")
 
                 exec(code, __main__dict, __main__dict)
                 if pgzrun:
@@ -578,7 +584,7 @@ ________________________
             # get a relevant list of modules likely to be imported
             # and prefetch them if found in repo trees
             imports = TopLevel_async_handler.list_imports(code=None, file=main)
-            print(f"579: {list(imports)}")
+            print(f"579: missing imports: {list(imports)}")
             await TopLevel_async_handler.async_imports(*imports, callback=callback)
             PyConfig.imports_ready = True
             return True
@@ -605,24 +611,8 @@ ________________________
 
             if check_code(main):
                 print("585: running main and resuming EventTarget in a few seconds")
-                aio.defer(execfile, (main,), {} )
 
-                # makes all queued events arrive after program has looped a few cycles
-                # note that you need a call to asyncio.run in your main to continue past
-                # that check
-                while not aio.run_called:
-                    await asyncio.sleep(.1)
-
-
-                # if you don't reach that step
-                # your main.py has an infinite sync loop somewhere !
-                print("590: ready")
-
-
-                aio.create_task(platform.EventTarget.process())
-
-                pdb("platform event loop started")
-
+                #aio.defer(execfile, (main,), {} )
 
             else:
                 for base in ('pygame','pg'):
@@ -631,10 +621,28 @@ ________________________
                         code = code.replace( block, f'{block};await asyncio.sleep(0)')
 
                 #print(" -> won't run synchronous code with a pygame loop")
-                shell.debug()
+            shell.debug()
 
-                TopLevel_async_handler.instance.eval(code)
-                TopLevel_async_handler.instance.start_console(shell)
+            print("629: starting shell")
+            TopLevel_async_handler.instance.start_console(shell)
+
+            TopLevel_async_handler.instance.eval(code)
+
+            # makes all queued events arrive after program has looped a few cycles
+            # note that you need a call to asyncio.run in your main to continue past
+            # that check
+
+            if 0:
+                while not aio.run_called:
+                    await asyncio.sleep(.1)
+
+            # if you don't reach that step
+            # your main.py has an infinite sync loop somewhere !
+            print("642: starting EventTarget in a few seconds")
+            aio.create_task(platform.EventTarget.process())
+
+            pdb("platform event loop started")
+
 
     PyConfig["shell"] = shell
     # end shell
