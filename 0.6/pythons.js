@@ -17,6 +17,14 @@ if (window.config) {
    config = {}
 }
 
+window.addEventListener("error", function (e) {
+   alert("Error occurred: " + e.error.message);
+   return false;
+})
+
+window.addEventListener('unhandledrejection', function (e) {
+  alert("Error occurred: " + e.reason.message);
+})
 
 function reverse(s){
     return s.split("").reverse().join("");
@@ -135,23 +143,25 @@ window.cross_file = function * cross_file(url, store) {
     fetch(url, FETCH_FLAGS)
         .then( resp => {
                 response = resp
-                if (checkStatus(response))
-                    response.arrayBuffer()
+                if (checkStatus(resp))
+                    return response.arrayBuffer()
             })
         .then( buffer => content = new Uint8Array(buffer) )
         .catch(x => response.error = new Error(x) )
 
-    while (response === null)
+    while (!response)
         yield content
 
     while (!content && !response.error )
         yield content
 
-    if (response.error)
+    if (response.error) {
+        console.error("cross_file:", response.error)
         return response.error
+    }
 
     FS.writeFile(store, content )
-    console.log("cross_file.fetch",store,"r/w=", content.byteLength )
+    console.log("cross_file.fetch", store, "r/w=", content.byteLength )
     yield store
 }
 
@@ -516,6 +526,10 @@ console.warn("TODO: test 2D/3D reservation")
     }
     document.addEventListener('click', event_fullscreen, false);
 
+
+    setTimeout(GL_TEST,500);
+*/
+
     function GL_TEST() {
         var gl
         const gl_aa = false
@@ -565,8 +579,7 @@ console.warn("TODO: test 2D/3D reservation")
 
         }
     }
-    setTimeout(GL_TEST,500);
-*/
+    window.GL_TEST = GL_TEST
 
     // window resize
     function window_canvas_adjust(divider) {
