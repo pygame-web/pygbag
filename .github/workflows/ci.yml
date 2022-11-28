@@ -9,7 +9,7 @@ jobs:
         SDK_VERSION: 3.1.27.2
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: emsdk pygame
-        STATIC: true
+        STATIC: false
         BUILDS: 3.12 3.11 3.10
         CYTHON: Cython-3.0.0a11-py2.py3-none-any.whl
 
@@ -47,10 +47,6 @@ jobs:
 
 
 
-
-
-
-
     - name: build 3.11 packages
       run: |
             cd $GITHUB_WORKSPACE
@@ -64,9 +60,6 @@ jobs:
 
 
 
-
-
-
     - name: build 3.12 packages
       run: |
             cd $GITHUB_WORKSPACE
@@ -76,8 +69,6 @@ jobs:
       run: |
             cd $GITHUB_WORKSPACE
             PYBUILD=3.12 bash ./scripts/build-loader.sh
-
-
 
 
 
