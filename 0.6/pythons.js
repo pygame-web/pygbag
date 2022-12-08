@@ -451,9 +451,11 @@ const vm = {
 
         preRun : [ prerun ],
         postRun : [ function (VM) {
+            VM["websocket"]["url"] = "wss://"
             window.python = VM
             window.py = new bridge(VM)
             setTimeout(custom_postrun, 10)
+
         } ]
 }
 
@@ -506,6 +508,8 @@ async function custom_postrun() {
     const pyrc_url = vm.config.cdn + "pythonrc.py"
     var content = 0
     console.log("cross_file.fetch", pyrc_url )
+
+
     fetch(pyrc_url, {})
         .then( response => checkStatus(response) && response.arrayBuffer() )
         .then( buffer => run_pyrc(new Uint8Array(buffer)) )
@@ -1216,6 +1220,10 @@ MM.set_volume = function get_volume(trackid, vol) {
     return MM[trackid].media.volume
 }
 
+MM.set_socket = function set_socket(mode) {
+    vm["websocket"]["url"] = mode
+    console.log("WebSocket default mode is now :", mode)
+}
 
 window.chromakey = function(context, r,g,b, tolerance, alpha) {
     context = canvas.getContext('2d', { willReadFrequently: true } );
@@ -1701,8 +1709,6 @@ console.log("pythons found at", url , elems)
     if ( (location.hostname === "localhost") || cfg.module) {
         config.cdn = url.split("?",1)[0].replace(module_name, "")
     }
-
-
 
     config.cdn     = config.cdn || url.split(module_name, 1)[0]  //??=
     config.xtermjs = config.xtermjs || 0
