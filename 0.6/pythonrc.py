@@ -51,6 +51,10 @@ def overloaded(i, *attrs):
 
 builtins.overloaded = overloaded
 
+def DBG(*argv):
+    if PyConfig.dev_mode:
+        print(*argv)
+
 
 try:
     # mpy already has execfile
@@ -212,7 +216,11 @@ if defined("embed") and hasattr(embed, "readline"):
     # import aio.toplevel
 
     class shell:
+        # command ouput
         out = []
+
+        # pending async tasks
+        coro = []
 
         if aio.cross.simulator:
             ROOT = os.getcwd()
@@ -344,7 +352,7 @@ if defined("embed") and hasattr(embed, "readline"):
                     continue
                 import aio.toplevel
                 #yield f"attempting to install {arg}"
-                await PyConfig.importer.async_imports(arg)
+                await PyConfig.importer.async_imports(None, arg)
 
         @classmethod
         def cd(cls, *argv):
@@ -436,7 +444,7 @@ if defined("embed") and hasattr(embed, "readline"):
             import aio.trace
 
             sys.settrace(aio.trace.calls)
-            return _process_args(argv, env)
+            return cls.parse_sync(argv, env)
 
         @classmethod
         def mute(cls, *argv, **env):
@@ -501,7 +509,7 @@ ________________________
                     return True
             except SyntaxError as e:
                 # try run a file or cmd
-                return cls._process_args(argv, env)
+                return cls.parse_sync(argv, env)
             return False
 
         time = run
@@ -580,12 +588,23 @@ ________________________
 
 
         @classmethod
-        async def preload(cls, main, callback=None):
+        async def preload_file(cls, main, callback=None):
             # get a relevant list of modules likely to be imported
             # and prefetch them if found in repo trees
             imports = TopLevel_async_handler.list_imports(code=None, file=main)
             print(f"579: missing imports: {list(imports)}")
-            await TopLevel_async_handler.async_imports(*imports, callback=callback)
+            await TopLevel_async_handler.async_imports(callback, *imports)
+            PyConfig.imports_ready = True
+            return True
+
+        @classmethod
+        async def preload_code(cls, code, callback=None):
+            # get a relevant list of modules likely to be imported
+            # and prefetch them if found in repo trees
+            for want in TopLevel_async_handler.list_imports(code, file=None):
+                DBG(f"605: preloading import {want=} {callback=}")
+                await TopLevel_async_handler.async_imports(callback, want)
+            #await TopLevel_async_handler.async_imports(callback, *TopLevel_async_handler.list_imports(code, file=None))
             PyConfig.imports_ready = True
             return True
 
@@ -600,17 +619,18 @@ ________________________
                 with open(file_name,"r") as code_file:
                     code = code_file.read()
                     if code.find('asyncio.run')<0:
-                        print("575 possibly synchronous code found")
+                        print("621: possibly synchronous code found")
                         maybe_sync = True
 
                     has_pygame =  code.find('display.flip(')>0 or code.find('display.update(')>0
 
                     if maybe_sync and has_pygame:
+                        print("627: possibly synchronous+pygame code found")
                         return False
                 return True
 
             if check_code(main):
-                print("585: running main and resuming EventTarget in a few seconds")
+                print("632: running main and resuming EventTarget in a few seconds")
 
                 #aio.defer(execfile, (main,), {} )
 
@@ -621,10 +641,16 @@ ________________________
                         code = code.replace( block, f'{block};await asyncio.sleep(0)')
 
                 #print(" -> won't run synchronous code with a pygame loop")
-            shell.debug()
 
-            print("629: starting shell")
-            TopLevel_async_handler.instance.start_console(shell)
+            await cls.preload_code(code)
+            DBG("646: TODO detect input/print to select repl debug")
+            if TopLevel_async_handler.instance:
+                DBG("648: starting shell")
+                TopLevel_async_handler.instance.start_console(shell)
+            else:
+                pdb("651: no async handler loader, starting a default async console")
+                shell.debug()
+                await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
 
             TopLevel_async_handler.instance.eval(code)
 
@@ -643,46 +669,45 @@ ________________________
 
             pdb("platform event loop started")
 
+        @classmethod
+        def parse_sync(shell, line, **env):
+            catch = True
+            for cmd in line.strip().split(";"):
+                cmd = cmd.strip()
+                if cmd.find(" ") > 0:
+                    cmd, args = cmd.split(" ", 1)
+                    args = args.split(" ")
+                else:
+                    args = ()
+
+                if hasattr(shell, cmd):
+                    fn = getattr(shell, cmd)
+
+                    try:
+                        if inspect.isgeneratorfunction(fn):
+                            for _ in fn(*args):
+                                print(_)
+                        elif inspect.iscoroutinefunction(fn):
+                            aio.create_task(fn(*args))
+                        elif inspect.isasyncgenfunction(fn):
+                            print("asyncgen N/I")
+                        elif inspect.isawaitable(fn):
+                            print("awaitable N/I")
+                        else:
+                            fn(*args)
+
+                    except Exception as cmderror:
+                        print(cmderror, file=sys.stderr)
+                elif cmd.endswith('.py'):
+                    shell.coro.append( shell.source(cmd, *args, **env) )
+                else:
+                    catch = undefined
+            return catch
+
 
     PyConfig["shell"] = shell
+    builtins.shell = shell
     # end shell
-
-
-
-    def _process_args(argv, env):
-        import inspect
-
-        catch = True
-        for cmd in argv:
-            cmd = cmd.strip()
-            if cmd.find(" ") > 0:
-                cmd, args = cmd.split(" ", 1)
-                args = args.split(" ")
-            else:
-                args = ()
-
-            if hasattr(shell, cmd):
-                fn = getattr(shell, cmd)
-
-                try:
-                    if inspect.isgeneratorfunction(fn):
-                        for _ in fn(*args):
-                            print(_)
-                    elif inspect.iscoroutinefunction(fn):
-                        aio.create_task(fn(*args))
-                    elif inspect.isasyncgenfunction(fn):
-                        print("asyncgen N/I")
-                    elif inspect.isawaitable(fn):
-                        print("awaitable N/I")
-                    else:
-                        fn(*args)
-
-                except Exception as cmderror:
-                    print(cmderror, file=sys.stderr)
-            else:
-                catch = shell.exec(cmd, *args, **env)
-        return catch
-
 
 try:
     PyConfig
@@ -702,7 +727,7 @@ except Exception as e:
     print(" - running in wasm simulator - ")
     aio.cross.simulator = True
 
-PyConfig["imports_ready"] = false
+PyConfig["imports_ready"] = False
 
 
 from types import SimpleNamespace
@@ -798,8 +823,8 @@ if not aio.cross.simulator:
 
         def urlretrieve(maybe_url, filename=None, reporthook=None, data=None):
             url = __EMSCRIPTEN__.fix_url(maybe_url)
-            filename = filename or f"/tmp/uru-{aio.ticks}"
-            rc = platform.window.python.DEPRECATED_wget_sync(str(url), str(filename))
+            filename = str(filename or f"/tmp/uru-{aio.ticks}")
+            rc = platform.window.python.DEPRECATED_wget_sync(str(url), filename)
             if rc == 200:
                 return filename, []
             raise Exception(f"urlib.error {rc}")
@@ -829,25 +854,29 @@ if not aio.cross.simulator:
             # address cdn
             PyConfig.pkg_indexes = PYCONFIG_PKG_INDEXES
 
-        from platform import window, document
+        from platform import window, document, ffi
 
         class fopen:
             ticks = 0
 
-            def __init__(self, maybe_url, mode="r"):
+            def __init__(self, maybe_url, mode="r", flags={'mode':'no-cors'}):
                 self.url = __EMSCRIPTEN__.fix_url(maybe_url)
                 self.mode = mode
+                if flags:
+                    self.flags = ffi(flags)
+                else:
+                    self.flags = None
                 self.tmpfile = None
 
             async def __aenter__(self):
                 import platform
 
-                # print(f'572: Download start: "{self.url}"')
+                print(f'849: fopen: fetching "{self.url}"')
 
                 if "b" in self.mode:
                     self.__class__.ticks += 1
                     self.tmpfile = f"/tmp/cf-{self.ticks}"
-                    cf = platform.window.cross_file(self.url, self.tmpfile)
+                    cf = platform.window.cross_file(self.url, self.tmpfile, self.flags)
                     content = await platform.jsiter(cf)
                     self.filelike = open(content, "rb")
                     self.filelike.path = content
@@ -864,7 +893,7 @@ if not aio.cross.simulator:
                 else:
                     import io
 
-                    jsp = platform.window.fetch(self.url)
+                    jsp = platform.window.fetch(self.url, self.flags)
                     response = await platform.jsprom(jsp)
                     content = await platform.jsprom(response.text())
                     if len(content) == 4:
@@ -883,7 +912,10 @@ if not aio.cross.simulator:
             async def __aexit__(self, *exc):
                 if self.tmpfile:
                     self.filelike.close()
-                    os.unlink(self.tmpfile)
+                    try:
+                        os.unlink(self.tmpfile)
+                    except FileNotFoundError as e:
+                        print("895: async I/O error",e)
                 del self.filelike, self.url, self.mode, self.tmpfile
                 return False
 
@@ -933,7 +965,9 @@ if not aio.cross.simulator:
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
 
         repos = []
-        mapping = {}
+        mapping = {
+            'pygame' : 'pygame.base',
+        }
         may_need = []
         ignore = ["distutils", "installer", "sysconfig"]
         ignore += ["python-dateutil", "matplotlib-pyodide"]
@@ -943,7 +977,6 @@ if not aio.cross.simulator:
         from pathlib import Path
 
         repodata = "repodata.json"
-
 
 
         def raw_input(self, prompt):
@@ -960,10 +993,20 @@ if not aio.cross.simulator:
 
 
         def eval(self, source):
-            for line in source.split('\n'):
+            for count, line in enumerate( source.split('\n') ):
+                if count and count < 10:
+                    print(str(count).zfill(3), self.buffer[-1] )
+                if not count:
+                    if line.startswith('<'):
+                        self.buffer.append(f'#{line}')
+                        continue
                 self.buffer.append( line )
-            self.buffer.append("")
-            print(f"917 {len(self.buffer)} lines queued for async eval")
+
+            if count:
+                self.line = None
+                self.buffer.insert(0,'#')
+            #self.buffer.append("")
+            DBG(f"996: {count} lines queued for async eval")
 
         @classmethod
         def scan_imports(cls, code, filename, load_try=False):
@@ -983,6 +1026,8 @@ if not aio.cross.simulator:
                     else:
                         mod = n.name.split(".")[0]
 
+                    mod = cls.mapping.get(mod,mod)
+
                     if mod in cls.ignore:
                         continue
 
@@ -1000,29 +1045,44 @@ if not aio.cross.simulator:
                             pass
 
                     required.append(mod)
+            DBG(f"1020: import scan {filename=} {len(code)=} {required}")
             return required
 
         @classmethod
         def list_imports(cls, code=None, file=None):
-            import platform
-            import json
 
             if code is None:
-                with open(file) as fcode:
-                    code = fcode.read()
+                if file:
+                    with open(file) as fcode:
+                        code = fcode.read()
+                else:
+                    code = ""
+
+            file = file or "<stdin>"
 
             for want in cls.scan_imports(code, file):
+                print(f"1044: requesting module {want=} for {file=} ")
+                repo = None
                 for repo in PyConfig.pkg_repolist:
                     if want in cls.may_need:
-                        continue
+                        DBG(f"1046: skip module {want=} reason: already requested")
+                        break
 
                     if want in sys.modules:
-                        continue
+                        DBG(f"1049: skip module {want=} reason: sys.modules")
+                        break
 
                     if want in repo:
                         cls.may_need.append(want)
+                        DBG(f"1055: module {want=} requested")
                         yield want
                         break
+                else:
+                    if repo:
+                        DBG(f"1063: {repo['-CDN-']=} does not provide {want=}")
+                    else:
+                        pdb(f"1081: no pkg repository available")
+
 
         @classmethod
         def imports(cls, *mods, lvl=0, wants=[]):
@@ -1048,65 +1108,6 @@ if not aio.cross.simulator:
                         wants.append(dep)
             return wants
 
-        @classmethod
-        async def async_imports(cls, *wanted, **kw):
-            def default_cb(pkg, error=None):
-                if error:
-                    pdb(msg)
-                else:
-                    print(f"\tinstalling {pkg}")
-
-            kw.setdefault('callback',default_cb)
-
-            # init dep solver.
-            if not len(cls.repos):
-                for cdn in PyConfig.pkg_indexes:
-                    async with platform.fopen(Path(cdn) / cls.repodata) as source:
-                        cls.repos.append(json.loads(source.read()))
-
-                # print(json.dumps(cls.repos[0]["packages"], sort_keys=True, indent=4))
-
-                print("referenced packages :", len(cls.repos[0]["packages"]))
-
-            if not len(PyConfig.pkg_repolist):
-                await cls.async_repos()
-
-            print("1092: remapping ?", PyConfig.dev_mode)
-            if PyConfig.dev_mode > 0:
-                for idx, repo in enumerate(PyConfig.pkg_repolist):
-                    print(repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
-                    repo["-CDN-"] = PyConfig.pkg_indexes[idx]
-
-            all = cls.imports(*wanted)
-
-            # FIXME: numpy must be loaded first for some modules.
-
-            if "numpy" in all:
-                kw['callback']('numpy')
-                try:
-                    await cls.get_pkg("numpy")
-                    __import__("numpy")
-                    all.remove("numpy")
-                except (IOError, zipfile.BadZipFile):
-                    pdb("914: cannot load numpy")
-                    return
-
-            for req in all:
-                if req == "python-dateutil":
-                    req = "dateutil"
-
-                if req == "pillow":
-                    req = "PIL"
-
-                if req in cls.ignore or req in sys.modules:
-                    continue
-                kw['callback'](req)
-                try:
-                    await cls.get_pkg(req)
-                except (IOError, zipfile.BadZipFile):
-                    msg=f"928: cannot download {req} pkg"
-                    kw['callback'](req,error=msg)
-
 
 
         # TODO: re order repo on failures
@@ -1122,7 +1123,7 @@ if not aio.cross.simulator:
         async def async_get_pkg(cls, want, ex, resume):
             pkg_file = ""
             for repo in PyConfig.pkg_repolist:
-                # print("954:", want, want in repo)
+                DBG(f"1109: {want=} found : {want in repo}")
                 if want in repo:
                     pkg_url = f"{repo['-CDN-']}{repo[want]}"
 
@@ -1149,6 +1150,67 @@ if not aio.cross.simulator:
         @classmethod
         def get_pkg(cls, want, ex=None, resume=None):
             return cls.async_get_pkg(want, ex, resume)
+
+        @classmethod
+        async def async_imports(cls, callback, *wanted, **kw):
+            def default_cb(pkg, error=None):
+                if error:
+                    pdb(msg)
+                else:
+                    DBG(f"\tinstalling {pkg}")
+
+            callback = callback or default_cb
+
+            # init dep solver.
+            if not len(cls.repos):
+                for cdn in PyConfig.pkg_indexes:
+                    async with platform.fopen(Path(cdn) / cls.repodata) as source:
+                        cls.repos.append(json.loads(source.read()))
+
+                # print(json.dumps(cls.repos[0]["packages"], sort_keys=True, indent=4))
+
+                print("referenced packages :", len(cls.repos[0]["packages"]))
+
+            if not len(PyConfig.pkg_repolist):
+                await cls.async_repos()
+
+            #print("1117: remapping ?", PyConfig.dev_mode)
+            if PyConfig.dev_mode > 0:
+                for idx, repo in enumerate(PyConfig.pkg_repolist):
+                    DBG("1120:",repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
+                    repo["-CDN-"] = PyConfig.pkg_indexes[idx]
+
+            all = cls.imports(*wanted)
+
+            # FIXME: numpy must be loaded first for some modules.
+
+            if "numpy" in all:
+                callback('numpy')
+                try:
+                    await cls.async_get_pkg("numpy", None, None)
+                    __import__("numpy")
+                    all.remove("numpy")
+                except (IOError, zipfile.BadZipFile):
+                    pdb("914: cannot load numpy")
+                    return
+
+            for req in all:
+                if req == "python-dateutil":
+                    req = "dateutil"
+
+                if req == "pillow":
+                    req = "PIL"
+
+                if req in cls.ignore or req in sys.modules:
+                    continue
+                callback(req)
+                try:
+                    await cls.async_get_pkg(req, None, None)
+                except (IOError, zipfile.BadZipFile):
+                    msg=f"928: cannot download {req} pkg"
+                    callback(req,error=msg)
+
+
 
         async def pv(
             track, prefix="", suffix="", decimals=1, length=70, fill="X", printEnd="\r"
@@ -1190,10 +1252,9 @@ if not aio.cross.simulator:
                         continue
                     PyConfig.pkg_repolist.append(repo)
 
-            print("1102 : remapping ?", PyConfig.dev_mode)
             if PyConfig.dev_mode > 0:
                 for idx, repo in enumerate(PyConfig.pkg_repolist):
-                    print(repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
+                    print("1199:",repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
                     repo["-CDN-"] = PyConfig.pkg_indexes[idx]
 
     # end TopLevel_async_handler
@@ -1208,7 +1269,28 @@ else:
     pdb("TODO: js simulator")
 
 # ======================================================
+def patch():
+    # DeprecationWarning: Using or importing the ABCs from 'collections'
+    # instead of from 'collections.abc' is deprecated since Python 3.3
+    # and in 3.10 it will stop working
+    import collections
+    from collections.abc import MutableMapping
+    collections.MutableMapping = MutableMapping
 
+    #import _sqlite3
+    #sys.modules['sqlite3'] = _sqlite3
+
+    def runPython(code):
+        from textwrap import dedent
+        print("1285: runPython N/I")
+
+
+    platform.runPython = runPython
+
+patch();del patch
+
+
+# ======================================================
 
 def ESC(*argv):
     for arg in argv:

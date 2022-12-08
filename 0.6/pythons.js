@@ -1,6 +1,9 @@
 "use strict";
 
+const module_name = "pythons.js"
+
 var config
+
 
 const FETCH_FLAGS = {
     mode:"no-cors",
@@ -134,13 +137,13 @@ window.addEventListener('unhandledrejection', function(event) {
 })
 
 
-
 //fileretrieve (binary). TODO: wasm compilation
-window.cross_file = function * cross_file(url, store) {
+window.cross_file = function * cross_file(url, store, flags) {
+    cross_file.dlcomplete = 1
     var content = 0
     var response = null
-    console.log("cross_file.fetch", url )
-    fetch(url, FETCH_FLAGS)
+    console.log("cross_file.fetch", url, flags || FETCH_FLAGS )
+    fetch(url, flags || FETCH_FLAGS)
         .then( resp => {
                 response = resp
                 if (checkStatus(resp))
@@ -152,8 +155,12 @@ window.cross_file = function * cross_file(url, store) {
     while (!response)
         yield content
 
+    console.warn("got response", response, "len", response.headers.get("Content-Length"))
+
     while (!content && !response.error )
         yield content
+
+    //console.warn("got content or error", content || response.error)
 
     if (response.error) {
         console.error("cross_file:", response.error)
@@ -162,8 +169,33 @@ window.cross_file = function * cross_file(url, store) {
 
     FS.writeFile(store, content )
     console.log("cross_file.fetch", store, "r/w=", content.byteLength )
+    cross_file.dlcomplete = content.byteLength
     yield store
 }
+
+
+
+
+window.cross_dl = async function cross_dl(url, flags) {
+    console.log("cross_dl.fetch", url, flags || FETCH_FLAGS )
+    const response = await fetch(url, flags || FETCH_FLAGS )
+    checkStatus(response)
+    console.log("cross_dl len=", response.headers.get("Content-Length") )
+    console.log("cross_dl.error", response.error )
+    if (response.body) {
+        console.log("cross_dl.text", await response.text() )
+        /*
+        const reader = response.body.getReader();
+        const text = await reader.read();
+        console.log("cross_dl.text", text )
+        */
+    } else {
+        console.error("cross_dl: no body")
+    }
+}
+
+
+
 
 
 //urlretrieve
@@ -428,9 +460,10 @@ const vm = {
 
 function run_pyrc(content) {
     const pyrc_file = "/data/data/org.python/assets/pythonrc.py"
-    FS.writeFile(pyrc_file, content )
 
+// TODO: concat blocks
     vm.FS.writeFile( "/data/data/org.python/assets/main.py" , vm.script.blocks[0] )
+    vm.FS.writeFile(pyrc_file, content )
 
     python.PyRun_SimpleString(`#!site
 PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
@@ -447,6 +480,8 @@ if os.path.isdir(PyConfig['prefix']):
     os.chdir(PyConfig['prefix'])
 
 fn = "${pyrc_file}"
+
+print("fixme async exec")
 
 if os.path.isfile(fn):
     exec(open(fn).read(), globals(), globals())
@@ -858,376 +893,6 @@ function feat_snd() {
         MM_play( {auto:1, test:1, media: new Audio(config.cdn+"empty.ogg")} , 1)
 }
 
-async function onload() {
-    var debug_hidden = true;
-
-    // this is how emscripten "os layer" will find it
-    window.Module = vm
-    var debug_mobile_request
-    try {
-        debug_mobile_request = (window.top.location.hash.search("#debug-mobile")>=0)
-    } catch (x) {
-        console.warn("FIXME:", x )
-        debug_mobile_request = false
-    }
-
-    const nuadm = mobile() || debug_mobile_request
-
-    var debug_user
-    try {
-        // not always accessible on cross-origin object
-        debug_user = window.top.location.hash.search("#debug")>=0
-    } catch (x) {
-        console.warn("FIXME:", x )
-        debug_user = false
-    }
-
-    const debug_dev = vm.PyConfig.orig_argv.includes("-X dev") || vm.PyConfig.orig_argv.includes("-d")
-    const debug_mobile = nuadm && ( debug_user || debug_dev )
-    if ( debug_user || debug_dev || debug_mobile ) {
-        debug_hidden = false;
-        vm.config.debug = true
-        if ( is_iframe() ){
-            vm.config.gui_divider = 3
-        } else {
-            vm.config.gui_divider = vm.config.gui_divider || 2 //??=
-        }
-    }
-    console.warn(`
-
-
-== FLAGS : is_mobile(${nuadm}) dev=${debug_dev} debug_user=${debug_user} debug_mobile=${debug_mobile} ==
-
-
-
-`)
-    if ( is_iframe() ) {
-        console.warn("======= IFRAME =========")
-    }
-
-
-    function br(){
-        document.body.appendChild( document.createElement('br') )
-    }
-
-    feat_lifecycle()
-
-    // container for html output
-    var html = document.getElementById('html')
-    if (!html){
-        html = document.createElement('div')
-        html.id = "html"
-        document.body.appendChild(html)
-    }
-
-    var has_vt = false
-
-    for (const feature of vm.config.features) {
-
-        if (feature.startsWith("snd")) {
-            feat_snd(debug_hidden)
-        }
-
-
-
-        if (feature.startsWith("gui")) {
-            feat_gui(debug_hidden)
-        }
-
-
-        // file upload widget
-
-        if (feature.startsWith("fs")) {
-            await feat_fs(debug_hidden)
-        }
-
-
-        // TERMINAL
-
-        if (!nuadm || debug_mobile) {
-            if (feature.startsWith("vt")) {
-
-                // simpleterm.js
-
-                if (feature === "vt") {
-                    await feat_vt(debug_hidden)
-                }
-
-                // xterm.js
-
-                if (feature === "vtx") {
-                    await feat_vtx(debug_hidden)
-                }
-                has_vt = true
-
-            }
-            if (feature.startsWith("stdout")){
-                feat_stdout()
-                has_vt = true
-                config.quiet = true
-            }
-
-        } else {
-            console.warn("NO VT/stdout on mobile, use remote debugger or explicit flag")
-        }
-    }
-
-    // FIXME: forced minimal output until until remote debugger is a thing.
-    if ( debug_mobile && !has_vt) {
-        console.warn("764: debug forced stdout")
-        feat_stdout()
-        has_vt = true
-    }
-
-    if (window.custom_onload)
-        window.custom_onload(debug_hidden)
-
-
-    window.busy--;
-    if (!config.quiet)
-        vm.vt.xterm.write('OK\r\nPlease \x1B[1;3;31mwait\x1B[0m ...\r\n')
-
-
-
-    if (window.window_resize)
-        window_resize(vm.config.gui_divider)
-
-
-// console.log("cleanup while loading wasm", "has_parent?", is_iframe(), "Parent:", window.parent)
-    feat_snd = feat_gui = feat_fs = feat_vt = feat_vtx = feat_stdout = feat_lifecycle = onload = null
-
-    if ( is_iframe() ) {
-        try {
-            if (window.top.blanker)
-                window.top.blanker.style.visibility = "hidden"
-        } catch (x) {
-            console.error("FIXME:", x)
-        }
-    }
-
-
-    if (!window.transfer) {
-// <!--
-        document.getElementById('html').insertAdjacentHTML('beforeend', `
-<style>
-    div.emscripten { text-align: center; }
-</style>
-<div id="transfer" align=center style="z-index: 5;">
-    <div class="emscripten" id="status">Downloading...</div>
-    <div class="emscripten">
-        <progress value="0" max="200" id="progress"></progress>
-    </div>
-</div>
-`);
-// -->
-    }
-
-    console.warn("Loading python interpreter from", config.executable)
-    jsimport(config.executable)
-
-}
-
-
-
-
-
-window.busy = 1
-
-window.addEventListener("load", onload )
-
-
-
-
-for (const script of document.getElementsByTagName('script')) {
-    const main = "pythons.js"
-    if (script.type == 'module') {
-        if (  script.src.search(main) >=0 ) {
-
-            var url = script.src
-
-console.log("pythons found at", url )
-
-            const old_url = url
-
-            var elems
-
-            elems = url.rsplit('#',1)
-            url = elems.shift()
-
-
-
-            elems = url.rsplit('?',1)
-            url = elems.shift()
-
-console.warn("TODO: merge/replace location options over script options")
-
-            if (script.src.endsWith(main)) {
-                url = url + (window.location.search || "?") + ( window.location.hash || "#" )
-                console.log("Location taking precedence over script", old_url ,'=>', url )
-            }
-
-            elems = url.rsplit('#',1)
-console.log("pythons found at", url , elems)
-            url = elems.shift()
-
-            if (elems.length)
-                for (const arg of elems.pop().split("%20") ) {
-                   vm.sys_argv.push(decodeURI(arg))
-                }
-
-            elems = url.rsplit('?',1)
-console.log("pythons found at", url , elems)
-            url = elems.shift()
-console.log("pythons found at", url , elems)
-
-            if (elems.length)
-                for (const arg of elems.pop().split("&")) {
-                    vm.cpy_argv.push(decodeURI(arg))
-                }
-
-
-            var code
-
-            if (script.text.length) {
-                code = script.text
-            } else {
-                console.warn("888: no inlined code found")
-            }
-
-            // default
-            vm.script.interpreter = "cpython"
-
-            if (vm.cpy_argv.length) {
-                var orig_argv_py
-                if ( vm.cpy_argv[0].search('cpython3')>=0 || vm.cpy_argv[0].search('wapy')>=0 )
-                    orig_argv_py = vm.script.interpreter
-                vm.script.interpreter = orig_argv_py || script.dataset.python || vm.script.interpreter
-                console.log("no python implementation specified, using default :",vm.script.interpreter)
-            }
-
-            // running pygbag proxy or lan testing ?
-            if (location.hostname === "localhost") {
-                config.cdn = script.src.split("?",1)[0].replace(main,"")
-            }
-
-
-
-            config.cdn     = config.cdn || script.src.split(main,1)[0]  //??=
-            config.xtermjs = config.xtermjs || 0
-
-config.archive = config.archive || (location.search.search(".apk")>=0)  //??=
-
-            config.debug = config.debug || (location.hash.search("#debug")>=0) //??=
-
-//FIXME: debug should force -i or just display vt ?
-config.interactive = config.interactive || (location.search.search("-i")>=0) //??=
-
-            config.gui_debug = config.gui_debug ||  2  //??=
-
-            if (script.id == "__main__")
-                config.autorun = 1
-
-            config.quiet = false
-            config.can_close = config.can_close || 0
-            config.autorun  = config.autorun || 0 //??=
-            config.features = config.features || script.dataset.src.split(",") //??=
-// TODO wapy is not versionned
-            config.PYBUILD  = config.PYBUILD || vm.script.interpreter.substr(7) || "3.11" //??=
-            config._sdl2    = config._sdl2 || "canvas" //??=
-
-            if (config.ume_block === undefined)
-                config.ume_block || true //??=
-
-            config.pydigits =  config.pydigits || config.PYBUILD.replace(".","") //??=
-            config.executable = config.executable || `${config.cdn}python${config.pydigits}/main.js` //??=
-
-            // https://docs.python.org/3/c-api/init_config.html#initialization-with-pyconfig
-
-            // TODO: https://docs.python.org/3/c-api/init_config.html#c.PyConfig.run_module
-            // TODO: https://docs.python.org/3/c-api/init_config.html#c.PyConfig.bytes_warning
-            // TODO: https://docs.python.org/3/c-api/init_config.html#c.PyConfig.program_name ( PYTHONEXECUTABLE )
-
-            vm.PyConfig = JSON.parse(`
-                {
-                    "isolated" : 0,
-                    "parse_argv" : 0,
-                    "quiet" : 0,
-                    "run_filename" : "main.py",
-                    "write_bytecode" : 0,
-                    "skip_source_first_line" : 1,
-                    "bytes_warning" : 1,
-                    "base_executable" : null,
-                    "base_prefix" : null,
-                    "buffered_stdio" : null,
-                    "bytes_warning" : 0,
-                    "warn_default_encoding" : 0,
-                    "code_debug_ranges" : 1,
-                    "check_hash_pycs_mode" : "default",
-                    "configure_c_stdio" : 1,
-                    "dev_mode" : -1,
-                    "dump_refs" : 0,
-                    "exec_prefix" : null,
-                    "executable" : "${config.executable}",
-                    "faulthandler" : 0,
-                    "filesystem_encoding" : "utf-8",
-                    "filesystem_errors" : "surrogatepass",
-                    "use_hash_seed" : 1,
-                    "hash_seed" : 1,
-                    "home": null,
-                    "import_time" : 0,
-                    "inspect" : 1,
-                    "install_signal_handlers" :0 ,
-                    "interactive" : ${config.interactive},
-                    "legacy_windows_stdio":0,
-                    "malloc_stats" : 0 ,
-                    "platlibdir" : "lib",
-                    "prefix" : "/data/data/org.python/assets/site-packages",
-                    "ps1" : ">>> ",
-                    "ps2" : "... "
-                }`)
-
-            vm.PyConfig.argv = vm.sys_argv
-            vm.PyConfig.orig_argv = vm.cpy_argv
-
-            for (const prop in config)
-                console.log(`config.${prop} =`, config[prop] )
-
-            console.log('interpreter=', vm.script.interpreter)
-            console.log('orig_argv', vm.PyConfig.orig_argv)
-            console.log('sys.argv: ' , vm.PyConfig.argv)
-            console.log('url=', url)
-            console.log('src=', script.src)
-            console.log('data-src=', script.dataset.src)
-            console.log('data-python=', script.dataset.python)
-            console.log('script: id=', script.id)
-            console.log('code : ' , code.length, ` as ${script.id}.py`)
-            vm.config = config
-
-// TODO remote script
-            if (config.autorun)
-                code = code + `
-if sys.platform in ('emscripten','wasi'):
-    embed.run()`
-
-            vm.script.blocks = [ code ]
-
-// TODO scripts argv ( sys.argv )
-
-            // only one script tag for now
-            break
-        }
-    } else {
-        console.log("script?", script.type, script.id, script.src, script.text )
-    }
-}
-
-for (const script of document.getElementsByTagName('script')) {
-    //TODO: process py-script brython whatever and push to vm.script.blocks
-    // for concat with vm.FS.writeFile
-}
-
-
-
 // ============================== event queue =============================
 
 window.EQ = []
@@ -1258,7 +923,7 @@ function download(diskfile, filename) {
 
     const blob = new Blob([FS.readFile(diskfile)])
     const elem = window.document.createElement('a');
-    elem.href = window.URL.createObjectURL(blob);
+    elem.href = window.URL.createObjectURL(blob, { oneTimeOnly: true });
     elem.download = filename;
     document.body.appendChild(elem);
     elem.click();
@@ -1364,7 +1029,7 @@ function MM_autoevents(track) {
 }
 
 
-window.cross_dl = async function cross_dl(trackid, url, flags) {
+window.cross_track = async function cross_track(trackid, url, flags) {
     var response = await fetch(url, flags || FETCH_FLAGS);
 
     checkStatus(response)
@@ -1392,7 +1057,7 @@ window.cross_dl = async function cross_dl(trackid, url, flags) {
             track.data.set(value, track.pos)
         } catch (x) {
             track.pos = -1
-            console.error("1323: cannot download", url)
+            console.error("1396: cannot download", url)
         }
 
         track.pos += value.length
@@ -1441,7 +1106,7 @@ MM.prepare = function prepare(url, cfg) {
     if (transport === 'fs') {
         if ( type === "audio" ) {
             const blob = new Blob([FS.readFile(track.url)])
-            audio = new Audio(URL.createObjectURL(blob))
+            audio = new Audio(URL.createObjectURL(blob,  { oneTimeOnly: true }))
             track.avail = true
         } else {
             console.error("fs transport is only for audio", JSON.stringify(track))
@@ -1456,8 +1121,8 @@ MM.prepare = function prepare(url, cfg) {
             audio = new Audio(url)
             track.avail = true
         } else {
-console.log("MM.cross_dl", trackid, transport, type, url )
-            cross_dl(trackid, url, {} )
+console.log("MM.cross_track", trackid, transport, type, url )
+            cross_track(trackid, url, {} )
         }
     }
 
@@ -1658,7 +1323,7 @@ shell.uptime()
 
 window.blob = function blob(filename) {
     console.warn(__FILE__, "1620: TODO: revoke blob url")
-    return URL.createObjectURL( new Blob([FS.readFile(filename)]))
+    return URL.createObjectURL( new Blob([FS.readFile(filename)],  { oneTimeOnly: true }))
 }
 
 /*
@@ -1713,13 +1378,13 @@ window.Fetch = {}
 // script is meant to be run at runtime in an emscripten environment
 
 // Fetch API allows data to be posted along with a POST request
-window.Fetch.POST = function * POST (url, data)
+window.Fetch.POST = function * POST (url, data, flags)
 {
     // post info about the request
     console.log("POST: " + url + "\nData: " + data);
     var request = new Request(url, {method: 'POST', body: JSON.stringify(data)})
     var content = 'undefined';
-    fetch(request)
+    fetch(request, flags || {})
    .then(resp => resp.text())
    .then((resp) => {
         console.log(resp);
@@ -1738,12 +1403,12 @@ window.Fetch.POST = function * POST (url, data)
 
 // Only URL to be passed
 // when called from python code, use urllib.parse.urlencode to get the query string
-window.Fetch.GET = function * GET (url)
+window.Fetch.GET = function * GET (url, flags)
 {
     console.log("GET: " + url);
     var request = new Request(url, { method: 'GET' })
     var content = 'undefined';
-    fetch(request)
+    fetch(request, flags || {})
    .then(resp => resp.text())
    .then((resp) => {
         console.log(resp);
@@ -1762,6 +1427,429 @@ window.Fetch.GET = function * GET (url)
 }
 
 
+// ====================================================================================
+//          pyodide compat layer
+// ====================================================================================
+
+
+window.loadPyodide =
+    async function loadPyodide(cfg) {
+        vm.runPython =
+            function runPython(code) {
+                console.warn("runPython N/I", code)
+                vm.PyRun_SimpleString(code)
+                return 'N/A'
+            }
+
+        console.warn("loadPyodide N/I")
+        auto_start(cfg)
+        auto_start = null
+        await onload()
+        onload = null
+        await _until(defined)("python")
+        vm.vt.xterm.write = cfg.stdout
+        console.warn("using ", python)
+        return vm
+    }
+
+// ====================================================================================
+//          STARTUP
+// ====================================================================================
+
+async function onload() {
+    var debug_hidden = true;
+
+    // this is how emscripten "os layer" will find it
+    window.Module = vm
+    var debug_mobile_request
+    try {
+        debug_mobile_request = (window.top.location.hash.search("#debug-mobile")>=0)
+    } catch (x) {
+        console.warn("FIXME:", x )
+        debug_mobile_request = false
+    }
+
+    const nuadm = mobile() || debug_mobile_request
+
+    var debug_user
+    try {
+        // not always accessible on cross-origin object
+        debug_user = window.top.location.hash.search("#debug")>=0
+    } catch (x) {
+        console.warn("FIXME:", x )
+        debug_user = false
+    }
+
+    const debug_dev = vm.PyConfig.orig_argv.includes("-X dev") || vm.PyConfig.orig_argv.includes("-d")
+    const debug_mobile = nuadm && ( debug_user || debug_dev )
+    if ( debug_user || debug_dev || debug_mobile ) {
+        debug_hidden = false;
+        vm.config.debug = true
+        if ( is_iframe() ){
+            vm.config.gui_divider = 3
+        } else {
+            vm.config.gui_divider = vm.config.gui_divider || 2 //??=
+        }
+    }
+    console.warn(`
+
+
+== FLAGS : is_mobile(${nuadm}) dev=${debug_dev} debug_user=${debug_user} debug_mobile=${debug_mobile} ==
+
+
+
+`)
+    if ( is_iframe() ) {
+        console.warn("======= IFRAME =========")
+    }
+
+
+    function br(){
+        document.body.appendChild( document.createElement('br') )
+    }
+
+    feat_lifecycle()
+
+    // container for html output
+    var html = document.getElementById('html')
+    if (!html){
+        html = document.createElement('div')
+        html.id = "html"
+        document.body.appendChild(html)
+    }
+
+    var has_vt = false
+
+    for (const feature of vm.config.features) {
+
+        if (feature.startsWith("snd")) {
+            feat_snd(debug_hidden)
+        }
+
+
+
+        if (feature.startsWith("gui")) {
+            feat_gui(debug_hidden)
+        }
+
+
+        // file upload widget
+
+        if (feature.startsWith("fs")) {
+            await feat_fs(debug_hidden)
+        }
+
+
+        // TERMINAL
+
+        if (!nuadm || debug_mobile) {
+            if (feature.startsWith("vt")) {
+
+                // simpleterm.js
+
+                if (feature === "vt") {
+                    await feat_vt(debug_hidden)
+                }
+
+                // xterm.js
+
+                if (feature === "vtx") {
+                    await feat_vtx(debug_hidden)
+                }
+                has_vt = true
+
+            }
+            if (feature.startsWith("stdout")){
+                feat_stdout()
+                has_vt = true
+                config.quiet = true
+            }
+
+        } else {
+            console.warn("NO VT/stdout on mobile, use remote debugger or explicit flag")
+        }
+    }
+
+    // FIXME: forced minimal output until until remote debugger is a thing.
+    if ( debug_mobile && !has_vt) {
+        console.warn("764: debug forced stdout")
+        feat_stdout()
+        has_vt = true
+    }
+
+    if (window.custom_onload)
+        window.custom_onload(debug_hidden)
+
+
+    window.busy--;
+    if (!config.quiet)
+        vm.vt.xterm.write('OK\r\nPlease \x1B[1;3;31mwait\x1B[0m ...\r\n')
+
+
+
+    if (window.window_resize)
+        window_resize(vm.config.gui_divider)
+
+
+// console.log("cleanup while loading wasm", "has_parent?", is_iframe(), "Parent:", window.parent)
+    feat_snd = feat_gui = feat_fs = feat_vt = feat_vtx = feat_stdout = feat_lifecycle = onload = null
+
+    if ( is_iframe() ) {
+        try {
+            if (window.top.blanker)
+                window.top.blanker.style.visibility = "hidden"
+        } catch (x) {
+            console.error("FIXME:", x)
+        }
+    }
+
+
+    if (!window.transfer) {
+// <!--
+        document.getElementById('html').insertAdjacentHTML('beforeend', `
+<style>
+    div.emscripten { text-align: center; }
+</style>
+<div id="transfer" align=center style="z-index: 5;">
+    <div class="emscripten" id="status">Downloading...</div>
+    <div class="emscripten">
+        <progress value="0" max="200" id="progress"></progress>
+    </div>
+</div>
+`);
+// -->
+    }
+
+    console.warn("Loading python interpreter from", config.executable)
+    jsimport(config.executable)
+
+}
+
+function auto_conf(cfg) {
+    var url = cfg.url
+
+    console.log("AUTOSTART", url, document.location.href, cfg.stdout)
+    if (document.currentScript) {
+        if (document.currentScript.async) {
+            console.log("Executing asynchronously", document.currentScript.src);
+        } else {
+            console.log("Executing synchronously");
+        }
+    }
+
+console.log("pythons found at", url )
+
+    const old_url = url
+
+    var elems
+
+    elems = url.rsplit('#',1)
+    url = elems.shift()
+
+
+
+    elems = url.rsplit('?',1)
+    url = elems.shift()
+
+console.warn("TODO: merge/replace location options over script options")
+
+    if (url.endsWith(module_name)) {
+        url = url + (window.location.search || "?") + ( window.location.hash || "#" )
+        console.log("Location taking precedence over script", old_url ,'=>', url )
+    }
+
+    elems = url.rsplit('#',1)
+console.log("pythons found at", url , elems)
+    url = elems.shift()
+
+    if (elems.length)
+        for (const arg of elems.pop().split("%20") ) {
+           vm.sys_argv.push(decodeURI(arg))
+        }
+
+    elems = url.rsplit('?',1)
+console.log("pythons found at", url , elems)
+    url = elems.shift()
+console.log("pythons found at", url , elems)
+
+    if (elems.length)
+        for (const arg of elems.pop().split("&")) {
+            vm.cpy_argv.push(decodeURI(arg))
+        }
+
+
+    var code = ""
+
+    if (!cfg.module && cfg.text.length) {
+        code = cfg.text
+    } else {
+        console.warn("1601: no inlined code found")
+    }
+
+    // default
+    vm.script.interpreter = "cpython"
+
+    if (vm.cpy_argv.length) {
+        var orig_argv_py
+        if ( vm.cpy_argv[0].search('cpython3')>=0 || vm.cpy_argv[0].search('wapy')>=0 )
+            orig_argv_py = vm.script.interpreter
+        vm.script.interpreter = orig_argv_py || config.python || vm.script.interpreter
+        console.log("no python implementation specified, using default :",vm.script.interpreter)
+    }
+
+    // running pygbag proxy, lan testing or a module url ?
+    if ( (location.hostname === "localhost") || cfg.module) {
+        config.cdn = url.split("?",1)[0].replace(module_name, "")
+    }
+
+
+
+    config.cdn     = config.cdn || url.split(module_name, 1)[0]  //??=
+    config.xtermjs = config.xtermjs || 0
+
+    config.archive = config.archive || (location.search.search(".apk")>=0)  //??=
+
+    config.debug = config.debug || (location.hash.search("#debug")>=0) //??=
+
+//FIXME: debug should force -i or just display vt ?
+config.interactive = config.interactive || (location.search.search("-i")>=0) //??=
+
+    config.gui_debug = config.gui_debug ||  2  //??=
+
+    if (config.id == "__main__")
+        config.autorun = 1
+
+    config.quiet = false
+    config.can_close = config.can_close || 0
+    config.autorun  = config.autorun || 0 //??=
+    config.features = config.features || cfg.os.split(",") //??=
+// TODO wapy is not versionned
+    config.PYBUILD  = config.PYBUILD || vm.script.interpreter.substr(7) || "3.11" //??=
+    config._sdl2    = config._sdl2 || "canvas" //??=
+
+    if (config.ume_block === undefined)
+        config.ume_block || true //??=
+
+    config.pydigits =  config.pydigits || config.PYBUILD.replace(".","") //??=
+    config.executable = config.executable || `${config.cdn}python${config.pydigits}/main.js` //??=
+
+    // https://docs.python.org/3/c-api/init_config.html#initialization-with-pyconfig
+
+    // TODO: https://docs.python.org/3/c-api/init_config.html#c.PyConfig.run_module
+    // TODO: https://docs.python.org/3/c-api/init_config.html#c.PyConfig.bytes_warning
+    // TODO: https://docs.python.org/3/c-api/init_config.html#c.PyConfig.program_name ( PYTHONEXECUTABLE )
+
+    vm.PyConfig = JSON.parse(`
+        {
+            "isolated" : 0,
+            "parse_argv" : 0,
+            "quiet" : 0,
+            "run_filename" : "main.py",
+            "write_bytecode" : 0,
+            "skip_source_first_line" : 1,
+            "bytes_warning" : 1,
+            "base_executable" : null,
+            "base_prefix" : null,
+            "buffered_stdio" : null,
+            "bytes_warning" : 0,
+            "warn_default_encoding" : 0,
+            "code_debug_ranges" : 1,
+            "check_hash_pycs_mode" : "default",
+            "configure_c_stdio" : 1,
+            "dev_mode" : -1,
+            "dump_refs" : 0,
+            "exec_prefix" : null,
+            "executable" : "${config.executable}",
+            "faulthandler" : 0,
+            "filesystem_encoding" : "utf-8",
+            "filesystem_errors" : "surrogatepass",
+            "use_hash_seed" : 1,
+            "hash_seed" : 1,
+            "home": null,
+            "import_time" : 0,
+            "inspect" : 1,
+            "install_signal_handlers" :0 ,
+            "interactive" : ${config.interactive},
+            "legacy_windows_stdio":0,
+            "malloc_stats" : 0 ,
+            "platlibdir" : "lib",
+            "prefix" : "/data/data/org.python/assets/site-packages",
+            "ps1" : ">>> ",
+            "ps2" : "... "
+        }`)
+
+    vm.PyConfig.argv = vm.sys_argv
+    vm.PyConfig.orig_argv = vm.cpy_argv
+
+    for (const prop in config)
+        console.log(`config.${prop} =`, config[prop] )
+
+    console.log('interpreter=', vm.script.interpreter)
+    console.log('orig_argv', vm.PyConfig.orig_argv)
+    console.log('sys.argv: ' , vm.PyConfig.argv)
+    console.log('docurl=', document.location.href)
+    console.log('srcurl=', url)
+    if (!cfg.module) {
+        console.log('data-os=', config.os)
+        console.log('data-python=', config.python)
+        console.log('script: id=', config.id)
+        console.log('code : ' , code.length, ` as ${config.id}.py`)
+    }
+    vm.config = config
+}
+
+
+function auto_start(cfg) {
+    window.busy = 1
+    if (cfg) {
+        console.error("not using python script tags")
+        cfg.os = "gui"
+        //config.id = "__main__"
+        cfg.module = true
+        auto_conf(cfg)
+        vm.script.blocks = [ "print(' - Pygbag runtime -')" ]
+    } else {
+        for (const script of document.getElementsByTagName('script')) {
+            if ( (script.type == 'module') && (script.src.search(module_name) >= 0)){
+                const code = script.text
+                cfg = {
+                    module : false,
+                    python : script.dataset.python,
+                    url : script.src,
+                    os : script.dataset.os,
+                    text : code,
+                    id : script.id,
+                    autorun : ""
+                }
+
+                window.addEventListener("load", onload )
+                auto_conf(cfg)
+
+                if (vm.config.autorun)
+                    code = code + `
+    if sys.platform in ('emscripten','wasi'):
+        embed.run()
+`
+
+                vm.script.blocks = [ code ]
+
+                // only one script tag for now
+                break
+            } else {
+                console.log("script?", script.type, script.id, script.src, script.text )
+            }
+        }
+
+        for (const script of document.getElementsByTagName('script')) {
+            //TODO: process py-script brython whatever and push to vm.script.blocks
+            // for concat with vm.FS.writeFile
+        }
+
+    }
+
+    console.error("auto_start done")
+
+}
 
 
 
@@ -1772,3 +1860,34 @@ window.Fetch.GET = function * GET (url)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+auto_start()
