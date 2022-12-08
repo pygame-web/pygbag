@@ -54,6 +54,10 @@ if hasattr(sys, "_emscripten_info"):
     except Exception as e:
         sys.print_exception(e)
         pdb(__file__, ":47 no browser/emscripten modules yet", e)
+
+    def ffi(arg):
+        return window.JSON.parse( json.dumps(arg) )
+
 else:
     is_browser = False
     builtins.__EMSCRIPTEN__ = None
@@ -198,10 +202,6 @@ def explore(root):
             if filename.endswith(".so"):
                 preld_counter += 1
                 src = f"{current}/{filename}"
-                #                dst = "/tmp/pre" + str(preld_counter).zfill(4) + ".so"
-                #                print(f"175 {src} -> {dst}")
-                #                shutil.copyfile(src, dst)
-                #                prelist[src] = dst
                 embed.preload(src)
 
 
@@ -209,10 +209,8 @@ def fix_preload_table():
     global prelist, preloadedWasm, preloadedImages, preloadedAudios
 
     if embed.counter() < 0:
-        pdb("233: asset manager not ready 0>", embed.counter())
+        pdb("212: asset manager not ready 0>", embed.counter())
         aio.defer(fix_preload_table, (), {}, delay=60)
-    #    else:
-    #        pdb("236: all assets were ready at", embed.counter())
 
     for (
         src,
@@ -238,18 +236,18 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
     global preloadedWasm, preloadedImages, preloadedAudios
 
     if loaderhome:
-        pdb(f"218: appdir mapped to {loaderhome} by loader")
+        pdb(f"241: appdir mapped to {loaderhome} by loader")
         ROOTDIR = str(loaderhome)
 
     # simulator won't run javascript for now
     if not hasattr(embed, "run_script"):
-        pdb("209: no js engine")
+        pdb("246: no js engine")
         return False
 
     # do not do stuff if not called properly from our js loader.
     if PyConfig.executable is None:
         # running in sim
-        pdb("223: running in simulator")
+        pdb("252: running in simulator")
         return False
 
     sys.executable = PyConfig.executable or "python"
@@ -281,7 +279,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
             pdb(f"{ROOTDIR=}")
             pdb(f"{os.getcwd()=}")
 
-        print(f"269 assets found :", preld_counter)
+        print(f"284: assets found :", preld_counter)
         if not preld_counter:
             embed.run()
 
@@ -312,15 +310,12 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
             if loadermain:
                 if os.path.isfile("main.py"):
                     print(
-                        f"290: running {ROOTDIR}/{loadermain} for {sys.argv[0]} (deferred)"
+                        f"315: running {ROOTDIR}/{loadermain} for {sys.argv[0]} (deferred)"
                     )
                     aio.defer(execfile, [f"{ROOTDIR}/{loadermain}"], {})
                 else:
                     pdb(f"no {loadermain} found for {sys.argv[0]} in {ROOTDIR}")
                 aio.defer(embed.prompt, (), {}, delay=2000)
-
-    #            else:
-    #                pdb(f"297: no loadermain request for {ROOTDIR=}")
 
     # C should unlock aio loop when preload count reach 0.
 
@@ -341,7 +336,16 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
         aio.started = True
         aio.create_task(EventTarget.process())
     else:
-        print("319: EventTarget delayed by loader")
+        print("341: EventTarget delayed by loader")
 
 
-#
+#===============================================================================================
+# platform
+
+def rcp(source, destination):
+    import urllib
+    import urllib.request
+    filename = Path(destination)
+    filename.parent.mkdir(parents=True, exist_ok=True)
+    urllib.request.urlretrieve(source_url, str(filename))
+

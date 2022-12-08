@@ -44,6 +44,13 @@ import multiprocessing
 import webbrowser
 import platform
 
+# for pyodide runPython emulation
+from textwrap import dedent
+
+# FIXME: because _sqlite3 is builtins anyway ?
+import sqlite3
+
+
 # for pygame-script FS
 import tempfile
 

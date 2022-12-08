@@ -68,7 +68,7 @@ def make_header(html, line):
             SCRIPT = line[2:].strip()
         else:
             SCRIPT = f' src="{pygbag.config["cdn"]}pythons.js"'
-            SCRIPT += ' data-src="vtx,fs,gui"'
+            SCRIPT += ' data-os="vtx,fs,gui"'
 
         line = (
             f"""

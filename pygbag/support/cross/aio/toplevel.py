@@ -99,46 +99,22 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         self.buffer = []
         self.one_liner = True
         self.opts = kw
-        self.coro = None
+        self.shell = self.opts.get("shell", None)
+        if self.shell is None:
+            class shell:
+                coro = []
+                @classmethod
+                def parse_sync(shell, line, **env):
+                    print("NoOp shell", line )
+
+            self.shell = shell
         self.rv = None
 
     # need to subclass
     # @staticmethod
     # def get_pkg(want, ex=None, resume=None):
 
-    def process_shell(self, shell, line, **env):
-        catch = True
-        for cmd in line.strip().split(";"):
-            cmd = cmd.strip()
-            if cmd.find(" ") > 0:
-                cmd, args = cmd.split(" ", 1)
-                args = args.split(" ")
-            else:
-                args = ()
 
-            if hasattr(shell, cmd):
-                fn = getattr(shell, cmd)
-
-                try:
-                    if inspect.isgeneratorfunction(fn):
-                        for _ in fn(*args):
-                            print(_)
-                    elif inspect.iscoroutinefunction(fn):
-                        aio.create_task(fn(*args))
-                    elif inspect.isasyncgenfunction(fn):
-                        print("asyncgen N/I")
-                    elif inspect.isawaitable(fn):
-                        print("awaitable N/I")
-                    else:
-                        fn(*args)
-
-                except Exception as cmderror:
-                    print(cmderror, file=sys.stderr)
-            elif cmd.endswith('.py'):
-                self.coro = shell.source(cmd, *args, **env)
-            else:
-                catch = undefined
-        return catch
 
     def runsource(self, source, filename="<stdin>", symbol="single"):
         if len(self.buffer)>1:
@@ -148,8 +124,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
             code = self.compile(source, filename, symbol)
         except SyntaxError:
             if self.one_liner:
-                shell = self.opts.get("shell", None)
-                if shell and self.process_shell(shell, self.line):
+                if self.shell.parse_sync(self.line):
                     return
             self.showsyntaxerror(filename)
             return False
@@ -182,17 +157,17 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
             raise
 
         except ModuleNotFoundError as ex:
-            get_pkg = self.opts.get("get_pkg", self.get_pkg)
+            get_pkg = self.opts.get("get_pkg", self.async_get_pkg)
             if get_pkg:
                 want = str(ex).split("'")[1]
-                self.coro = get_pkg(want, ex, bc)
+                self.shell.coro.append( get_pkg(want, ex, bc) )
 
         except BaseException as ex:
             if self.one_liner:
                 shell = self.opts.get("shell", None)
                 if shell:
-                    # coro maybe be filler by shell exec
-                    if self.process_shell(shell, self.line):
+                    # coro maybe be filled by shell exec
+                    if shell.parse_sync(self.line):
                         return
             sys.print_exception(ex, limit=-1)
 
@@ -213,7 +188,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
 
         self.write(
-            "Python %s on %s\n%s\n%s "
+            "\nPython %s on %s\n%s\n%s "
             % (sys.version, sys.platform, cprt, '>>>')
         )
 
@@ -221,7 +196,6 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
         while not aio.exit:
             await asyncio.sleep(0)
-            self.coro = None
             try:
                 try:
                     self.line = self.raw_input(prompt)
@@ -244,8 +218,8 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 more = 0
             try:
                 # if async prepare is required
-                if self.coro is not None:
-                    self.rv = await self.coro
+                while len(self.shell.coro):
+                    self.rv = await self.shell.coro.pop(0)
 
                 if self.rv not in [undefined, None, False, True]:
                     await self.rv
