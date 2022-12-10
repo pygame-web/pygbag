@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.27.2
+        SDK_VERSION: 3.1.28.0
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: emsdk pygame
         STATIC: false
