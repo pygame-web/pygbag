@@ -44,7 +44,9 @@ class CodeHandler(SimpleHTTPRequestHandler):
         self.send_header("access-control-allow-origin", "*")
         self.send_header("cross-origin-resource-policy:", "cross-origin")
         self.send_header("cross-origin-opener-policy", "cross-origin")
-        self.send_header("cross-origin-embedder-policy", "require-corp")
+
+        #self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
+        self.send_header("Cross-Origin-Embedder-Policy", "unsafe-none")
 
         super().end_headers()
 
