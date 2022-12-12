@@ -45,8 +45,12 @@ class CodeHandler(SimpleHTTPRequestHandler):
         self.send_header("cross-origin-resource-policy:", "cross-origin")
         self.send_header("cross-origin-opener-policy", "cross-origin")
 
-        #self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
-        self.send_header("Cross-Origin-Embedder-Policy", "unsafe-none")
+        # buggy for https://pygame-web.github.io/archives/repo/index.json
+        # self.send_header("cross-origin-embedder-policy", "unsafe-none")
+
+        # at least raise
+        # net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep 200
+        self.send_header("cross-origin-embedder-policy", "require-corp")
 
         super().end_headers()
 
@@ -120,6 +124,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
                                 "content-length",
                                 "access-control-allow-origin",
                                 "cross-origin-embedder-policy",
+                                "cross-origin-resource-policy",
+                                "cross-origin-opener-policy",
                             ]:
                                 continue
                             self.send_header(k, v)
