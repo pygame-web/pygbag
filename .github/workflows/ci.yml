@@ -35,18 +35,6 @@ jobs:
             sudo apt-get install -y bash git curl wget lz4 pv 2>&1 >/dev/null
 
 
-    - name: build 3.10 packages
-      run: |
-            cd $GITHUB_WORKSPACE
-            PYBUILD=3.10 bash ./scripts/build-pkg.sh
-
-    - name: build 3.10 loader
-      run: |
-            cd $GITHUB_WORKSPACE
-            PYBUILD=3.10 bash ./scripts/build-loader.sh
-
-
-
     - name: build 3.11 packages
       run: |
             cd $GITHUB_WORKSPACE
