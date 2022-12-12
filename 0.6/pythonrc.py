@@ -728,6 +728,8 @@ except Exception as e:
     aio.cross.simulator = True
 
 PyConfig["imports_ready"] = False
+PyConfig["pygbag"] = 0
+
 
 
 from types import SimpleNamespace
@@ -838,12 +840,16 @@ if not aio.cross.simulator:
         if platform.window.location.href.find("//localhost:") > 0:
             port = str(platform.window.location.port)
 
-            # pygbag developer mode
+            # pygbag developer mode ( --dev )
             if ('-d' in PyConfig.orig_argv) or (port == "8666"):
                 PyConfig.dev_mode = 1
+                print(sys._emscripten_info)
 
-        if PyConfig.dev_mode > 0:
-            print(sys._emscripten_info)
+            PyConfig.pygbag = 1
+        else:
+            PyConfig.pygbag = 0
+
+        if (PyConfig.dev_mode > 0) or PyConfig.pygbag:
             # in pygbag dev mode use local repo
             PyConfig.pkg_indexes = []
             for idx in PYCONFIG_PKG_INDEXES_DEV:
@@ -1175,7 +1181,7 @@ if not aio.cross.simulator:
                 await cls.async_repos()
 
             #print("1117: remapping ?", PyConfig.dev_mode)
-            if PyConfig.dev_mode > 0:
+            if PyConfig.pygbag > 0:
                 for idx, repo in enumerate(PyConfig.pkg_repolist):
                     DBG("1120:",repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
                     repo["-CDN-"] = PyConfig.pkg_indexes[idx]
