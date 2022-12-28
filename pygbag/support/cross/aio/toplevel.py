@@ -11,8 +11,10 @@ import types
 import inspect
 import zipfile
 
+HISTORY=[]
 
 def install(pkg_file, sconf=None):
+    global HISTORY
     from installer import install
     from installer.destinations import SchemeDictionaryDestination
     from installer.sources import WheelFile
@@ -34,12 +36,17 @@ def install(pkg_file, sconf=None):
                     "INSTALLER": b"pygbag",
                 },
             )
+            HISTORY.append(pkg_file)
+    except FileExistsError:
+        print(f"38: {pkg_file} already installed")
     except Exception as ex:
         pdb(f"82: cannot install {pkg_file}")
         sys.print_exception(ex)
 
 
 async def get_repo_pkg(pkg_file, pkg, resume, ex):
+    global HISTORY
+
     # print("-"*40)
     import platform
     import json
@@ -47,30 +54,34 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
     import importlib
     from pathlib import Path
 
-    sconf = sysconfig.get_paths()
-    # sconf["platlib"] = os.environ.get("HOME","/tmp")
-    platlib = sconf["platlib"]
-    Path(platlib).mkdir(exist_ok=True)
-    # print(f"{platlib=}")
+    if not pkg_file in HISTORY:
+        sconf = sysconfig.get_paths()
+        # sconf["platlib"] = os.environ.get("HOME","/tmp")
+        platlib = sconf["platlib"]
+        Path(platlib).mkdir(exist_ok=True)
+        # print(f"{platlib=}")
 
-    if platlib not in sys.path:
-        sys.path.append(platlib)
-    try:
-        aio.toplevel.install(pkg_file, sconf)
-    except Exception as rx:
-        pdb(f"failed to install {pkg_file}")
-        sys.print_exception(rx)
+        if platlib not in sys.path:
+            sys.path.append(platlib)
 
-    await asyncio.sleep(0)
+        try:
+            aio.toplevel.install(pkg_file, sconf)
+        except Exception as rx:
+            pdb(f"failed to install {pkg_file}")
+            sys.print_exception(rx)
 
-    try:
-        platform.explore(platlib)
         await asyncio.sleep(0)
-        importlib.invalidate_caches()
-        # print(f"{pkg_file} installed, preloading", embed.preloading())
-    except Exception as rx:
-        pdb(f"failed to preload {pkg_file}")
-        sys.print_exception(rx)
+
+        try:
+            platform.explore(platlib)
+            await asyncio.sleep(0)
+            importlib.invalidate_caches()
+            # print(f"{pkg_file} installed, preloading", embed.preloading())
+        except Exception as rx:
+            pdb(f"failed to preload {pkg_file}")
+            sys.print_exception(rx)
+    else:
+        print(f"84: {pkg_file} already installed")
 
     if resume and ex:
         try:
@@ -91,6 +102,8 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
 class AsyncInteractiveConsole(code.InteractiveConsole):
     instance = None
     console = None
+# TODO: use PyConfig interactive flag
+    muted = True
 
     def __init__(self, locals, **kw):
         super().__init__(locals)
@@ -100,6 +113,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         self.one_liner = True
         self.opts = kw
         self.shell = self.opts.get("shell", None)
+
         if self.shell is None:
             class shell:
                 coro = []
@@ -174,6 +188,22 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         finally:
             self.one_liner = True
 
+    def banner(self):
+        if self.muted:
+            return
+        cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
+
+        self.write(
+            "\nPython %s on %s\n%s\n"
+            % (sys.version, sys.platform, cprt)
+        )
+
+    @classmethod
+    def prompt(cls):
+        if not cls.muted:
+            embed.prompt()
+
+
     async def interact(self):
         try:
             sys.ps1
@@ -184,13 +214,6 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
             sys.ps2
         except AttributeError:
             sys.ps2 = "--- "
-
-        cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
-
-        self.write(
-            "\nPython %s on %s\n%s\n%s "
-            % (sys.version, sys.platform, cprt, '>>>')
-        )
 
         prompt = sys.ps1
 
@@ -224,11 +247,11 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 if self.rv not in [undefined, None, False, True]:
                     await self.rv
             except Exception as ex:
+                print(type(self.rv),self.rv)
                 sys.print_exception(ex)
 
-            embed.prompt()
-
-        self.write("now exiting %s...\n" % self.__class__.__name__)
+            self.prompt()
+        aio.exit_now(0)
 
     @classmethod
     def start_console(cls, shell):
@@ -246,10 +269,10 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
 
     @classmethod
-    async def start_toplevel(cls, shell, console=True):
+    async def start_toplevel(cls, shell, console=True, ns='__main__'):
         """start async import system with optionnal async console"""
         cls.instance = cls(
-            globals(),
+            vars(__import__(ns)),
             shell=shell,
         )
 

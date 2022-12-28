@@ -72,7 +72,7 @@ pygame.quit = patch_pygame_quit
 __pygame_display_set_mode__ = pygame.display.set_mode
 
 
-def patch_pygame_display_set_mode(size=(0,0), flags=0, depth=0):
+def patch_pygame_display_set_mode(size=(0,0), flags=0, depth=0, display=0, vsync=0):
 
     # apparently no need to remove scaled.
     if size != (0,0):
@@ -80,9 +80,9 @@ def patch_pygame_display_set_mode(size=(0,0), flags=0, depth=0):
             try:
                 window.window_resize()
             except:
-                print("ERROR: browser host does not provide window_resize() function",file=sys.__stderr__)
+                print("ERROR: browser host does not provide window_resize() function", file=sys.__stderr__)
 
-    return __pygame_display_set_mode__(size, flags, depth)
+    return __pygame_display_set_mode__(size, flags, depth, display, vsync)
 
 
 pygame.display.set_mode = patch_pygame_display_set_mode

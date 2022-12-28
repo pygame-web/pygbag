@@ -1,6 +1,9 @@
 import aio
 import inspect
+import sys
 import threading as __threading__
+sys.modules["__threading__"] = __threading__
+from __threading__ import *
 
 # mark not started but no error
 aio.error = None
@@ -191,6 +194,28 @@ class Thread:
     def is_alive(self):
         return self.status is True
 
+class Timer:
+    def __init__(self, interval, function, args=None, kwargs=None):
+        self.abort = False
+        self.interval = interval
+        self.thread = Thread(group=None, target=self.function, args=args, kwargs=kwargs)
+
+    async def defer(self):
+        await asyncio.sleep(self.interval)
+        if not self.abort:
+            self.thread.start()
+        del self.abort, self.interval, self.thread
+
+    def start(self):
+        aio.create_task(self.defer())
+        return self
+
+    def cancel(self):
+        self.abort = True
+
+
+
+
 
 def service(srv, *argv, **kw):
     embed.log(f"starting green thread : {srv}")
@@ -215,3 +240,4 @@ class Runnable:
 import sys
 
 sys.modules["threading"] = sys.modules["aio.gthread"]
+sys.modules["dummy_threading"] = sys.modules["aio.gthread"]

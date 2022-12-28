@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 
 /src
+/dist
+/ATTIC

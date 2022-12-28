@@ -62,8 +62,6 @@ try:
 except:
 
     def execfile(filename):
-        global pgzrun
-
         imports = []
 
         # this buggy parser is for implementations that do not have ast module.
@@ -73,12 +71,7 @@ except:
             myglobs = ["setup", "loop", "main"]
             tmpl = []
 
-            pgzrun = None
-
             for l in f.readlines():
-                if pgzrun is None:
-                    pgzrun = l.find("pgzrun") > 0
-
                 testline = l.split("#")[0].strip(" \r\n,\t")
 
                 if testline.startswith("global ") and (
@@ -184,36 +177,45 @@ except:
                 code = None
 
             if code:
-                if pgzrun or "pgzrun" in imports:
-                    # Indicate that we're running with the pgzrun runner
-                    # and disable the pgzrun module
-                    sys._pgzrun = True
-
-                    sys.modules["pgzrun"] = type(__main__)("pgzrun")
-                    import pgzrun
-
-                    pgzrun.go = lambda: None
-
-                    import pgzero
-                    import pgzero.runner
-
-                    pgzero.runner.prepare_mod(__main__)
-                print(f"190: imports: {imports}")
-
+                print(f"180: imports: {imports}")
                 exec(code, __main__dict, __main__dict)
-                if pgzrun:
-                    pgzero.runner.run_mod(__main__)
 
         return __import__("__main__")
 
     define("execfile", execfile)
 
-if defined("embed") and hasattr(embed, "readline"):
+
+
+
+
+
+if ...: #defined("embed") and hasattr(embed, "readline"):
+
+    try:
+        PyConfig
+        PyConfig["pkg_repolist"] = []
+
+        aio.cross.simulator = False
+        sys.argv = PyConfig.pop("argv", [])
+
+    except Exception as e:
+        sys.print_exception(e)
+        # TODO: build a pyconfig extracted from C here
+        PyConfig = {}
+        PyConfig["dev_mode"] = 1
+        PyConfig["run_filename"] = "main.py"
+        PyConfig["executable"] = sys.executable
+        PyConfig["interactive"] = 1
+        print(" - running in wasm simulator - ")
+        aio.cross.simulator = True
+
+    PyConfig["imports_ready"] = False
+    PyConfig["pygbag"] = 0
+
     import inspect
     from pathlib import Path
     import json
-    # import urllib.request
-    # import aio.toplevel
+
 
     class shell:
         # command ouput
@@ -228,6 +230,14 @@ if defined("embed") and hasattr(embed, "readline"):
         else:
             ROOT = f"/data/data/{sys.argv[0]}"
             HOME = f"/data/data/{sys.argv[0]}/assets"
+
+        ticks = 0
+        pgzrunning = None
+
+        @classmethod
+        def mktemp(cls,suffix=""):
+            cls.ticks += 1
+            return f"/tmp/tmp-{cls.ticks}{suffix}"
 
         @classmethod
         def cat(cls, *argv):
@@ -266,11 +276,17 @@ if defined("embed") and hasattr(embed, "readline"):
             ESC("c")
 
         @classmethod
+        def pg_init(cls):
+            if pygame.display.get_init():
+                return pygame.display.get_surface()
+            screen = pygame.display.set_mode([cls.screen_width, cls.screen_height])
+            return screen
+        @classmethod
         def clear(cls, *argv, **kw):
             """clear terminal screen"""
             import pygame
 
-            screen = pygame.display.set_mode([1024, 600])
+            screen = cls.pg_init()
             screen.fill((0, 0, 0))
             pygame.display.update()
 
@@ -282,24 +298,27 @@ if defined("embed") and hasattr(embed, "readline"):
             if not len(argv):
                 surf = _
             else:
-                ext = argv[-1].lower()
-                if ext.endswith(".six"):
-                    cls.more(argv[-1])
-                    return
-                if ext.endswith("bmp"):
-                    surf = pygame.image.load_basic(argv[-1])
-                else:
-                    surf = pygame.image.load(argv[-1])
+                arg = argv[-1]
+                ext = arg.lower()
+                if ext.endswith('.b64'):
+                    import base64
+                    ext = arg[:-4]
+                    with open( arg , 'rb' ) as infile:
+                        arg = arg[:-4]
+                        with open( arg,'wb') as outfile:
+                            base64.decode(infile,outfile)
 
-            screen = pygame.display.set_mode([1024, 600])
+                if ext.endswith(".six"):
+                    cls.more(arg)
+                    return
+                if ext.endswith(".bmp"):
+                    surf = pygame.image.load_basic(arg)
+                else:
+                    surf = pygame.image.load(arg)
+
+            screen = cls.pg_init()
             screen.blit(surf, (1, 1))
             pygame.display.update()
-
-        @classmethod
-        def pgzrun(cls, *argv):
-            global pgzrun
-            pgzrun = True
-            cls.exec(*argv)
 
         @classmethod
         def mkdir(cls, *argv):
@@ -317,6 +336,20 @@ if defined("embed") and hasattr(embed, "readline"):
                 platform.window.MM.download(arg)
                 yield f"file {arg} sent"
             return True
+
+
+        @classmethod
+        async def async_pgzrun(cls, *argv, **env):
+            await __import__("pgzero").runner.PGZeroGame(__import__("__main__")).async_run()
+
+        @classmethod
+        def pgzrun(cls, *argv, **env):
+            import pgzero
+            import pgzero.runner
+            pgzt = pgzero.runner.PGZeroGame(__import__("__main__")).async_run()
+            asyncio.create_task(pgzt)
+            return True
+
 
         @classmethod
         def wget(cls, *argv, **env):
@@ -377,15 +410,14 @@ if defined("embed") and hasattr(embed, "readline"):
 
         @classmethod
         def spawn(cls, cmd, *argv, **env):
-            global pgzrun
             # TODO extract env from __main__ snapshot
             if cmd.endswith(".py"):
-                if pgzrun:
+                if cls.pgzrunning:
                     print(
                         "a program is already running, using 'stop' cmd before retrying"
                     )
                     cls.stop()
-                    pgzrun = None
+                    cls.pgzrunning = None
                     aio.defer(cls.spawn, (cmd, *argv), env, delay=500)
 
                 else:
@@ -522,10 +554,9 @@ ________________________
 
         @classmethod
         def stop(cls, *argv, **env):
-            global pgzrun
             aio.exit = True
             # pgzrun will reset to None next exec
-            if not pgzrun:
+            if not cls.pgzrunning:
                 # pgzrun does its own cleanup call
                 aio.defer(aio.recycle.cleanup, (), {}, delay=500)
                 aio.defer(embed.prompt, (), {}, delay=800)
@@ -560,57 +591,34 @@ ________________________
                 aio.create_task(perf_index())
             else:
                 print(f"last frame : {aio.spent / 0.016666666666666666:.4f}")
-
-        @classmethod
-        async def exec(cls, sub, *argv):
-            if inspect.isgenerator(sub):
-                for _ in sub:
-                    print(_)
-                return
-            elif inspect.isgeneratorfunction(sub):
-                for _ in sub(*argv):
-                    print(_)
-                return
-            elif inspect.iscoroutinefunction(sub):
-                await sub(*args)
-                return
-
-            from collections.abc import Iterator
-            if isinstance(sub, Iterator):
-                for _ in sub:
-                    print(_)
-                return
-            elif isinstance(sub, (str, Path,) ):
-                # subprocess
-                print("N/I", sub)
-            else:
-                await sub
-
-
-        @classmethod
-        async def preload_file(cls, main, callback=None):
-            # get a relevant list of modules likely to be imported
-            # and prefetch them if found in repo trees
-            imports = TopLevel_async_handler.list_imports(code=None, file=main)
-            print(f"579: missing imports: {list(imports)}")
-            await TopLevel_async_handler.async_imports(callback, *imports)
-            PyConfig.imports_ready = True
-            return True
+# cannot deal with HTML trail properly
+#        @classmethod
+#        async def preload_file(cls, main, callback=None):
+#            # get a relevant list of modules likely to be imported
+#            # and prefetch them if found in repo trees
+#            imports = TopLevel_async_handler.list_imports(code=None, file=main)
+#            print(f"579: missing imports: {list(imports)}")
+#            await TopLevel_async_handler.async_imports(callback, *imports)
+#            PyConfig.imports_ready = True
+#            return True
 
         @classmethod
         async def preload_code(cls, code, callback=None):
             # get a relevant list of modules likely to be imported
             # and prefetch them if found in repo trees
-            for want in TopLevel_async_handler.list_imports(code, file=None):
-                DBG(f"605: preloading import {want=} {callback=}")
-                await TopLevel_async_handler.async_imports(callback, want)
-            #await TopLevel_async_handler.async_imports(callback, *TopLevel_async_handler.list_imports(code, file=None))
+#
+#            for want in TopLevel_async_handler.list_imports(code, file=None):
+#                DBG(f"605: preloading import {want=} {callback=}")
+#                await TopLevel_async_handler.async_imports(callback, want)
+
+            await TopLevel_async_handler.async_imports(callback, *TopLevel_async_handler.list_imports(code, file=None))
             PyConfig.imports_ready = True
             return True
 
         @classmethod
-        async def source(cls, main, *args):
+        async def source(cls, main, *args, **kw):
             code = ""
+            shell.pgzrunning = None
 
             def check_code(file_name):
                 nonlocal code
@@ -618,56 +626,86 @@ ________________________
                 has_pygame = False
                 with open(file_name,"r") as code_file:
                     code = code_file.read()
+                    code = code.rsplit(TopLevel_async_handler.HTML_MARK,1)[0]
+
+                    if code[0:320].find('#!pgzrun')>=0:
+                        shell.pgzrunning = True
+
                     if code.find('asyncio.run')<0:
-                        print("621: possibly synchronous code found")
+                        DBG("622: possibly synchronous code found")
                         maybe_sync = True
 
                     has_pygame =  code.find('display.flip(')>0 or code.find('display.update(')>0
 
                     if maybe_sync and has_pygame:
-                        print("627: possibly synchronous+pygame code found")
+                        DBG("628: possibly synchronous+pygame code found")
                         return False
                 return True
 
             if check_code(main):
-                print("632: running main and resuming EventTarget in a few seconds")
-
-                #aio.defer(execfile, (main,), {} )
-
+                DBG("633: running main and resuming EventTarget in a few seconds")
             else:
                 for base in ('pygame','pg'):
                     for func in ('flip','update'):
                         block =  f'{base}.display.{func}()'
                         code = code.replace( block, f'{block};await asyncio.sleep(0)')
 
-                #print(" -> won't run synchronous code with a pygame loop")
+            # fix cwd to match a run of main.py from its folder
+            __import__('__main__').__file__ = main
+            cls.HOME = Path(main).parent
+            os.chdir(cls.HOME)
 
-            await cls.preload_code(code)
-            DBG("646: TODO detect input/print to select repl debug")
+            await cls.preload_code(code, **kw)
+            DBG("643: TODO detect input/print to select repl debug")
+
             if TopLevel_async_handler.instance:
-                DBG("648: starting shell")
+                DBG("646: starting shell")
                 TopLevel_async_handler.instance.start_console(shell)
             else:
                 pdb("651: no async handler loader, starting a default async console")
                 shell.debug()
                 await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
 
+            if shell.pgzrunning:
+                print("600 : pygame zero detected")
+                __main__ = __import__("__main__")
+                sys._pgzrun = True
+                sys.modules["pgzrun"] = type(__main__)("pgzrun")
+                import pgzrun
+                pgzrun.go = lambda: None
+                await TopLevel_async_handler.async_imports(None, "pygame.base", "pgzero", "pyfxr", **kw)
+                import pgzero
+                import pgzero.runner
+                pgzero.runner.prepare_mod(__main__)
+
+
+
             TopLevel_async_handler.instance.eval(code)
 
             # makes all queued events arrive after program has looped a few cycles
             # note that you need a call to asyncio.run in your main to continue past
             # that check
-
-            if 0:
-                while not aio.run_called:
-                    await asyncio.sleep(.1)
+            for _ in range(3):
+                await asyncio.sleep(.016)
 
             # if you don't reach that step
             # your main.py has an infinite sync loop somewhere !
-            print("642: starting EventTarget in a few seconds")
+            DBG("642: starting EventTarget in a few seconds")
+
+            print()
+            TopLevel_async_handler.instance.banner()
+
             aio.create_task(platform.EventTarget.process())
 
-            pdb("platform event loop started")
+            if not shell.pgzrunning:
+                del __import__('__main__').__file__
+            else:
+                shell.pgzrun()
+
+
+            #DBG("678: platform event loop started")
+            TopLevel_async_handler.muted = False
+            return code
 
         @classmethod
         def parse_sync(shell, line, **env):
@@ -704,31 +742,36 @@ ________________________
                     catch = undefined
             return catch
 
+        @classmethod
+        async def exec(cls, sub, **env):
+            if inspect.isgenerator(sub):
+                for _ in sub:
+                    print(_)
+                return
+            elif inspect.isgeneratorfunction(sub):
+                for _ in sub(*argv):
+                    print(_)
+                return
+            elif inspect.iscoroutinefunction(sub):
+                await sub(*args)
+                return
+
+            from collections.abc import Iterator
+            if isinstance(sub, Iterator):
+                for _ in sub:
+                    print(_)
+                return
+            elif isinstance(sub, (str, Path,) ):
+                # subprocess
+                return cls.parse_sync(sub, **env)
+            else:
+                await sub
+
 
     PyConfig["shell"] = shell
     builtins.shell = shell
     # end shell
 
-try:
-    PyConfig
-    PyConfig["pkg_repolist"] = []
-
-    aio.cross.simulator = False
-    sys.argv = PyConfig.pop("argv", [])
-
-except Exception as e:
-    sys.print_exception(e)
-    # TODO: build a pyconfig extracted from C here
-    PyConfig = {}
-    PyConfig["dev_mode"] = 1
-    PyConfig["run_filename"] = "main.py"
-    PyConfig["executable"] = sys.executable
-    PyConfig["interactive"] = 1
-    print(" - running in wasm simulator - ")
-    aio.cross.simulator = True
-
-PyConfig["imports_ready"] = False
-PyConfig["pygbag"] = 0
 
 
 
@@ -744,11 +787,13 @@ import random
 
 random.seed(1)
 
+import __EMSCRIPTEN__ as platform
+
+platform.shell = shell
+
+
 
 if not aio.cross.simulator:
-    import __EMSCRIPTEN__ as platform
-
-    platform.shell = shell
 
     def fix_url(maybe_url):
         url = str(maybe_url)
@@ -767,7 +812,6 @@ if not aio.cross.simulator:
     del fix_url
 
     def apply_patches():
-
 
         # use shell generators instead of subprocesses
         # ==========================================================
@@ -863,7 +907,7 @@ if not aio.cross.simulator:
         from platform import window, document, ffi
 
         class fopen:
-            ticks = 0
+
 
             def __init__(self, maybe_url, mode="r", flags={'mode':'no-cors'}):
                 self.url = __EMSCRIPTEN__.fix_url(maybe_url)
@@ -880,8 +924,7 @@ if not aio.cross.simulator:
                 print(f'849: fopen: fetching "{self.url}"')
 
                 if "b" in self.mode:
-                    self.__class__.ticks += 1
-                    self.tmpfile = f"/tmp/cf-{self.ticks}"
+                    self.tmpfile = shell.mktemp()
                     cf = platform.window.cross_file(self.url, self.tmpfile, self.flags)
                     content = await platform.jsiter(cf)
                     self.filelike = open(content, "rb")
@@ -954,6 +997,19 @@ if not aio.cross.simulator:
 
     del apply_patches
 
+
+    # convert a emscripten FS path to a blob url
+    # TODO: weakmap and GC collect
+    def File(path):
+        return platform.window.blob(str(path))
+
+
+
+
+
+
+
+
     # =================== async import , async console ===================================
 
     import os
@@ -969,6 +1025,8 @@ if not aio.cross.simulator:
 
 
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
+
+        HTML_MARK = '""" # BEGIN -->'
 
         repos = []
         mapping = {
@@ -999,9 +1057,10 @@ if not aio.cross.simulator:
 
 
         def eval(self, source):
+
             for count, line in enumerate( source.split('\n') ):
-                if count and count < 10:
-                    print(str(count).zfill(3), self.buffer[-1] )
+#                if count and count < 10:
+#                    print(str(count).zfill(3), self.buffer[-1] )
                 if not count:
                     if line.startswith('<'):
                         self.buffer.append(f'#{line}')
@@ -1012,12 +1071,22 @@ if not aio.cross.simulator:
                 self.line = None
                 self.buffer.insert(0,'#')
             #self.buffer.append("")
-            DBG(f"996: {count} lines queued for async eval")
+            print(f"996: {count} lines queued for async eval")
 
         @classmethod
         def scan_imports(cls, code, filename, load_try=False):
-            root = ast.parse(code, filename)
             required = []
+            try:
+                root = ast.parse(code, filename)
+            except SyntaxError as e:
+                print("_"*40)
+                print(filename)
+                print("_"*40)
+                for count, line in enumerate( code.split('\n') ):
+                    print(str(count).zfill(3), line )
+                sys.print_exception(e)
+                return required
+
             for node in ast.walk(root):
                 if isinstance(node, ast.Import):
                     module = []
@@ -1063,6 +1132,8 @@ if not aio.cross.simulator:
                         code = fcode.read()
                 else:
                     code = ""
+
+            HTML_MARK = '"" # BEGIN -->'
 
             file = file or "<stdin>"
 
@@ -1134,6 +1205,9 @@ if not aio.cross.simulator:
                     pkg_url = f"{repo['-CDN-']}{repo[want]}"
 
                     pkg_file = f"/tmp/{repo[want].rsplit('/',1)[-1]}"
+
+                    if pkg_file in aio.toplevel.HISTORY:
+                        break
 
                     cfg = {"io": "url", "type": "fs", "path": pkg_file}
                     print("pkg :", pkg_url)
@@ -1266,16 +1340,23 @@ if not aio.cross.simulator:
     # end TopLevel_async_handler
 
 
-    # convert a emscripten FS path to a blob url
-    # TODO: weakmap and GC collect
-    def File(path):
-        return platform.window.blob(str(path))
 
 else:
+
     pdb("TODO: js simulator")
+
+
+try:
+    shell.screen_width = int( platform.window.canvas.width)
+    shell.screen_height =int( platform.window.canvas.height)
+except:
+    shell.screen_width = 1024
+    shell.screen_height = 600
+
 
 # ======================================================
 def patch():
+    import platform
     # DeprecationWarning: Using or importing the ABCs from 'collections'
     # instead of from 'collections.abc' is deprecated since Python 3.3
     # and in 3.10 it will stop working
@@ -1293,11 +1374,45 @@ def patch():
 
     platform.runPython = runPython
 
+    sys.modules["decimal"] = type(sys)("decimal")
+    class Decimal:
+        pass
+    sys.modules["decimal"].Decimal = Decimal
+
+
 patch();del patch
 
 
 # ======================================================
 
+
+async def display(obj, target=None, **kw):
+    filename = shell.mktemp(".png")
+    if repr(type(obj)).find('matplotlib.figure.Figure')>0:
+        print("matplotlib figure")
+        if platform.is_browser:
+            # Agg is not avail, save to svg only option.
+            obj.canvas.draw()
+            tmp = "/tmp/plt.svg"
+            obj.savefig(tmp, format="svg", dpi=72)
+            # TODO SVG conversion
+            await platform.jsiter(platform.window.svg.render(tmp, filename))
+        else:
+            # desktop matplotlib can save to any format
+            obj.canvas.draw()
+            obj.savefig(filename, format="png", dpi=72)
+
+    if target is None:
+        kw.setdefault("x",0)
+        kw.setdefault("y",0)
+        screen = shell.pg_init()
+        screen.fill((0, 0, 0))
+        screen.blit(pygame.image.load(filename), (int(kw["x"]), int(kw["y"])))
+        pygame.display.update()
+
+    await asyncio.sleep(3)
+
+# ======================================================
 def ESC(*argv):
     for arg in argv:
         sys.__stdout__.write(chr(0x1B))
@@ -1308,8 +1423,6 @@ def CSR(*argv):
     for arg in argv:
         ESC("[", arg)
 
-
-pgzrun = None
 
 if os.path.isfile("/data/data/usersite.py"):
     execfile("/data/data/usersite.py")

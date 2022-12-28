@@ -4,7 +4,7 @@ reset
 export CI=${CI:-false}
 
 
-BUILDS=${BUILDS:-3.12 3.11 3.10}
+BUILDS=${BUILDS:-3.12 3.11}
 
 export STATIC=${STATIC:-true}
 

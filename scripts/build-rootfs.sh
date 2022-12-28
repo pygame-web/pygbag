@@ -84,6 +84,9 @@ import zlib
 from xml.etree import ElementTree
 import distutils.spawn
 
+#matplotlib
+import uuid
+#from decimal import Decimal
 
 #pygame_gui
 import importlib.resources

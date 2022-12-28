@@ -506,10 +506,13 @@ main(int argc, char **argv)
     setenv("TERMINFO", "/usr/share/terminfo", 0);
     setenv("COLS","132", 0);
     setenv("LINES","30", 0);
+//    setenv("PYTHONINTMAXSTRDIGITS", "0", 0);
+    setenv("LANG", "en_US.UTF-8", 0);
+
     setenv("TERM", "xterm", 0);
     setenv("NCURSES_NO_UTF8_ACS", "1", 0);
-    setenv("PYTHONINTMAXSTRDIGITS", "0", 0);
-    setenv("LANG", "en_US.UTF-8", 0);
+    setenv("MPLBACKEND", "svg", 0);
+
 
 // force
     setenv("PYTHONHOME","/usr", 1);
@@ -518,6 +521,7 @@ main(int argc, char **argv)
     setenv("PYTHONDONTWRITEBYTECODE","1",1);
     setenv("HOME", "/home/web_user", 1);
     setenv("APPDATA", "/home/web_user", 1);
+
 
 
     status = pymain_init(&args);

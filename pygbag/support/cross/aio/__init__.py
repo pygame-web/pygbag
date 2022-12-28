@@ -354,7 +354,7 @@ def run(coro, *, debug=False):
             if coro.__name__ == "custom_site":
                 embed.run()
                 run_called = False
-            else:
+            elif not aio.cross.simulator:
                 # let prelinker start asyncio loop
                 print("AIO will auto-start at 0+, now is", embed.counter())
 
@@ -432,13 +432,6 @@ except:
 
 def rtclock():
     return int(Time.time() * 1_000)
-
-
-def prompt_request():
-    try:
-        embed.prompt_request()
-    except:
-        aio.defer(embed.prompt, (), {}, delay=100)
 
 
 class after:

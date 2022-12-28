@@ -104,11 +104,11 @@ then
     export COPTS="-O0 -g3 -fPIC"
 
     echo "       building DEBUG $COPTS"
-    LOPTS="$LOPTS -s ASSERTIONS=0"
+    LOPTS="$LOPTS -sASSERTIONS=0"
     ALWAYS_FS="--preload-file ${ALWAYS_CODE}@/data/data/org.python/assets"
 else
     echo "       building RELEASE $COPTS"
-    LOPTS="$LOPTS -s ASSERTIONS=0 -s LZ4=1"
+    LOPTS="$LOPTS -sASSERTIONS=0 -sLZ4"
     ALWAYS_FS=""
 fi
 
@@ -237,7 +237,7 @@ then
     " 1>&2
 
     if emcc -m32 $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG\
-     -s TOTAL_MEMORY=256MB -s ALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \
+     -s TOTAL_MEMORY=256MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \
      $CF_SDL \
      --use-preload-plugins \
      $STDLIBFS \

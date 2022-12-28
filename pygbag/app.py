@@ -53,35 +53,14 @@ else:
 DEFAULT_SCRIPT = "main.py"
 
 
-def main():
-    asyncio.run(main_run(Path(sys.argv[-1]).resolve()))
 
 
-async def main_run(patharg, cdn=DEFAULT_CDN):
-    global DEFAULT_PORT, DEFAULT_SCRIPT
 
-    if patharg.is_file():
-        DEFAULT_SCRIPT = patharg.name
-        app_folder = patharg.parent
-    else:
-        app_folder = patharg.resolve()
 
-    reqs = []
+async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
+    global DEFAULT_PORT, DEFAULT_SCRIPT, required
 
-    if sys.version_info < (3, 8):
-        # zip deflate  compression level 3.7
-        # https://docs.python.org/3.11/library/shutil.html#shutil.copytree dirs_exist_ok = 3.8
-        reqs.append("pygbag requires CPython version >= 3.8")
-
-    if not app_folder.is_dir() or patharg.as_posix().endswith("/pygbag/__main__.py"):
-        reqs.append(
-            "ERROR: Last argument must be app top level directory, or the main python script"
-        )
-
-    if len(reqs):
-        while len(reqs):
-            print(reqs.pop())
-        sys.exit(1)
+    DEFAULT_SCRIPT = mainscript or DEFAULT_SCRIPT
 
     app_folder.joinpath("build").mkdir(exist_ok=True)
 
