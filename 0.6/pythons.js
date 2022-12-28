@@ -1,6 +1,15 @@
 "use strict";
 
+/*  Facilities implemented in js
+
+    js.SVG     : convert svg to png
+    js.FETCH   : async GET/POST via fetch
+    js.MM      : media manager
+    js.VT      : terminal creation
+*/
+
 const module_name = "pythons.js"
+
 
 var config
 
@@ -78,7 +87,6 @@ window.jsimport = jsimport
 window.__defineGetter__('__FILE__', function() {
   return (new Error).stack.split('/').slice(-1).join().split('?')[0].split(':')[0] +": "
 })
-
 
 
 const delay = (ms, fn_solver) => new Promise(resolve => setTimeout(() => resolve(fn_solver()), ms));
@@ -462,29 +470,50 @@ const vm = {
 
 function run_pyrc(content) {
     const pyrc_file = "/data/data/org.python/assets/pythonrc.py"
-
+    const main_file = "/data/data/org.python/assets/main.py"
 // TODO: concat blocks
-    vm.FS.writeFile( "/data/data/org.python/assets/main.py" , vm.script.blocks[0] )
+    vm.FS.writeFile(main_file, vm.script.blocks[0] )
     vm.FS.writeFile(pyrc_file, content )
 
     python.PyRun_SimpleString(`#!site
 PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
 verbose = PyConfig.get('quiet', False)
-if verbose:
-    print(" ")
-    print("* site.py from pythons.js *")
-
 import os, sys, json
+pfx=PyConfig['prefix']
+if os.path.isdir(pfx):
+    sys.path.append(pfx)
+    os.chdir(pfx)
+
+__file__ = "${pyrc_file}"
+if os.path.isfile(__file__):
+    exec(open(__file__).read(), globals(), globals())
+    import asyncio
+    async def custom_site():
+        await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
+        def ui_callback(pkg):
+            print(f"installing {pkg}")
+        tmpdir = Path(__import__("tempfile").gettempdir())
+        os.chdir(tmpdir)
+        __file__ = "${main_file}"
+        TopLevel_async_handler.muted = True
+        await shell.source(__file__)
+        if sys.argv[0].endswith('.py'):
+            __file__ = str( tmpdir / sys.argv[0].rsplit('/',1)[-1] )
+            await shell.exec( shell.wget(f"-O{__file__}", sys.argv[0]) )
+            if not Path(__file__).is_file():
+                print("404: ",sys.argv)
+            else:
+                await shell.source(__file__)
+    asyncio.run(custom_site())
+    del custom_site
+del pfx, verbose
+#
+`)
+}
 
 
-if os.path.isdir(PyConfig['prefix']):
-    sys.path.append(PyConfig['prefix'])
-    os.chdir(PyConfig['prefix'])
 
-fn = "${pyrc_file}"
-
-print("fixme async exec")
-
+/*
 if os.path.isfile(fn):
     exec(open(fn).read(), globals(), globals())
     if verbose:
@@ -498,9 +527,7 @@ if os.path.isfile(fn):
     async_exec("/data/data/org.python/assets/main.py")
 else:
     print(fn,"not found")
-#
-`)
-}
+*/
 
 
 async function custom_postrun() {
@@ -542,6 +569,7 @@ console.warn("TODO: test 2D/3D reservation")
     } else {
         // user managed canvas
         config.user_canvas = config.user_canvas || 1
+console.warn("TODO: user defined canvas")
     }
 
     vm.canvas = canvas
@@ -565,60 +593,7 @@ console.warn("TODO: test 2D/3D reservation")
     }
     document.addEventListener('click', event_fullscreen, false);
 
-
-    setTimeout(GL_TEST,500);
 */
-
-    function GL_TEST() {
-        var gl
-        const gl_aa = false
-
-        try {
-            gl = canvas.getContext("webgl2")
-        } catch (x) {
-            console.error("FIXME NO WEBGL2:", x)
-            gl = null;
-        }
-
-        if (!gl) {
-            try {
-                gl = canvas.getContext("webgl");
-            } catch (x) {
-                console.error("FIXME WEBGL:", x)
-                gl = null;
-            }
-        }
-
-        if (!gl) {
-            try {
-                gl = canvas.getContext("experimental-webgl");
-            } catch (x) {
-                console.error("FIXME experimental-webgl :", x)
-                gl = null;
-            }
-        }
-
-        console.log("GL :", gl)
-        if (gl) {
-            var ext = gl.getExtension('OES_standard_derivatives');
-            if (!ext)
-                console.log('GL: [OES_standard_derivatives] supported');
-            else
-                console.log('GL: Error [OES_standard_derivatives] derivatives *not* supported');
-
-
-            var antialias = gl.getContextAttributes().antialias;
-            console.log('GL: antialias = '+antialias);
-
-            var aasize = gl.getParameter(gl.SAMPLES);
-            console.log('GL: antialias size = '+aasize );
-        } else  {
-            console.error("Uh, your browser doesn't support WebGL. This application won't work.");
-            return;
-
-        }
-    }
-    window.GL_TEST = GL_TEST
 
     // window resize
     function window_canvas_adjust(divider) {
@@ -682,15 +657,17 @@ console.warn("TODO: test 2D/3D reservation")
             canvas.style.left = "auto"
             canvas.style.bottom = "auto"
         } else {
-            if (!vm.config.user_canvas) {
-                // center canvas
-                canvas.style.position = "absolute"
-                canvas.style.left = 0
-                canvas.style.bottom = 0
-                canvas.style.top = 0
-                canvas.style.right = 0
-                canvas.style.margin= "auto"
-            }
+            // canvas is handled by program
+            if (vm.config.user_canvas)
+                return
+
+            // center canvas
+            canvas.style.position = "absolute"
+            canvas.style.left = 0
+            canvas.style.bottom = 0
+            canvas.style.top = 0
+            canvas.style.right = 0
+            canvas.style.margin= "auto"
         }
     }
 
@@ -699,12 +676,18 @@ console.warn("TODO: test 2D/3D reservation")
             console.warn("416: No canvas defined")
             return
         }
+
+        // canvas is handled by user program
+        if (vm.config.user_canvas)
+            return
+
         setTimeout(window_canvas_adjust, 100, gui_divider);
         setTimeout(window.focus, 200);
     }
 
     function window_resize_event() {
-        window_resize(vm.config.gui_divider)
+        if (!vm.config.user_canvas)
+            window_resize(vm.config.gui_divider)
     }
 
     window.addEventListener('resize', window_resize_event);
@@ -756,12 +739,12 @@ async function feat_fs(debug_hidden) {
 
         for (var i=0;i<dlg_multifile.files.length;i++) {
             let file = dlg_multifile.files[i]
-            var frec = {}
             const datapath = `/tmp/upload-${uploaded_file_count}`
+            var frec = {}
                 frec["name"] = file.name
-            frec["size"] = file.size
-            frec["mimetype"] = file.type
-            frec["text"] = datapath
+                frec["size"] = file.size
+                frec["mimetype"] = file.type
+                frec["text"] = datapath
 
             function file_done(data) {
                 const pydata = JSON.stringify(frec)
@@ -787,6 +770,9 @@ async function feat_fs(debug_hidden) {
     dlg_multifile.addEventListener("change", transfer_uploads );
 
 }
+
+
+// js.VT
 
 // simpleterm
 async function feat_vt(debug_hidden) {
@@ -814,8 +800,6 @@ async function feat_vt(debug_hidden) {
 
 }
 
-
-
 // xterm.js + sixel
 async function feat_vtx(debug_hidden) {
     var terminal = document.getElementById('terminal')
@@ -836,7 +820,7 @@ async function feat_vtx(debug_hidden) {
 
     const { WasmTerminal } = await import("./vtx.js")
 
-    vm.vt = new WasmTerminal("terminal", 132, 42, [
+    vm.vt = new WasmTerminal("terminal", terminal.dataset.cols || 132, terminal.dataset.rows || 42, [
             { url : (config.cdn || "./") + "xtermjsixel/xterm-addon-image-worker.js", sixelSupport:true}
     ] )
 }
@@ -918,7 +902,7 @@ __EMSCRIPTEN__.EventTarget.build('${ev.name}', '''${ev.data}''')
     }
 }
 
-
+// js.MM
 // =============================  media manager ===========================
 
 function download(diskfile, filename) {
@@ -1377,7 +1361,65 @@ function bridge(host) {
   return pybr
 }
 
+// js.SVG
+window.svg = { }
 
+window.svg.init = function () {
+    if (svg.screen)
+        return
+    svg.screen = new OffscreenCanvas(canvas.width, canvas.height)
+    svg.ctx = svg.screen.getContext('2d')
+
+}
+
+window.svg.render =  function * (path, dest) {
+    var converted = 0
+    svg.init()
+    dest = dest || path + ".png"
+    let blob = new Blob([FS.readFile(path)], {type: 'image/svg+xml'});
+    let url = URL.createObjectURL(blob);
+
+    svg.ctx.clearRect(0, 0, -1, -1);
+
+    let rd = new Image();
+        rd.src = url
+
+    async function load_cleanup () {
+        svg.ctx.drawImage(rd, 0, 0 )
+
+        window.svg.blob = await svg.screen.convertToBlob()
+        const reader = new FileReader()
+        reader.addEventListener("load", () => {
+            FS.writeFile(dest,  new Int8Array(reader.result) )
+            console.log("svg conversion of", path,"to png complete :" , dest)
+            converted = 1
+          }, false
+        );
+        reader.readAsArrayBuffer(svg.blob)
+        URL.revokeObjectURL(url)
+
+    }
+    rd.addEventListener('load', load_cleanup );
+    while (!converted)
+        yield converted
+}
+
+window.svg.draw = function (path, x, y) {
+    svg.init()
+    let blob = new Blob([FS.readFile(path)], {type: 'image/svg+xml'});
+    let url = URL.createObjectURL(blob);
+
+    const rd = new Image();
+    rd.src = url
+    function load_cleanup () {
+        canvas.getContext('2d').drawImage(rd,x || 0, y || 0 )
+        URL.revokeObjectURL(url)
+    }
+    rd.addEventListener('load', load_cleanup );
+}
+
+
+// js.FETCH
 
 
 window.Fetch = {}

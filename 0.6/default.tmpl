@@ -164,7 +164,8 @@ async def custom_site():
         screen.blit(prompt, ( marginx+ ux(80), marginy - uy(10) ) )
         compose()
 
-    await shell.preload_file(main, callback=ui_callback)
+    #await shell.preload_file(main, callback=ui_callback)
+    await shell.source(main, callback=ui_callback)
 
 
     # test/wait if user media interaction required
