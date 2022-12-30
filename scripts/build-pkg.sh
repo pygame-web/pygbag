@@ -165,6 +165,10 @@ END
         echo "
         * added ./${PKG_PATH}.overlay to $PKGDIR/
 " 1>&2
+    else
+        echo "
+        * no non-upstreamed patches found in ./${PKG_PATH}.overlay/ for $PKGDIR/
+" 1>&2
     fi
 
     if [ -d ./${PGK_PATH}.overlay-$PYBUILD ]
@@ -173,6 +177,11 @@ END
         echo "
         * added ./${PKG_PATH}.overlay-$PYBUILD to $PKGDIR/
 " 1>&2
+    else
+        echo "
+        * no non-upstreamed patches found in ./${PKG_PATH}.overlayoverlay-$PYBUILD/ for $PKGDIR/
+" 1>&2
+
     fi
 
 # TODO make a clean option

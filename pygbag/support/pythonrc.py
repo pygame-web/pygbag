@@ -277,6 +277,7 @@ if ...: #defined("embed") and hasattr(embed, "readline"):
 
         @classmethod
         def pg_init(cls):
+            import pygame
             if pygame.display.get_init():
                 return pygame.display.get_surface()
             screen = pygame.display.set_mode([cls.screen_width, cls.screen_height])
@@ -1402,7 +1403,8 @@ async def display(obj, target=None, **kw):
             obj.canvas.draw()
             obj.savefig(filename, format="png", dpi=72)
 
-    if target is None:
+    if target in [None,"pygame"]:
+        import pygame
         kw.setdefault("x",0)
         kw.setdefault("y",0)
         screen = shell.pg_init()

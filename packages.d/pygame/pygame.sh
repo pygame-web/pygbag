@@ -52,7 +52,7 @@ fi
 mkdir -p src
 pushd $(pwd)/src
 
-if true
+if false
 then
     echo "
     * using pygame-wasm WIP repo
@@ -74,19 +74,27 @@ then
     pushd $(pwd)/pygame-wasm
     git restore .
     git pull
-    rm -rf build Setup
 else
     git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
     pushd $(pwd)/pygame-wasm
 fi
 
+
 # test patches go here
 # ===================
 
+    wget https://github.com/pygame/pygame/pull/3593.diff
+    wget https://github.com/pygame/pygame/pull/3371.diff
+    wget https://github.com/pygame/pygame/pull/3306.diff
+    cat *.diff | patch -p1
+    cp -rf ../../packages.d/pygame/pygame.overlay/* src_py/
+
 # patch -p1 <<END
 # END
-
+    rm -rf build Setup
 # ===================
+
+
 
 pwd
 env|grep PY
