@@ -1060,8 +1060,6 @@ if not aio.cross.simulator:
         def eval(self, source):
 
             for count, line in enumerate( source.split('\n') ):
-#                if count and count < 10:
-#                    print(str(count).zfill(3), self.buffer[-1] )
                 if not count:
                     if line.startswith('<'):
                         self.buffer.append(f'#{line}')
@@ -1081,7 +1079,7 @@ if not aio.cross.simulator:
                 root = ast.parse(code, filename)
             except SyntaxError as e:
                 print("_"*40)
-                print(filename)
+                print("1004:",filename)
                 print("_"*40)
                 for count, line in enumerate( code.split('\n') ):
                     print(str(count).zfill(3), line )
@@ -1120,7 +1118,9 @@ if not aio.cross.simulator:
                         except (ModuleNotFoundError, ImportError):
                             pass
 
-                    required.append(mod)
+                    if not mod in required:
+                        required.append(mod)
+
             DBG(f"1020: import scan {filename=} {len(code)=} {required}")
             return required
 
@@ -1201,7 +1201,7 @@ if not aio.cross.simulator:
         async def async_get_pkg(cls, want, ex, resume):
             pkg_file = ""
             for repo in PyConfig.pkg_repolist:
-                DBG(f"1109: {want=} found : {want in repo}")
+                DBG(f"1204: {want=} found : {want in repo}")
                 if want in repo:
                     pkg_url = f"{repo['-CDN-']}{repo[want]}"
 
@@ -1240,6 +1240,7 @@ if not aio.cross.simulator:
                 else:
                     DBG(f"\tinstalling {pkg}")
 
+
             callback = callback or default_cb
 
             # init dep solver.
@@ -1263,8 +1264,12 @@ if not aio.cross.simulator:
 
             all = cls.imports(*wanted)
 
-            # FIXME: numpy must be loaded first for some modules.
+            # pygame must be early for plotting
+            if ("matplotlib" in all) and ("pygame" not in sys.modules):
+                await cls.async_get_pkg("pygame.base", None, None)
+                __import__("pygame")
 
+            # FIXME: numpy must be loaded first for some modules.
             if "numpy" in all:
                 callback('numpy')
                 try:
@@ -1284,13 +1289,19 @@ if not aio.cross.simulator:
 
                 if req in cls.ignore or req in sys.modules:
                     continue
+
                 callback(req)
+
                 try:
                     await cls.async_get_pkg(req, None, None)
                 except (IOError, zipfile.BadZipFile):
                     msg=f"928: cannot download {req} pkg"
                     callback(req,error=msg)
+                    continue
 
+                if req in platform.patches:
+                    DBG("1299:", req ,"requires patch")
+                    platform.patches[req]()
 
 
         async def pv(
@@ -1380,13 +1391,50 @@ def patch():
         pass
     sys.modules["decimal"].Decimal = Decimal
 
+    def patch_matplotlib_pyplot():
+        import matplotlib
+        import matplotlib.pyplot
+
+        def patch_matplotlib_pyplot_show(*args, **kwargs):
+            import pygame
+            import matplotlib.pyplot
+            import matplotlib.backends.backend_agg
+            figure = matplotlib.pyplot.gcf()
+            canvas = matplotlib.backends.backend_agg.FigureCanvasAgg(figure)
+            canvas.draw()
+            renderer = canvas.get_renderer()
+            raw_data = renderer.tostring_rgb()
+            size = canvas.get_width_height()
+
+            screen = shell.pg_init()
+            surf = pygame.image.fromstring(raw_data, size, "RGB")
+            screen.blit(surf, (0,0))
+            pygame.display.update()
+
+        matplotlib.pyplot.show = patch_matplotlib_pyplot_show
+
+        matplotlib.pyplot.__pause__ = matplotlib.pyplot.pause
+
+        def patch_matplotlib_pyplot_pause(interval):
+            matplotlib.pyplot.__pause__(.0001)
+            patch_matplotlib_pyplot_show()
+            return asyncio.sleep(interval)
+
+        matplotlib.pyplot.pause = patch_matplotlib_pyplot_pause
+
+    platform.patches = {
+        "matplotlib" : patch_matplotlib_pyplot
+    }
+
+
+
 
 patch();del patch
 
 
 # ======================================================
-
-
+# emulate pyodide display() cmd
+# TODO: fixme target
 async def display(obj, target=None, **kw):
     filename = shell.mktemp(".png")
     target = kw.pop("target", None)
@@ -1394,7 +1442,7 @@ async def display(obj, target=None, **kw):
     y = kw.pop("y",0)
     dpi = kw.setdefault("dpi", 72)
     if repr(type(obj)).find('matplotlib.figure.Figure')>0:
-        print(f"matplotlib figure {platform.is_browser=}")
+        #print(f"matplotlib figure {platform.is_browser=}")
         if platform.is_browser:
             # Agg is not avail, save to svg only option.
             obj.canvas.draw()

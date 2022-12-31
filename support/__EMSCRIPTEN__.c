@@ -511,7 +511,7 @@ main(int argc, char **argv)
 
     setenv("TERM", "xterm", 0);
     setenv("NCURSES_NO_UTF8_ACS", "1", 0);
-    setenv("MPLBACKEND", "svg", 0);
+    setenv("MPLBACKEND", "Agg", 0);
 
 
 // force
