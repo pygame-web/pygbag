@@ -483,15 +483,12 @@ pfx=PyConfig['prefix']
 if os.path.isdir(pfx):
     sys.path.append(pfx)
     os.chdir(pfx)
-
 __file__ = "${pyrc_file}"
 if os.path.isfile(__file__):
     exec(open(__file__).read(), globals(), globals())
     import asyncio
     async def custom_site():
         await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
-        def ui_callback(pkg):
-            print(f"installing {pkg}")
         tmpdir = Path(__import__("tempfile").gettempdir())
         os.chdir(tmpdir)
         __file__ = "${main_file}"
