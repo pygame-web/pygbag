@@ -57,8 +57,18 @@ then
     echo "
     * using pygame-wasm WIP repo
 " 1>&2
-    PG_BRANCH="pygame-wasm"
+    PG_BRANCH="pygame-wasm-upstream"
     PG_GIT="https://github.com/pmp-p/pygame-wasm.git"
+
+    if [ -d pygame-wasm ]
+    then
+        pushd $(pwd)/pygame-wasm
+        git restore .
+        git pull
+    else
+        git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
+        pushd $(pwd)/pygame-wasm
+    fi
 
 else
     echo "
@@ -66,30 +76,24 @@ else
 " 1>&2
     PG_BRANCH="main"
     PG_GIT="https://github.com/pygame/pygame.git"
-fi
 
-
-if [ -d pygame-wasm ]
-then
-    pushd $(pwd)/pygame-wasm
-    git restore .
-    git pull
-else
-    git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
-    pushd $(pwd)/pygame-wasm
+    if [ -d pygame-wasm ]
+    then
+        pushd $(pwd)/pygame-wasm
+        git restore .
+        git pull
+    else
+        git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
+        pushd $(pwd)/pygame-wasm
+    fi
+    wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-wasm/pull/7.diff | patch -p1
 fi
 
 
 # test patches go here
 # ===================
-
-    wget https://github.com/pygame/pygame/pull/3593.diff
-    wget https://github.com/pygame/pygame/pull/3371.diff
-    wget https://github.com/pygame/pygame/pull/3306.diff
-    cat *.diff | patch -p1
-    cp -rf ../../packages.d/pygame/pygame.overlay/* src_py/
-
 # patch -p1 <<END
+
 # END
     rm -rf build Setup
 # ===================
