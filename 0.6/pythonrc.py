@@ -189,7 +189,7 @@ except:
 
 
 
-if ...: #defined("embed") and hasattr(embed, "readline"):
+if 1: #defined("embed") and hasattr(embed, "readline"):
 
     try:
         PyConfig
@@ -218,11 +218,14 @@ if ...: #defined("embed") and hasattr(embed, "readline"):
 
 
     class shell:
-        # command ouput
+        # command output
         out = []
 
         # pending async tasks
         coro = []
+
+        # async top level instance compiler/runner
+        runner = None
 
         if aio.cross.simulator:
             ROOT = os.getcwd()
@@ -898,7 +901,8 @@ if not aio.cross.simulator:
             # in pygbag dev mode use local repo
             PyConfig.pkg_indexes = []
             for idx in PYCONFIG_PKG_INDEXES_DEV:
-                PyConfig.pkg_indexes.append(idx.replace("<port>", port))
+                redirect = idx.replace("<port>", port)
+                PyConfig.pkg_indexes.append(redirect)
 
             print("807: DEV MODE ON", PyConfig.pkg_indexes)
         else:
@@ -1233,25 +1237,14 @@ if not aio.cross.simulator:
             return cls.async_get_pkg(want, ex, resume)
 
         @classmethod
-        async def async_imports(cls, callback, *wanted, **kw):
-            def default_cb(pkg, error=None):
-                if error:
-                    pdb(msg)
-                else:
-                    DBG(f"\tinstalling {pkg}")
+        async def async_imports_init(cls):
+            for cdn in PyConfig.pkg_indexes:
+                async with platform.fopen(Path(cdn) / cls.repodata) as source:
+                    cls.repos.append(json.loads(source.read()))
 
+            # print(json.dumps(cls.repos[0]["packages"], sort_keys=True, indent=4))
 
-            callback = callback or default_cb
-
-            # init dep solver.
-            if not len(cls.repos):
-                for cdn in PyConfig.pkg_indexes:
-                    async with platform.fopen(Path(cdn) / cls.repodata) as source:
-                        cls.repos.append(json.loads(source.read()))
-
-                # print(json.dumps(cls.repos[0]["packages"], sort_keys=True, indent=4))
-
-                print("referenced packages :", len(cls.repos[0]["packages"]))
+            print("referenced packages :", len(cls.repos[0]["packages"]))
 
             if not len(PyConfig.pkg_repolist):
                 await cls.async_repos()
@@ -1259,8 +1252,24 @@ if not aio.cross.simulator:
             #print("1117: remapping ?", PyConfig.dev_mode)
             if PyConfig.pygbag > 0:
                 for idx, repo in enumerate(PyConfig.pkg_repolist):
-                    DBG("1120:",repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
-                    repo["-CDN-"] = PyConfig.pkg_indexes[idx]
+                    DBG("1264:",repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[-1])
+                    repo["-CDN-"] = PyConfig.pkg_indexes[-1]
+
+
+        @classmethod
+        async def async_imports(cls, callback, *wanted, **kw):
+            def default_cb(pkg, error=None):
+                if error:
+                    pdb(msg)
+                else:
+                    DBG(f"\tinstalling {pkg}")
+
+            callback = callback or default_cb
+
+            # init dep solver.
+            if not len(cls.repos):
+                await cls.async_imports_init()
+                del cls.async_imports_init
 
             all = cls.imports(*wanted)
 
@@ -1335,6 +1344,7 @@ if not aio.cross.simulator:
         async def async_repos(cls):
             abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
             for repo in PyConfig.pkg_indexes:
+                print("1340:", repo)
                 async with fopen(f"{repo}index.json", "r") as index:
                     try:
                         data = index.read().replace("<abi>", abitag)
@@ -1342,12 +1352,17 @@ if not aio.cross.simulator:
                     except:
                         pdb(f"{repo}: malformed json index {data}")
                         continue
-                    PyConfig.pkg_repolist.append(repo)
+                    if repo not in PyConfig.pkg_repolist:
+                        PyConfig.pkg_repolist.append(repo)
 
             if PyConfig.dev_mode > 0:
                 for idx, repo in enumerate(PyConfig.pkg_repolist):
-                    print("1199:",repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[idx])
-                    repo["-CDN-"] = PyConfig.pkg_indexes[idx]
+                    try:
+                        print("1353:",repo["-CDN-"],idx, "REMAPPED TO", PyConfig.pkg_indexes[idx])
+                        repo["-CDN-"] = PyConfig.pkg_indexes[idx]
+                    except Exception as e:
+                        sys.print_exception(e)
+
 
     # end TopLevel_async_handler
 
