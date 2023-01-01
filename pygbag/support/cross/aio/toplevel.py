@@ -244,7 +244,8 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 while len(self.shell.coro):
                     self.rv = await self.shell.coro.pop(0)
 
-                if self.rv not in [undefined, None, False, True]:
+                #if self.rv not in [undefined, None, False, True]:
+                if inspect.isawaitable(self.rv):
                     await self.rv
             except Exception as ex:
                 print(type(self.rv),self.rv)
@@ -254,14 +255,20 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         aio.exit_now(0)
 
     @classmethod
-    def start_console(cls, shell):
+    def make_instance(cls, shell, ns='__main__'):
+        cls.instance = cls(
+            vars(__import__(ns)),
+            shell=shell,
+        )
+        shell.runner = cls.instance
+        del AsyncInteractiveConsole.make_instance
+
+
+    @classmethod
+    def start_console(cls, shell, ns='__main__'):
         """will only start a console, not async import system"""
         if cls.instance is None:
-            cls.instance = cls(
-                globals(),
-                shell=shell,
-            )
-            PyConfig.aio = cls.instance
+            cls.make_instance(shell, ns)
 
         if cls.console is None:
             asyncio.create_task(cls.instance.interact())
@@ -271,15 +278,12 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
     @classmethod
     async def start_toplevel(cls, shell, console=True, ns='__main__'):
         """start async import system with optionnal async console"""
-        cls.instance = cls(
-            vars(__import__(ns)),
-            shell=shell,
-        )
-
-        await cls.instance.async_repos()
+        if cls.instance is None:
+            cls.make_instance(shell, ns)
+            await cls.instance.async_repos()
 
         if console:
-            cls.start_console(shell)
+            cls.start_console(shell, ns = ns)
 
 
 
