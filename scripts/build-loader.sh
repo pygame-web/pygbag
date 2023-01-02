@@ -97,11 +97,11 @@ fi
 LOPTS="-sMAIN_MODULE --bind -fno-rtti"
 
 # O0/g3 is much faster to build and easier to debug
+export COPTS="-O1 -g1 -fPIC"
 
 echo "  ************************************"
 if [ -f dev ]
 then
-    export COPTS="-O0 -g3 -fPIC"
 
     echo "       building DEBUG $COPTS"
     LOPTS="$LOPTS -sASSERTIONS=0"

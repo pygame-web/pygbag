@@ -22,6 +22,7 @@ async def custom_site():
     else:
         app_folder = patharg.resolve()
 
+    sys.path.insert(0, str(app_folder))
 
     if not app_folder.is_dir() or patharg.as_posix().endswith("/pygbag/__main__.py"):
         required.append(

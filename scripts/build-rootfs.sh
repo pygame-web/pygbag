@@ -50,7 +50,6 @@ from textwrap import dedent
 # FIXME: because _sqlite3 is builtins anyway ?
 import sqlite3
 
-
 # for pygame-script FS
 import tempfile
 
@@ -86,7 +85,9 @@ import distutils.spawn
 
 #matplotlib
 import uuid
-#from decimal import Decimal
+
+#arcade
+import ctypes.util
 
 #pygame_gui
 import importlib.resources

@@ -6,6 +6,8 @@
     js.FETCH   : async GET/POST via fetch
     js.MM      : media manager
     js.VT      : terminal creation
+    js.MISC    : todo
+
 */
 
 const module_name = "pythons.js"
@@ -905,6 +907,7 @@ __EMSCRIPTEN__.EventTarget.build('${ev.name}', '''${ev.data}''')
 // js.MM
 // =============================  media manager ===========================
 
+// js.MM.download
 function download(diskfile, filename) {
     if (!filename)
         filename = diskfile.rsplit("/").pop()
@@ -918,7 +921,12 @@ function download(diskfile, filename) {
     document.body.removeChild(elem);
 }
 
-window.MM = { tracks : 0, UME : true, download : download }
+
+
+
+
+
+window.MM = { tracks : 0, UME : true, download : download, camera : {} }
 
 async function media_prepare(trackid) {
     const track = MM[trackid]
@@ -1209,6 +1217,162 @@ MM.set_socket = function set_socket(mode) {
     console.log("WebSocket default mode is now :", mode)
 }
 
+// TODO: https://ffmpegwasm.netlify.app/ https://github.com/ffmpegwasm
+// js.MM.CAMERA
+window.MM.camera.started = 0
+window.MM.camera.init = function * (width,height, preview, grabber) {
+    if (!MM.camera.started) {
+        var done = 0
+        var rc = null
+        const vidcap = document.createElement('video')
+        vidcap.id = "vidcap"
+        vidcap.autoplay = true
+
+        width = width || 640
+        height = width || 480
+
+        var framegrabber = null
+
+        if (window.stdout) {
+            if (preview)
+                stdout.appendChild(vidcap)
+            if (grabber) {
+                framegrabber = document.createElement('canvas')
+                stdout.appendChild(framegrabber)
+            } else {
+
+            }
+        }
+        if (!framegrabber)
+            framegrabber = new OffscreenCanvas(width, height)
+        else {
+            framegrabber.width = width
+            framegrabber.height = height
+        }
+
+
+        var localMediaStream = null;
+
+        function onCameraFail(e) {
+            console.log('924: Camera did not start.', e)
+            MM.camera.started = 0
+            done =1
+        }
+
+        MM.camera.get_raw = function () {
+            if (localMediaStream) {
+                framegrabber.getContext("2d").drawImage(localMediaStream, 0, 0);
+            }
+        }
+
+        //btn_snapshot.addEventListener("click", MM.camera.get_image )
+
+        const params = {
+            audio: true,
+            video: {
+                mandatory: {
+                    maxWidth: width,
+                    maxHeight: height
+                }
+            }
+        }
+
+        MM.camera.get_image = async function (device) {
+            device = device || "/dev/video0"
+            MM.camera.get_raw()
+            MM.camera.blob = await framegrabber.convertToBlob()
+            const reader = new FileReader()
+            reader.addEventListener("load", () => {
+                FS.writeFile(device,  new Int8Array(reader.result) )
+                console.log("frame ready in", device)
+                }, false
+            );
+            reader.readAsArrayBuffer(MM.camera.blob)
+            return device
+        }
+
+        function connection(stream) {
+            localMediaStream = vidcap // document.querySelector('video');
+            localMediaStream.srcObject = stream
+            localMediaStream.onloadedmetadata = function(e) {
+                console.log("video stream ready")
+                MM.camera.started = 1
+                done =1
+            }
+        }
+
+        navigator.mediaDevices.getUserMedia(params) //, connection, onCameraFail)
+        .then( stream => connection(stream) )
+        .catch(e => onCameraFail(e))
+
+        while (!done)
+            yield 0
+    }
+    yield window.MM.camera.started
+}
+
+//=========================================================
+// js.SVG
+
+window.svg = { }
+
+window.svg.init = function () {
+    if (svg.screen)
+        return
+    svg.screen = new OffscreenCanvas(canvas.width, canvas.height)
+    svg.ctx = svg.screen.getContext('2d')
+
+}
+
+window.svg.render =  function * (path, dest) {
+    var converted = 0
+    svg.init()
+    dest = dest || path + ".png"
+    let blob = new Blob([FS.readFile(path)], {type: 'image/svg+xml'});
+    let url = URL.createObjectURL(blob);
+
+    svg.ctx.clearRect(0, 0, -1, -1);
+
+    let rd = new Image();
+        rd.src = url
+
+    async function load_cleanup () {
+        svg.ctx.drawImage(rd, 0, 0 )
+
+        window.svg.blob = await svg.screen.convertToBlob()
+        const reader = new FileReader()
+        reader.addEventListener("load", () => {
+            FS.writeFile(dest,  new Int8Array(reader.result) )
+            console.log("svg conversion of", path,"to png complete :" , dest)
+            converted = 1
+          }, false
+        );
+        reader.readAsArrayBuffer(svg.blob)
+        URL.revokeObjectURL(url)
+
+    }
+    rd.addEventListener('load', load_cleanup );
+    while (!converted)
+        yield converted
+}
+
+window.svg.draw = function (path, x, y) {
+    svg.init()
+    let blob = new Blob([FS.readFile(path)], {type: 'image/svg+xml'});
+    let url = URL.createObjectURL(blob);
+
+    const rd = new Image();
+    rd.src = url
+    function load_cleanup () {
+        canvas.getContext('2d').drawImage(rd,x || 0, y || 0 )
+        URL.revokeObjectURL(url)
+    }
+    rd.addEventListener('load', load_cleanup );
+}
+
+//=========================================================
+// js.misc
+
 window.chromakey = function(context, r,g,b, tolerance, alpha) {
     context = canvas.getContext('2d', { willReadFrequently: true } );
 
@@ -1222,8 +1386,6 @@ window.chromakey = function(context, r,g,b, tolerance, alpha) {
     tolerance -= 255
     alpha = alpha || 0
 
-
-
     for(var i = 0, n = data.length; i < n; i += 4) {
         var diff = Math.abs(data[i] - r) + Math.abs(data[i+1] - g) + Math.abs(data[i+2] - b);
         if(diff <= tolerance) {
@@ -1232,6 +1394,7 @@ window.chromakey = function(context, r,g,b, tolerance, alpha) {
     }
     context.putImageData(imageData, 0, 0);
 }
+
 
 
 window.mobile_check = function() {
@@ -1314,21 +1477,13 @@ shell.uptime()
 
 
 window.blob = function blob(filename) {
-    console.warn(__FILE__, "1620: TODO: revoke blob url")
+    console.warn(__FILE__, "1458: TODO: revoke blob url")
     return URL.createObjectURL( new Blob([FS.readFile(filename)],  { oneTimeOnly: true }))
 }
 
-/*
-function rpc_handler(emsg, url, line) {
-    if ( (line == 1) && (emsg.search(': py.')>0)){
-        console.log('msg', emsg, 'url', url, 'line', line)
-        return true
-    }
-    return false
-}
+// ========================================
+// js.RPC
 
-window.addEventListener("error", rpc_handler )
-*/
 
 window.rpc = { path : [], call : "", argv : [] }
 
@@ -1361,64 +1516,8 @@ function bridge(host) {
   return pybr
 }
 
-// js.SVG
-window.svg = { }
 
-window.svg.init = function () {
-    if (svg.screen)
-        return
-    svg.screen = new OffscreenCanvas(canvas.width, canvas.height)
-    svg.ctx = svg.screen.getContext('2d')
-
-}
-
-window.svg.render =  function * (path, dest) {
-    var converted = 0
-    svg.init()
-    dest = dest || path + ".png"
-    let blob = new Blob([FS.readFile(path)], {type: 'image/svg+xml'});
-    let url = URL.createObjectURL(blob);
-
-    svg.ctx.clearRect(0, 0, -1, -1);
-
-    let rd = new Image();
-        rd.src = url
-
-    async function load_cleanup () {
-        svg.ctx.drawImage(rd, 0, 0 )
-
-        window.svg.blob = await svg.screen.convertToBlob()
-        const reader = new FileReader()
-        reader.addEventListener("load", () => {
-            FS.writeFile(dest,  new Int8Array(reader.result) )
-            console.log("svg conversion of", path,"to png complete :" , dest)
-            converted = 1
-          }, false
-        );
-        reader.readAsArrayBuffer(svg.blob)
-        URL.revokeObjectURL(url)
-
-    }
-    rd.addEventListener('load', load_cleanup );
-    while (!converted)
-        yield converted
-}
-
-window.svg.draw = function (path, x, y) {
-    svg.init()
-    let blob = new Blob([FS.readFile(path)], {type: 'image/svg+xml'});
-    let url = URL.createObjectURL(blob);
-
-    const rd = new Image();
-    rd.src = url
-    function load_cleanup () {
-        canvas.getContext('2d').drawImage(rd,x || 0, y || 0 )
-        URL.revokeObjectURL(url)
-    }
-    rd.addEventListener('load', load_cleanup );
-}
-
-
+// ========================================
 // js.FETCH
 
 
@@ -1475,6 +1574,7 @@ window.Fetch.GET = function * GET (url, flags)
         yield content;
     }
 }
+
 
 
 // ====================================================================================

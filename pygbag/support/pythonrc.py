@@ -472,7 +472,9 @@ if 1: #defined("embed") and hasattr(embed, "readline"):
         @classmethod
         def dll(cls, *argv):
             cdll = __import__("ctypes").CDLL(None)
-            print(getattr(cdll, argv[0])(*argv[1:]))
+            sym = getattr(cdll, argv[0])
+            print("symbol :", sym)
+            print(sym(*argv[1:]))
             return True
 
         @classmethod
@@ -987,14 +989,7 @@ if not aio.cross.simulator:
         platform.jsiter = jsiter
 
         async def jsprom(prom):
-            mark = None
-            value = undefined
-            wit = platform.window.iterator(prom)
-            while mark != undefined:
-                value = mark
-                await aio.sleep(0)
-                mark = next(wit, undefined)
-            return value
+            return await jsiter(platform.window.iterator(prom))
 
         platform.jsprom = jsprom
 

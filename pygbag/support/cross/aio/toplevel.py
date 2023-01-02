@@ -247,6 +247,12 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 #if self.rv not in [undefined, None, False, True]:
                 if inspect.isawaitable(self.rv):
                     await self.rv
+            except RuntimeError as re:
+                if str(re).endswith('awaited coroutine'):
+                    ...
+                else:
+                    sys.print_exception(ex)
+
             except Exception as ex:
                 print(type(self.rv),self.rv)
                 sys.print_exception(ex)

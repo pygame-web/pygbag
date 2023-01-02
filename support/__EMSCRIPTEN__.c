@@ -481,6 +481,59 @@ main_iteration(void) {
     HOST_RETURN(0);
 }
 
+#define EGLTEST
+
+#if defined(EGLTEST)
+    #include <EGL/egl.h>
+   // #include <GLES2/gl2.h>
+    #include <SDL2/SDL_egl.h>
+
+
+EMSCRIPTEN_KEEPALIVE EGLBoolean
+egl_ChooseConfig (EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config) {
+    return eglChooseConfig(dpy, attrib_list, configs, config_size, num_config);
+}
+
+EMSCRIPTEN_KEEPALIVE EGLDisplay
+egl_GetCurrentDisplay (void) {
+    return eglGetCurrentDisplay();
+}
+
+
+EMSCRIPTEN_KEEPALIVE void egl_test() {
+    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    assert(display != EGL_NO_DISPLAY);
+    assert(eglGetError() == EGL_SUCCESS);
+
+    EGLint major = 0, minor = 0;
+    EGLBoolean ret = eglInitialize(display, &major, &minor);
+    assert(eglGetError() == EGL_SUCCESS);
+    assert(ret == EGL_TRUE);
+    assert(major * 10000 + minor >= 10004);
+
+    EGLint numConfigs;
+    ret = eglGetConfigs(display, NULL, 0, &numConfigs);
+    assert(eglGetError() == EGL_SUCCESS);
+    assert(ret == EGL_TRUE);
+
+    EGLint attribs[] = {
+        EGL_RED_SIZE, 5,
+        EGL_GREEN_SIZE, 6,
+        EGL_BLUE_SIZE, 5,
+        EGL_NONE
+    };
+    EGLConfig config;
+    ret = egl_ChooseConfig(display, attribs, &config, 1, &numConfigs);
+    assert(eglGetError() == EGL_SUCCESS);
+    assert(ret == EGL_TRUE);
+
+    EGLNativeWindowType dummyWindow = 0;
+    EGLSurface surface = eglCreateWindowSurface(display, config, dummyWindow, NULL);
+    assert(eglGetError() == EGL_SUCCESS);
+    assert(surface != 0);
+    puts("EGL test complete");
+}
+#endif
 
 PyStatus status;
 
@@ -522,6 +575,7 @@ main(int argc, char **argv)
     setenv("HOME", "/home/web_user", 1);
     setenv("APPDATA", "/home/web_user", 1);
 
+    setenv("PYGLET_HEADLESS", "1", 1);
 
 
     status = pymain_init(&args);
@@ -637,6 +691,12 @@ EM_ASM({
 
 
     PyRun_SimpleString("import sys, os, json, builtins, shutil, time;");
+
+
+#   if defined(EGLTEST)
+    egl_test();
+#   endif // EGLTEST
+
 
 /*
     #if 1
