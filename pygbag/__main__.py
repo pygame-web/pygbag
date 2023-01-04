@@ -1,4 +1,5 @@
 import asyncio
+
 asyncrun = asyncio.run
 
 import sys
@@ -8,6 +9,7 @@ print(f" *pygbag {__version__}*")
 
 from pathlib import Path
 from .app import main_run
+
 
 async def custom_site():
     import sys
@@ -29,7 +31,6 @@ async def custom_site():
             "ERROR: Last argument must be app top level directory, or the main python script"
         )
 
-
     if sys.version_info < (3, 8):
         # zip deflate compression level 3.7
         # https://docs.python.org/3.11/library/shutil.html#shutil.copytree dirs_exist_ok = 3.8
@@ -40,23 +41,21 @@ async def custom_site():
             print(required.pop())
         sys.exit(1)
 
-    if not '--sim' in sys.argv:
+    if not "--sim" in sys.argv:
         # run pygbag build/server
         await main_run(app_folder, mainscript)
         return True
-
 
     # or run as a native simulator
 
     mod_dir = Path(__file__).parent
     support = mod_dir / "support"
 
-    print(" - simulator -", mod_dir, support )
+    print(" - simulator -", mod_dir, support)
 
     import sys, os, builtins
 
-
-    sys.path.insert(0, str(support / "cross") )
+    sys.path.insert(0, str(support / "cross"))
 
     try:
         import pymunk4 as pymunk
@@ -84,10 +83,11 @@ async def custom_site():
     class fake_EventTarget:
         clients = {}
         events = []
+
         async def process(self):
             ...
 
-    #et = EventTarget()
+    # et = EventTarget()
     class __EMSCRIPTEN__(object):
         EventTarget = fake_EventTarget()
         ticks = 0
@@ -116,13 +116,12 @@ async def custom_site():
             sys.stdout.flush()
             sys.stderr.flush()
 
-
         @classmethod
         def system(cls):
             return "Linux"
 
         @classmethod
-        def no_op(cls, *argv,**kw):
+        def no_op(cls, *argv, **kw):
             ...
 
         run = no_op
@@ -136,26 +135,20 @@ async def custom_site():
         js = pdb
         run_script = pdb
 
-
     __EMSCRIPTEN__ = __EMSCRIPTEN__()
 
     sys.modules["__EMSCRIPTEN__"] = __EMSCRIPTEN__
     sys.modules["embed"] = __EMSCRIPTEN__
 
-
     with open(support / "pythonrc.py", "r") as file:
-        exec( file.read(), globals(), globals())
-
+        exec(file.read(), globals(), globals())
 
     import zipfile
     import aio.toplevel
     import ast
     from pathlib import Path
 
-
-
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
-
 
         HTML_MARK = '""" # BEGIN -->'
 
@@ -173,18 +166,17 @@ async def custom_site():
             return []
 
         def eval(self, source):
-            for count, line in enumerate( source.split('\n') ):
+            for count, line in enumerate(source.split("\n")):
                 if not count:
-                    if line.startswith('<'):
-                        self.buffer.append(f'#{line}')
+                    if line.startswith("<"):
+                        self.buffer.append(f"#{line}")
                         continue
-                self.buffer.append( line )
+                self.buffer.append(line)
 
             if count:
                 self.line = None
-                self.buffer.insert(0,'#')
+                self.buffer.insert(0, "#")
             print(f"178: {count} lines queued for async eval")
-
 
     # start async top level machinery and add a console.
     await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
@@ -194,14 +186,12 @@ async def custom_site():
 
     __import__(__name__).__file__ = sys.argv[-1]
 
-
     import aio.clock
+
     # asyncio.create_task( aio.clock.loop() )
     aio.clock.start(x=80)
 
     print(__name__, "sim repl ready for", __file__)
-
-
 
     await shell.source(__file__)
 
@@ -214,44 +204,8 @@ async def custom_site():
     print(__name__, "sim terminated")
 
 
-
-
-
-
 if __name__ == "__main__":
-    asyncio.run( custom_site() )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    asyncio.run(custom_site())
 
 
 #

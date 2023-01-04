@@ -53,10 +53,6 @@ else:
 DEFAULT_SCRIPT = "main.py"
 
 
-
-
-
-
 async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
     global DEFAULT_PORT, DEFAULT_SCRIPT, required
 

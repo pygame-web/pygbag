@@ -97,16 +97,17 @@ fi
 LOPTS="-sMAIN_MODULE --bind -fno-rtti"
 
 # O0/g3 is much faster to build and easier to debug
-export COPTS="-O1 -g1 -fPIC"
+
 
 echo "  ************************************"
 if [ -f dev ]
 then
-
+    export COPTS="-O1 -g1 -fPIC"
     echo "       building DEBUG $COPTS"
     LOPTS="$LOPTS -sASSERTIONS=0"
     ALWAYS_FS="--preload-file ${ALWAYS_CODE}@/data/data/org.python/assets"
 else
+    export COPTS="-Os -g0 -fPIC"
     echo "       building RELEASE $COPTS"
     LOPTS="$LOPTS -sASSERTIONS=0 -sLZ4"
     ALWAYS_FS=""

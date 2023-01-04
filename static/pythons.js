@@ -561,6 +561,7 @@ function feat_gui(debug_hidden) {
         canvas.style.position = "absolute"
         canvas.style.top = "0px"
         canvas.style.right = "0px"
+        canvas.tabindex = 0
         document.body.appendChild(canvas)
 console.warn("TODO: test 2D/3D reservation")
 
