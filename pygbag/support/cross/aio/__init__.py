@@ -351,8 +351,10 @@ def run(coro, *, debug=False):
         # https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame
         elif __EMSCRIPTEN__ or __wasi__:
             # handle special custom_site() case
-            if coro.__name__ == "custom_site":
+            if coro.__name__ == "import_site":
                 embed.run()
+                run_called = False
+            elif coro.__name__ == "custom_site":
                 run_called = False
             elif not aio.cross.simulator:
                 # let prelinker start asyncio loop
@@ -361,6 +363,7 @@ def run(coro, *, debug=False):
         # fallback to blocking asyncio
         else:
             loop.run_forever()
+        print(f"364: asyncio.run({coro=})")
     elif run_called:
         pdb("273: aio.run called twice !!!")
 

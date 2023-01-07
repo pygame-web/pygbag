@@ -22,6 +22,12 @@ from . import web
 
 devmode = "--dev" in sys.argv
 
+DEFAULT_SCRIPT = "main.py"
+CACHE_ROOT  = Path("build")
+CACHE_PATH  = CACHE_ROOT / "web-cache"
+CACHE_VERSION = CACHE_ROOT / "version.txt"
+CACHE_APP   = CACHE_ROOT / "web"
+
 cdn_dot = __version__.split(".")
 cdn_dot.pop()
 cdn_version = ".".join(cdn_dot)
@@ -50,31 +56,95 @@ else:
     DEFAULT_PORT = 8000
     DEFAULT_TMPL = "default.tmpl"
 
-DEFAULT_SCRIPT = "main.py"
 
 
-async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
-    global DEFAULT_PORT, DEFAULT_SCRIPT, required
+def set_args(program):
+    import sys
+    from pathlib import Path
 
-    DEFAULT_SCRIPT = mainscript or DEFAULT_SCRIPT
+    required = []
 
-    app_folder.joinpath("build").mkdir(exist_ok=True)
+    patharg = Path(program).resolve()
+    if patharg.is_file():
+        mainscript = patharg.name
+        app_folder = patharg.parent
+    else:
+        app_folder = patharg.resolve()
 
-    build_dir = app_folder.joinpath("build/web")
+    sys.path.insert(0, str(app_folder))
+
+    if not app_folder.is_dir() or patharg.as_posix().endswith("/pygbag/__main__.py"):
+        required.append(
+            "78: Error, Last argument must be a valid app top level directory, or the main python script"
+        )
+
+    if sys.version_info < (3, 8):
+        # zip deflate compression level 3.7
+        # https://docs.python.org/3.11/library/shutil.html#shutil.copytree dirs_exist_ok = 3.8
+        required.append("84: Error, pygbag requires CPython version >= 3.8")
+
+    if len(required):
+        while len(required):
+            print(required.pop())
+        print("89: missing requirement(s)")
+        sys.exit(89)
+
+    return app_folder, mainscript
+
+
+def cache_check(app_folder, devmode = False):
+    global CACHE_PATH, CACHE_APP, __version__
+
+    version_file = app_folder / CACHE_VERSION
+
+    clear_cache = False
+
+    # always clear the cache in devmode, because cache source is local and changes a lot
+    if devmode :
+        print("103: DEVMODE: clearing cache")
+        clear_cache = True
+    elif version_file.is_file():
+        try:
+            with open(version_file, "r") as file:
+                cache_ver = file.read()
+                if cache_ver != __version__:
+                    print(f"115: cache {cache_ver} mismatch, want {__version__}, cleaning ...")
+                    clear_cache = True
+        except:
+            # something's wrong in cache structure, try clean it up
+            clear_cache = True
+    else:
+        clear_cache = True
+
+    app_folder.joinpath(CACHE_ROOT).mkdir(exist_ok=True)
+
+    build_dir = app_folder / CACHE_APP
     build_dir.mkdir(exist_ok=True)
 
-    cache_dir = app_folder.joinpath("build/web-cache")
+    cache_dir = app_folder / CACHE_PATH
 
-    if devmode and cache_dir.is_dir():
-        print("DEVMODE: clearing cache")
+    if clear_cache and cache_dir.is_dir():
         if shutil.rmtree.avoids_symlink_attacks:
             shutil.rmtree(cache_dir.as_posix())
         else:
-            print("can't clear cache : rmtree is not safe")
+            print("115: cannot clear cache : rmtree is not safe on that system", file=sys.stderr)
+            raise SystemEXit(115)
 
-    cache_dir.mkdir(exist_ok=True)
+        # rebuild
+        cache_dir.mkdir(exist_ok=True)
 
-    # version = "0.0.0"
+        with open(version_file, "w") as file:
+            file.write(__version__)
+
+    return build_dir, cache_dir
+
+
+async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
+    global DEFAULT_PORT, DEFAULT_SCRIPT, APP_CACHE, required
+
+    DEFAULT_SCRIPT = mainscript or DEFAULT_SCRIPT
+
+    build_dir, cache_dir = cache_check(app_folder, devmode)
 
     sys.argv.pop()
 
@@ -211,7 +281,7 @@ ________________________
 # the app folder
 app_folder={app_folder}
 
-# artefacts directoty
+# artefacts directory
 build_dir={build_dir}
 
 # the window title and icon name
@@ -220,7 +290,7 @@ app_name={app_name}
 # package name, better make it unique
 package={args.package}
 
-# icon 96x96 for dekstop 16x16 for web
+# icons:  96x96 for desktop, 16x16 for web
 icon={args.icon}
 
 # js/wasm provider
@@ -386,3 +456,15 @@ build_dir = {build_dir}
             )
     else:
         print(args.template, "is not a valid template")
+
+
+def main():
+    app_folder, mainscript = set_args(sys.argv[-1])
+
+    # sim does not use cache.
+    if "--sim" in sys.argv:
+        print(f"To use simulator launch with : {sys.executable} -m pygbag {' '.join(sys.argv[1:])}")
+        return 1
+    else:
+        asyncio.run(main_run(app_folder, mainscript))
+    return 0

@@ -21,14 +21,76 @@ def generate_predictable_names():
 def transform_source(source: str) -> str:
     src = transform_source_nobreak(source)
     src = transform_source_repeat(src)
-    src = transform_source_switch(src)
+    # faulty
+    # src = transform_source_switch(src)
     src = transform_source_sched_yield(src)
-    return src
+
+    # py => nim
+    lines = source.split("\n")
+
+    defcpp = {"include ": "include ", "if ": "when ", "else": "else:", "endif": "pass"}
+
+    for idx, l in enumerate(lines):
+        ll = l.lstrip(" ")
+
+        if not len(ll):
+            continue
+
+        if ll.rstrip() == "...":
+            lines[idx] = l.replace("...", "pass")
+
+        if ll[0] == "#":
+            pos = l.find("#")
+            head = l[:pos]
+            trail = ""
+            for tag, value in defcpp.items():
+                if ll.startswith(f"#{tag}"):
+                    trail = ll[1:].replace(tag, value)
+                elif ll.startswith(f"# {tag}"):
+                    trail = ll[2:].replace(tag, value)
+                else:
+                    continue
+                break
+
+            if trail:
+                lines[idx] = head + trail
+                continue
+
+            if ll.startswith("##nim "):
+                lines[idx] = l.replace("##nim ", "")
+                continue
+
+        if ll.startswith('"""#!nim'):
+            lines[idx] = "#nim:Begin"
+
+        elif ll.startswith('"""  #!nim'):
+            lines[idx] = "#nim:End"
+
+        elif l.find(", end=") >= 0:
+            # TODO: will fail on  , end="x", sep=","
+
+            pos = l.find("print(")
+            head = l[:pos]
+
+            if pos >= 0:
+                print("=" * 80)
+                l = l[pos + 6 :].rstrip(") ")
+                l, endl = l.rsplit(", end=", 1)
+                # print(f'{l=}{endl=}')
+                lines[idx] = f"{head}write(stdout, {l});write(stdout, {endl})"
+                print("=" * 80)
+                # lines[idx] = l.replace(', end=','
+
+    return "\n".join(lines)
 
 
-def transform_file(filename: str):
-    with open("extended_syntax.py", "r") as sourcefile:
-        return transform_source(sourcefile.read())
+def transform_file(filename: str, out: str = ""):
+    with open(filename, "r") as sourcefile:
+        source = transform_source(sourcefile.read())
+        if out:
+            with open(out, "w") as file:
+                file.write(source)
+        return source
 
 
 # =============================================================================
@@ -181,7 +243,9 @@ def transform_source_switch(source, callback_params=None, **_kwargs):
 
         if len(line) > 1:
             _index = token_utils.get_first_index(line)
+            print("205:", line)
             second_token = line[_index + 1]
+
         else:
             second_token = None
 
@@ -222,7 +286,6 @@ def transform_source_switch(source, callback_params=None, **_kwargs):
 
 
 def transform_source_sched_yield(source, **_kwargs):
-    """This performs a simple replacement of ``function`` by ``lambda``."""
     new_tokens = []
     skip = 0
     for token in token_utils.tokenize(source):

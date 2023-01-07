@@ -8,40 +8,16 @@ from .__init__ import __version__
 print(f" *pygbag {__version__}*")
 
 from pathlib import Path
-from .app import main_run
+from .app import main_run, set_args
 
 
-async def custom_site():
+async def import_site():
     import sys
     from pathlib import Path
 
-    required = []
-    patharg = Path(sys.argv[-1]).resolve()
-    mainscript = None
-    if patharg.is_file():
-        mainscript = patharg.name
-        app_folder = patharg.parent
-    else:
-        app_folder = patharg.resolve()
+    app_folder, mainscript = set_args(sys.argv[-1])
 
-    sys.path.insert(0, str(app_folder))
-
-    if not app_folder.is_dir() or patharg.as_posix().endswith("/pygbag/__main__.py"):
-        required.append(
-            "ERROR: Last argument must be app top level directory, or the main python script"
-        )
-
-    if sys.version_info < (3, 8):
-        # zip deflate compression level 3.7
-        # https://docs.python.org/3.11/library/shutil.html#shutil.copytree dirs_exist_ok = 3.8
-        required.append("pygbag requires CPython version >= 3.8")
-
-    if len(required):
-        while len(required):
-            print(required.pop())
-        sys.exit(1)
-
-    if not "--sim" in sys.argv:
+    if ("--sim" not in sys.argv) and ("--piny" not in sys.argv):
         # run pygbag build/server
         await main_run(app_folder, mainscript)
         return True
@@ -57,12 +33,12 @@ async def custom_site():
 
     sys.path.insert(0, str(support / "cross"))
 
-    try:
-        import pymunk4 as pymunk
-
-        sys.modules["pymunk"] = pymunk
-    except:
-        print("pymunk4 was not build for simulator")
+    #    try:
+    #        import pymunk4 as pymunk
+    #
+    #        sys.modules["pymunk"] = pymunk
+    #    except:
+    #        print("pymunk4 was not build for simulator")
 
     # need them earlier than aio
 
@@ -184,28 +160,38 @@ async def custom_site():
 
     ns["TopLevel_async_handler"] = TopLevel_async_handler
 
-    __import__(__name__).__file__ = sys.argv[-1]
+    sourcefile = sys.argv[-1]
 
-    import aio.clock
+    __import__(__name__).__file__ = sourcefile
 
-    # asyncio.create_task( aio.clock.loop() )
-    aio.clock.start(x=80)
+    if "--piny" in sys.argv:
+        from . import mutator
 
-    print(__name__, "sim repl ready for", __file__)
+        mutator.transform_file(sourcefile, f"{sourcefile[:-3]}.pn")
 
-    await shell.source(__file__)
+    else:
 
-    # if you don't reach that step
-    # your main.py has an infinite sync loop somewhere !
-    print(f"{platform.is_browser=}, sim ready, press enter to start")
+        import aio.clock
 
-    while not aio.exit:
-        await aio.sleep(0.016)
-    print(__name__, "sim terminated")
+        # asyncio.create_task( aio.clock.loop() )
+        aio.clock.start(x=80)
+
+        print(__name__, "sim repl ready for", __file__)
+
+        await shell.runpy(__file__)
+        shell.interact()
+
+        # if you don't reach that step
+        # your main.py has an infinite sync loop somewhere !
+        print(f"{platform.is_browser=}, sim ready, press enter to start")
+
+        while not aio.exit:
+            await aio.sleep(0.016)
+        print(__name__, "sim terminated")
 
 
 if __name__ == "__main__":
-    asyncio.run(custom_site())
+    asyncio.run(import_site())
 
 
 #

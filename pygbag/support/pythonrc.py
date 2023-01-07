@@ -226,6 +226,7 @@ if 1: #defined("embed") and hasattr(embed, "readline"):
 
         # async top level instance compiler/runner
         runner = None
+        interactive = None
 
         if aio.cross.simulator:
             ROOT = os.getcwd()
@@ -621,8 +622,30 @@ ________________________
             PyConfig.imports_ready = True
             return True
 
+
+
         @classmethod
-        async def source(cls, main, *args, **kw):
+        def interact(cls):
+            if cls.interactive:
+                return
+            # if you don't reach that step
+            # your main.py has an infinite sync loop somewhere !
+            DBG("642: starting EventTarget in a few seconds")
+
+            print()
+            TopLevel_async_handler.instance.banner()
+
+            aio.create_task(platform.EventTarget.process())
+            cls.interactive = True
+
+            if not shell.pgzrunning:
+                del __import__('__main__').__file__
+            else:
+                shell.pgzrun()
+
+
+        @classmethod
+        async def runpy(cls, main, *args, **kw):
             code = ""
             shell.pgzrunning = None
 
@@ -634,6 +657,14 @@ ________________________
                     code = code_file.read()
                     code = code.rsplit(TopLevel_async_handler.HTML_MARK,1)[0]
 
+                    # do not check site/final/packed code
+                    if TopLevel_async_handler.muted:
+                        return True
+
+                    print("v"*80)
+
+
+                    print("^"*80)
                     if code[0:320].find('#!pgzrun')>=0:
                         shell.pgzrunning = True
 
@@ -648,9 +679,7 @@ ________________________
                         return False
                 return True
 
-            if check_code(main):
-                DBG("633: running main and resuming EventTarget in a few seconds")
-            else:
+            if not check_code(main):
                 for base in ('pygame','pg'):
                     for func in ('flip','update'):
                         block =  f'{base}.display.{func}()'
@@ -662,7 +691,7 @@ ________________________
             os.chdir(cls.HOME)
 
             await cls.preload_code(code, **kw)
-            DBG("643: TODO detect input/print to select repl debug")
+
 
             if TopLevel_async_handler.instance:
                 DBG("646: starting shell")
@@ -684,34 +713,24 @@ ________________________
                 import pgzero.runner
                 pgzero.runner.prepare_mod(__main__)
 
-
-
             TopLevel_async_handler.instance.eval(code)
 
-            # makes all queued events arrive after program has looped a few cycles
-            # note that you need a call to asyncio.run in your main to continue past
-            # that check
-            for _ in range(3):
-                await asyncio.sleep(.016)
+            if not TopLevel_async_handler.muted:
+                print("going interactive")
+                DBG("643: TODO detect input/print to select repl debug")
+                cls.interact()
 
-            # if you don't reach that step
-            # your main.py has an infinite sync loop somewhere !
-            DBG("642: starting EventTarget in a few seconds")
-
-            print()
-            TopLevel_async_handler.instance.banner()
-
-            aio.create_task(platform.EventTarget.process())
-
-            if not shell.pgzrunning:
-                del __import__('__main__').__file__
-            else:
-                shell.pgzrun()
-
-
-            #DBG("678: platform event loop started")
-            TopLevel_async_handler.muted = False
             return code
+
+
+        @classmethod
+        async def source(cls, main, *args, **kw):
+            TopLevel_async_handler.muted = True
+            try:
+                return await cls.runpy(main, *args, **kw)
+            finally:
+                TopLevel_async_handler.muted = False
+
 
         @classmethod
         def parse_sync(shell, line, **env):
@@ -891,7 +910,7 @@ if not aio.cross.simulator:
             port = str(platform.window.location.port)
 
             # pygbag developer mode ( --dev )
-            if ('-d' in PyConfig.orig_argv) or (port == "8666"):
+            if ("-i" in PyConfig.orig_argv) or (port == "8666"):
                 PyConfig.dev_mode = 1
                 print(sys._emscripten_info)
 
@@ -915,22 +934,24 @@ if not aio.cross.simulator:
 
         class fopen:
 
-
-            def __init__(self, maybe_url, mode="r", flags={'mode':'no-cors'}):
+            flags = {
+#                'mode': "no-cors",
+                'redirect': 'follow',
+#                'referrerPolicy': 'no-referrer',
+                'credentials': 'omit'
+            }
+            def __init__(self, maybe_url, mode="r", flags=None):
                 self.url = __EMSCRIPTEN__.fix_url(maybe_url)
                 self.mode = mode
-                if flags:
-                    self.flags = ffi(flags)
-                else:
-                    self.flags = None
+                flags = flags or self.__class__.flags
+                print(f'849: fopen: fetching "{self.url}" with {flags=}')
+                self.flags = ffi(flags)
                 self.tmpfile = None
 
             async def __aenter__(self):
                 import platform
 
-                print(f'849: fopen: fetching "{self.url}"')
-
-                if "b" in self.mode:
+                if ("b" in self.mode):
                     self.tmpfile = shell.mktemp()
                     cf = platform.window.cross_file(self.url, self.tmpfile, self.flags)
                     content = await platform.jsiter(cf)
@@ -948,7 +969,6 @@ if not aio.cross.simulator:
 
                 else:
                     import io
-
                     jsp = platform.window.fetch(self.url, self.flags)
                     response = await platform.jsprom(jsp)
                     content = await platform.jsprom(response.text())
@@ -1342,7 +1362,10 @@ if not aio.cross.simulator:
                 print("1340:", repo)
                 async with fopen(f"{repo}index.json", "r") as index:
                     try:
-                        data = index.read().replace("<abi>", abitag)
+                        data = index.read()
+                        if isinstance(data, bytes):
+                            data = data.decode()
+                        data = data.replace("<abi>", abitag)
                         repo = json.loads(data)
                     except:
                         pdb(f"{repo}: malformed json index {data}")
