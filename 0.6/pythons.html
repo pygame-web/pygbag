@@ -1,0 +1,222 @@
+<html><head><meta charset="utf-8"></head><script src="pythons.js" type=module id="site" data-os="fs,vtx,gui" async defer>#<!--
+import sys
+import platform
+import asyncio
+from pathlib import Path
+
+#print(json.dumps(PyConfig, sort_keys=True, indent=4))
+
+
+# ok
+# import packaging, pyparsing, cycler, kiwisolver, PIL, dateutil, pytz, numpy, matplotlib
+
+# screen pixels (real, hardware)
+WIDTH=1024
+HEIGHT=600
+
+# reference/idealized screen pixels
+REFX = 1980
+REFY = 1080
+
+
+def u(real, ref, v):
+    if abs(v)<0.9999999:
+        result = int( (float(real)/100.0) * (v*1000))
+        if v<0:
+            return real-result
+        return result
+    return int( (real/ref) * v )
+
+def ux(*argv):
+    global WIDTH, REFX
+    acc = 0
+    for v in argv:
+        acc += u(WIDTH, REFX, v)
+    return acc
+
+def uy(*argv):
+    global HEIGHT, REFY
+    acc = 0
+    for v in argv:
+        acc += u(HEIGHT, REFY, v)
+    return acc
+
+
+
+if sys.platform in ("emscripten","wasi",):
+
+    platform.window.python.is_ready = True
+
+    log =  platform.console
+
+    try:
+        platform.document.body.style.background = "#7f7f7f"
+        import pygame
+        screen = pygame.display.set_mode([ux(.100),uy(.100)], pygame.SRCALPHA, 32)
+        screen.set_colorkey( (0,0,0,0), pygame.RLEACCEL )
+        screen.fill( (0,0,0,0) )
+
+    except Exception as _:
+        pygame = False
+        sys.print_exception(_)
+        log.error("cannot load pygame and clear canvas")
+
+
+
+
+    async def custom_site():
+        global PyConfig, con
+
+        # reset term
+        # shell.reset()
+
+
+        class VFS:
+            from pathlib import Path
+            script = Path(PyConfig.run_filename) # or sys.argv[0]
+            if script.suffix.lower() == ".py":
+                print("Loading:", script )
+
+
+        await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
+
+        #wants = "packaging, pyparsing, cycler, kiwisolver, PIL, dateutil, pytz, numpy".split(', ')
+        wants = ["numpy"]
+        if 0:
+            if await TopLevel_async_handler.async_imports(*wants):
+                import numpy
+
+        if 0:
+            await asyncio.sleep(1)
+            if await TopLevel_async_handler.async_imports("matplotlib"):
+                import matplotlib
+        if 0:
+            import sys
+            from urllib.parse import urlencode
+            import asyncio
+            import json
+
+
+            class Fetch:
+                """
+                WASM compatible request handler
+                auto-detects emscripten environment and sends requests using JavaScript Fetch API
+                """
+                GET = 'GET'
+                POST = 'POST'
+                _js_code = ""
+                _init = False
+
+                def __init__(self):
+                    self.is_web = True if sys.platform == 'emscripten' else False
+                    if not self._init:
+                        self.init()
+                    self.debug = True
+                    self.result = None
+                    if not self.is_web:
+                        try:
+                            import requests
+                            self.requests = requests
+                        except ImportError:
+                            pass
+
+                def init(self):
+                    self.is_web = sys.platform in ('emscripten','wasi')
+                    # jscode is already in pygbag loader
+
+
+
+                @staticmethod
+                def read_file(file):
+                    # synchronous reading of file intended for evaluating on initialization
+                    # use async functions during runtime
+                    with open(file, 'r') as f:
+                        data = f.read()
+                    return data
+
+                @staticmethod
+                def print(*args, default=True):
+                    try:
+                        for i in args:
+                            platform.window.console.log(i)
+                    except AttributeError:
+                        pass
+                    except Exception as e:
+                        return e
+                    if default:
+                        print(*args)
+
+                async def get(self, url, params=None, doseq=False):
+                    # await asyncio.sleep(5)
+                    if params is None:
+                        params = {}
+                    if self.is_web:
+                        query_string = urlencode(params, doseq=doseq)
+                        await asyncio.sleep(0)
+                        content = await platform.jsiter(platform.window.Fetch.GET(url + "?" + query_string))
+                        if self.debug:
+                            self.print(content)
+                        self.result = content
+                    else:
+                        self.result = self.requests.get(url, params).text
+                    return self.result
+
+                # def get(self, url, params=None, doseq=False):
+                #     return await self._get(url, params, doseq)
+
+                async def post(self, url, data=None):
+                    if data is None:
+                        data = {}
+                    if self.is_web:
+                        await asyncio.sleep(0)
+                        content = await platform.jsiter(platform.window.Fetch.POST(url, json.dumps(data)))
+                        if self.debug:
+                            self.print(content)
+                        self.result = content
+                    else:
+                        self.result = self.requests.post(url, data).text
+                    return self.result
+
+                # def post(self, url, data=None):
+                #     return await self._post(url, data)
+
+        if not pygame:
+            return
+
+        rng = 10 # resolution of progress bar
+        slot = ux(.060)/rng # 60%
+
+        async def compose(delay=0):
+            import asyncio
+            global screen
+            pygame.display.update()
+            platform.window.chromakey(None, *screen.get_colorkey(), 40)
+            await asyncio.sleep(delay)
+
+        for i in range(rng):
+            marginx = ux(.020) # 20%
+            marginy = uy(.045) # 45%
+            pygame.draw.rect(screen,(10,10,10),( marginx-ux(10), marginy-uy(10), (rng*slot)+ux(20), uy(110) ) )
+            pygame.draw.rect(screen,(0,255,0), ( marginx, marginy, (1+i)*slot, uy(90)) )
+            await compose(1)
+
+
+        #embed.prompt()
+
+    asyncio.run(custom_site())
+
+
+
+
+
+# --></script></html>
+
+
+
+
+
+
+
+
+
+
