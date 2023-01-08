@@ -48,6 +48,8 @@ def transform_source(source: str) -> str:
                     trail = ll[1:].replace(tag, value)
                 elif ll.startswith(f"# {tag}"):
                     trail = ll[2:].replace(tag, value)
+                elif ll.startswith(f"#!{tag}"):
+                    trail = ll[2:].replace(tag, value)
                 else:
                     continue
                 break

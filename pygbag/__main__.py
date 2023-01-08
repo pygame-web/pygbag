@@ -162,7 +162,7 @@ async def import_site():
 
     sourcefile = sys.argv[-1]
 
-    __import__(__name__).__file__ = sourcefile
+    __import__(__name__).__file__ = str(sourcefile)
 
     if "--piny" in sys.argv:
         from . import mutator

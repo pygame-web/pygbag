@@ -132,13 +132,13 @@ async def custom_site():
     def ui_callback(pkg):
         print(f"installing {pkg}")
 
-    await shell.interact(main)
+    await shell.source(main, callback=ui_callback)
 
     # if you don't reach that step
     # your main.py has an infinite sync loop somewhere !
     print("noctxl.html: ready")
 
-
+    shell.interact()
 
 asyncio.run( custom_site() )
 

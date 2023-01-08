@@ -658,13 +658,10 @@ ________________________
                     code = code.rsplit(TopLevel_async_handler.HTML_MARK,1)[0]
 
                     # do not check site/final/packed code
+                    # preload code must be fully async and no pgzero based
                     if TopLevel_async_handler.muted:
                         return True
 
-                    print("v"*80)
-
-
-                    print("^"*80)
                     if code[0:320].find('#!pgzrun')>=0:
                         shell.pgzrunning = True
 
@@ -686,12 +683,11 @@ ________________________
                         code = code.replace( block, f'{block};await asyncio.sleep(0)')
 
             # fix cwd to match a run of main.py from its folder
-            __import__('__main__').__file__ = main
+            __import__('__main__').__file__ = str(main)
             cls.HOME = Path(main).parent
             os.chdir(cls.HOME)
 
             await cls.preload_code(code, **kw)
-
 
             if TopLevel_async_handler.instance:
                 DBG("646: starting shell")
@@ -708,7 +704,8 @@ ________________________
                 sys.modules["pgzrun"] = type(__main__)("pgzrun")
                 import pgzrun
                 pgzrun.go = lambda: None
-                await TopLevel_async_handler.async_imports(None, "pygame.base", "pgzero", "pyfxr", **kw)
+                cb = kw.pop('callback',None)
+                await TopLevel_async_handler.async_imports(cb, "pygame.base", "pgzero", "pyfxr", **kw)
                 import pgzero
                 import pgzero.runner
                 pgzero.runner.prepare_mod(__main__)
@@ -1455,8 +1452,21 @@ def patch():
 
         matplotlib.pyplot.pause = patch_matplotlib_pyplot_pause
 
+    def patch_panda3d_showbase():
+        import panda3d
+        import panda3d.core as p3d
+        from direct.showbase.ShowBase import ShowBase
+        print("prc patches")
+
+        def run(*argv,**env):
+            print("ShowBase.run patch")
+
+        ShowBase.run = run
+
+
     platform.patches = {
-        "matplotlib" : patch_matplotlib_pyplot
+        "matplotlib" : patch_matplotlib_pyplot,
+        "panda3d" : patch_panda3d_showbase,
     }
 
 

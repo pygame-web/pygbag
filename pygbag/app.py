@@ -1,6 +1,9 @@
 import asyncio
 import sys
 
+# rmtree msg on win32
+import warnings
+
 # import os
 import argparse
 
@@ -23,10 +26,10 @@ from . import web
 devmode = "--dev" in sys.argv
 
 DEFAULT_SCRIPT = "main.py"
-CACHE_ROOT  = Path("build")
-CACHE_PATH  = CACHE_ROOT / "web-cache"
+CACHE_ROOT = Path("build")
+CACHE_PATH = CACHE_ROOT / "web-cache"
 CACHE_VERSION = CACHE_ROOT / "version.txt"
-CACHE_APP   = CACHE_ROOT / "web"
+CACHE_APP = CACHE_ROOT / "web"
 
 cdn_dot = __version__.split(".")
 cdn_dot.pop()
@@ -57,8 +60,8 @@ else:
     DEFAULT_TMPL = "default.tmpl"
 
 
-
 def set_args(program):
+    global DEFAULT_SCRIPT
     import sys
     from pathlib import Path
 
@@ -70,12 +73,21 @@ def set_args(program):
         app_folder = patharg.parent
     else:
         app_folder = patharg.resolve()
+        mainscript = DEFAULT_SCRIPT
 
     sys.path.insert(0, str(app_folder))
 
+    if patharg.suffix == "pyw":
+        required.append("79: Error, no .pyw allowed use .py for python script")
+
+    script_path = app_folder / mainscript
+
+    if not script_path.is_file():
+        required.append(f"83: Error, no main.py {script_path} found in folder")
+
     if not app_folder.is_dir() or patharg.as_posix().endswith("/pygbag/__main__.py"):
         required.append(
-            "78: Error, Last argument must be a valid app top level directory, or the main python script"
+            "89: Error, Last argument must be a valid app top level directory, or the main.py python script"
         )
 
     if sys.version_info < (3, 8):
@@ -92,7 +104,7 @@ def set_args(program):
     return app_folder, mainscript
 
 
-def cache_check(app_folder, devmode = False):
+def cache_check(app_folder, devmode=False):
     global CACHE_PATH, CACHE_APP, __version__
 
     version_file = app_folder / CACHE_VERSION
@@ -100,7 +112,7 @@ def cache_check(app_folder, devmode = False):
     clear_cache = False
 
     # always clear the cache in devmode, because cache source is local and changes a lot
-    if devmode :
+    if devmode:
         print("103: DEVMODE: clearing cache")
         clear_cache = True
     elif version_file.is_file():
@@ -108,7 +120,9 @@ def cache_check(app_folder, devmode = False):
             with open(version_file, "r") as file:
                 cache_ver = file.read()
                 if cache_ver != __version__:
-                    print(f"115: cache {cache_ver} mismatch, want {__version__}, cleaning ...")
+                    print(
+                        f"115: cache {cache_ver} mismatch, want {__version__}, cleaning ..."
+                    )
                     clear_cache = True
         except:
             # something's wrong in cache structure, try clean it up
@@ -116,22 +130,35 @@ def cache_check(app_folder, devmode = False):
     else:
         clear_cache = True
 
-    app_folder.joinpath(CACHE_ROOT).mkdir(exist_ok=True)
-
-    build_dir = app_folder / CACHE_APP
-    build_dir.mkdir(exist_ok=True)
-
+    cache_root = app_folder.joinpath(CACHE_ROOT)
     cache_dir = app_folder / CACHE_PATH
+    build_dir = app_folder / CACHE_APP
 
-    if clear_cache and cache_dir.is_dir():
-        if shutil.rmtree.avoids_symlink_attacks:
-            shutil.rmtree(cache_dir.as_posix())
+    def make_cache_dirs():
+        nonlocal cache_root, cache_dir
+
+        cache_root.mkdir(exist_ok=True)
+        build_dir.mkdir(exist_ok=True)
+        cache_dir.mkdir(exist_ok=True)
+
+    if clear_cache:
+        win32 = sys.platform == "win32"
+        if shutil.rmtree.avoids_symlink_attacks or win32:
+            if cache_dir.is_dir():
+                if win32:
+                    warnings.warn(
+                        "clear cache : rmtree is not safe on that system (win32)"
+                    )
+                shutil.rmtree(cache_dir.as_posix())
         else:
-            print("115: cannot clear cache : rmtree is not safe on that system", file=sys.stderr)
-            raise SystemEXit(115)
+            print(
+                "115: cannot clear cache : rmtree is not safe on that system",
+                file=sys.stderr,
+            )
+            raise SystemExit(115)
 
         # rebuild
-        cache_dir.mkdir(exist_ok=True)
+        make_cache_dirs()
 
         with open(version_file, "w") as file:
             file.write(__version__)
@@ -463,7 +490,9 @@ def main():
 
     # sim does not use cache.
     if "--sim" in sys.argv:
-        print(f"To use simulator launch with : {sys.executable} -m pygbag {' '.join(sys.argv[1:])}")
+        print(
+            f"To use simulator launch with : {sys.executable} -m pygbag {' '.join(sys.argv[1:])}"
+        )
         return 1
     else:
         asyncio.run(main_run(app_folder, mainscript))

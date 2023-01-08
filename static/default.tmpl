@@ -3,7 +3,7 @@
 print("""
 Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
     Pygbag Version : {{cookiecutter.version}}
-    Template Version : 0.6.0
+    Template Version : 0.6.6
     Python  : {{cookiecutter.PYBUILD}}
     CDN URL : {{cookiecutter.cdn}}
     Screen  : {{cookiecutter.width}}x{{cookiecutter.height}}
@@ -148,7 +148,7 @@ async def custom_site():
 
     # now that apk is mounted we have access to font cache
     # but we need to fill __file__ that is not yet set
-    __import__(__name__).__file__ = main
+    __import__(__name__).__file__ = str(main)
 
 
     # now make a prompt
