@@ -53,9 +53,7 @@ class SOCKS5Server:
         logging.info("Start listening at %s:%s", self.host, self.port)
         await asyncio.start_server(self._handle_conn, host=self.host, port=self.port)
 
-    async def _handle_conn(
-        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
-    ):
+    async def _handle_conn(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         def close_conn(resp):
             writer.write(resp)
             writer.close()
@@ -158,11 +156,7 @@ class BaseSOCKS5Handler:
         if isinstance(self.dest_host, ipaddress.IPv4Address):
             resp += b"\x01" + self.dest_host.packed
         elif isinstance(self.dest_host, str):
-            resp += (
-                b"\x03"
-                + len(self.dest_host).to_bytes(1, "big")
-                + self.dest_host.encode("ascii")
-            )
+            resp += b"\x03" + len(self.dest_host).to_bytes(1, "big") + self.dest_host.encode("ascii")
         elif isinstance(self.dest_host, ipaddress.IPv6Address):
             resp += b"\x04" + self.dest_host.packed
         resp += self.dest_port.to_bytes(2, "big")
@@ -183,9 +177,7 @@ class SimpleSOCKS5Handler(BaseSOCKS5Handler):
         )
         self.response_status(SOCKS5Status.OK)
         try:
-            server_reader, server_writer = await asyncio.open_connection(
-                self.dest_host_str(), self.dest_port
-            )
+            server_reader, server_writer = await asyncio.open_connection(self.dest_host_str(), self.dest_port)
         except ConnectionRefusedError:
             self.response_status(SOCKS5Status.CONN_REFUSED)
             return self.close()
@@ -199,17 +191,11 @@ class SimpleSOCKS5Handler(BaseSOCKS5Handler):
             }.get(e.errno, SOCKS5Status.GENERAL_FAILURE)
             self.response_status(status)
             return self.close()
-        await SimpleSOCKS5Handler._bridge(
-            self.client_reader, self.client_writer, server_reader, server_writer
-        )
+        await SimpleSOCKS5Handler._bridge(self.client_reader, self.client_writer, server_reader, server_writer)
 
     async def do_TCP_bind(self):
-        async def on_conn(
-            server_reader: asyncio.StreamReader, server_writer: asyncio.StreamWriter
-        ):
-            await self._bridge(
-                self.client_reader, self.client_writer, server_reader, server_writer
-            )
+        async def on_conn(server_reader: asyncio.StreamReader, server_writer: asyncio.StreamWriter):
+            await self._bridge(self.client_reader, self.client_writer, server_reader, server_writer)
             srv.close()
             logging.info(
                 "TCP UNBOUND %s:%s == %s:%s",
@@ -227,9 +213,7 @@ class SimpleSOCKS5Handler(BaseSOCKS5Handler):
             self.dest_port,
         )
         try:
-            srv = await asyncio.start_server(
-                on_conn, self.dest_host_str(), self.dest_port
-            )
+            srv = await asyncio.start_server(on_conn, self.dest_host_str(), self.dest_port)
             self.dest_host, self.dest_port = srv.sockets[0].getsockname()
             logging.info(
                 "TCP BOUND %s:%s == %s:%s",

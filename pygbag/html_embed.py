@@ -23,7 +23,6 @@ def fs_decode(fsname, o248):
     filename = Path.cwd() / fsname
     if not filename.is_file():
         filename.parent.mkdir(parents=True, exist_ok=True)
-        print("FS:", filename)
         with open(fsname,"wb") as fs:
             for input in o248.split("\\n"):
                 if not input: continue
@@ -91,21 +90,18 @@ def html_embed(target_folder, packlist: list, htmlfile: str):
     print("HTML:", htmlfile)
     RUNPY = "asyncio.run(main())"
     SKIP = False
+    MAX = 0
     with open(htmlfile, "w+", encoding="utf-8") as html:
         for topack in packlist:
 
             if topack == "/main.py":
-                for lnum, line in enumerate(
-                    open(target_folder / topack[1:], "r", encoding="utf-8").readlines()
-                ):
-                    if line.startswith("asyncio.run"):
+                for lnum, line in enumerate(open(target_folder / topack[1:], "r", encoding="utf-8").readlines()):
+                    if line.rstrip().startswith("asyncio.run"):
                         RUNPY = line
                         MAX = lnum
                         break
 
-                for lnum, line in enumerate(
-                    open(target_folder / topack[1:], "r", encoding="utf-8").readlines()
-                ):
+                for lnum, line in enumerate(open(target_folder / topack[1:], "r", encoding="utf-8").readlines()):
                     if SKIP:
                         if line.endswith("del fs_decode, PYGBAG_FS"):
                             SKIP = False

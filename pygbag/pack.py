@@ -66,9 +66,7 @@ async def archive(apkname, target_folder, build_dir=None):
         html_embed(target_folder, packlist, apkname[:-4] + ".html")
 
     try:
-        with zipfile.ZipFile(
-            apkname, mode="x", compression=zipfile.ZIP_DEFLATED, compresslevel=9
-        ) as zf:
+        with zipfile.ZipFile(apkname, mode="x", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
             # pack_files(zf, Path.cwd(), ["assets"], target_folder)
             await pack_files(zf, packlist, ["assets"], target_folder)
 

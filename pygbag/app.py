@@ -86,9 +86,7 @@ def set_args(program):
         required.append(f"83: Error, no main.py {script_path} found in folder")
 
     if not app_folder.is_dir() or patharg.as_posix().endswith("/pygbag/__main__.py"):
-        required.append(
-            "89: Error, Last argument must be a valid app top level directory, or the main.py python script"
-        )
+        required.append("89: Error, Last argument must be a valid app top level directory, or the main.py python script")
 
     if sys.version_info < (3, 8):
         # zip deflate compression level 3.7
@@ -120,9 +118,7 @@ def cache_check(app_folder, devmode=False):
             with open(version_file, "r") as file:
                 cache_ver = file.read()
                 if cache_ver != __version__:
-                    print(
-                        f"115: cache {cache_ver} mismatch, want {__version__}, cleaning ..."
-                    )
+                    print(f"115: cache {cache_ver} mismatch, want {__version__}, cleaning ...")
                     clear_cache = True
         except:
             # something's wrong in cache structure, try clean it up
@@ -146,9 +142,7 @@ def cache_check(app_folder, devmode=False):
         if shutil.rmtree.avoids_symlink_attacks or win32:
             if cache_dir.is_dir():
                 if win32:
-                    warnings.warn(
-                        "clear cache : rmtree is not safe on that system (win32)"
-                    )
+                    warnings.warn("clear cache : rmtree is not safe on that system (win32)")
                 shutil.rmtree(cache_dir.as_posix())
         else:
             print(
@@ -217,9 +211,7 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         help="Specify if window will ask confirmation for closing [default:%s]" % 0,
     )
 
-    parser.add_argument(
-        "--cache", default=cache_dir.as_posix(), help="md5 based url cache directory"
-    )
+    parser.add_argument("--cache", default=cache_dir.as_posix(), help="md5 based url cache directory")
 
     parser.add_argument(
         "--package",
@@ -235,9 +227,7 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         help="override prebuilt version path [default:%s]" % __version__,
     )
 
-    parser.add_argument(
-        "--build", action="store_true", help="build only, do not run test server"
-    )
+    parser.add_argument("--build", action="store_true", help="build only, do not run test server")
 
     parser.add_argument(
         "--html",
@@ -245,13 +235,9 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         help="build as html with embedded assets (pygame-script)",
     )
 
-    parser.add_argument(
-        "--no_opt", action="store_true", help="turn off assets optimizer"
-    )
+    parser.add_argument("--no_opt", action="store_true", help="turn off assets optimizer")
 
-    parser.add_argument(
-        "--archive", action="store_true", help="make build/web.zip archive for itch.io"
-    )
+    parser.add_argument("--archive", action="store_true", help="make build/web.zip archive for itch.io")
 
     #    parser.add_argument(
     #        "--main",
@@ -277,9 +263,7 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         help="index.html template [default:%s]" % DEFAULT_TMPL,
     )
 
-    parser.add_argument(
-        "--ssl", default=False, help="enable ssl with server.pem and key.pem"
-    )
+    parser.add_argument("--ssl", default=False, help="enable ssl with server.pem and key.pem")
 
     parser.add_argument(
         "--port",
@@ -438,9 +422,7 @@ now packing application ....
 
     if template_file.is_file():
         with template_file.open("r", encoding="utf-8") as source:
-            with open(
-                build_dir.joinpath("index.html").resolve(), "w", encoding="utf-8"
-            ) as target:
+            with open(build_dir.joinpath("index.html").resolve(), "w", encoding="utf-8") as target:
                 # while ( line := source.readline()):
                 while True:
                     line = source.readline()
@@ -490,9 +472,7 @@ def main():
 
     # sim does not use cache.
     if "--sim" in sys.argv:
-        print(
-            f"To use simulator launch with : {sys.executable} -m pygbag {' '.join(sys.argv[1:])}"
-        )
+        print(f"To use simulator launch with : {sys.executable} -m pygbag {' '.join(sys.argv[1:])}")
         return 1
     else:
         asyncio.run(main_run(app_folder, mainscript))

@@ -11,7 +11,8 @@ import types
 import inspect
 import zipfile
 
-HISTORY=[]
+HISTORY = []
+
 
 def install(pkg_file, sconf=None):
     global HISTORY
@@ -102,7 +103,7 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
 class AsyncInteractiveConsole(code.InteractiveConsole):
     instance = None
     console = None
-# TODO: use PyConfig interactive flag
+    # TODO: use PyConfig interactive flag
     muted = True
 
     def __init__(self, locals, **kw):
@@ -115,11 +116,13 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         self.shell = self.opts.get("shell", None)
 
         if self.shell is None:
+
             class shell:
                 coro = []
+
                 @classmethod
                 def parse_sync(shell, line, **env):
-                    print("NoOp shell", line )
+                    print("NoOp shell", line)
 
             self.shell = shell
         self.rv = None
@@ -128,10 +131,8 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
     # @staticmethod
     # def get_pkg(want, ex=None, resume=None):
 
-
-
     def runsource(self, source, filename="<stdin>", symbol="single"):
-        if len(self.buffer)>1:
+        if len(self.buffer) > 1:
             symbol = "exec"
 
         try:
@@ -174,7 +175,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
             get_pkg = self.opts.get("get_pkg", self.async_get_pkg)
             if get_pkg:
                 want = str(ex).split("'")[1]
-                self.shell.coro.append( get_pkg(want, ex, bc) )
+                self.shell.coro.append(get_pkg(want, ex, bc))
 
         except BaseException as ex:
             if self.one_liner:
@@ -193,16 +194,12 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
             return
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
 
-        self.write(
-            "\nPython %s on %s\n%s\n"
-            % (sys.version, sys.platform, cprt)
-        )
+        self.write("\nPython %s on %s\n%s\n" % (sys.version, sys.platform, cprt))
 
     @classmethod
     def prompt(cls):
         if not cls.muted:
             embed.prompt()
-
 
     async def interact(self):
         try:
@@ -244,24 +241,24 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 while len(self.shell.coro):
                     self.rv = await self.shell.coro.pop(0)
 
-                #if self.rv not in [undefined, None, False, True]:
+                # if self.rv not in [undefined, None, False, True]:
                 if inspect.isawaitable(self.rv):
                     await self.rv
             except RuntimeError as re:
-                if str(re).endswith('awaited coroutine'):
+                if str(re).endswith("awaited coroutine"):
                     ...
                 else:
                     sys.print_exception(ex)
 
             except Exception as ex:
-                print(type(self.rv),self.rv)
+                print(type(self.rv), self.rv)
                 sys.print_exception(ex)
 
             self.prompt()
         aio.exit_now(0)
 
     @classmethod
-    def make_instance(cls, shell, ns='__main__'):
+    def make_instance(cls, shell, ns="__main__"):
         cls.instance = cls(
             vars(__import__(ns)),
             shell=shell,
@@ -269,9 +266,8 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         shell.runner = cls.instance
         del AsyncInteractiveConsole.make_instance
 
-
     @classmethod
-    def start_console(cls, shell, ns='__main__'):
+    def start_console(cls, shell, ns="__main__"):
         """will only start a console, not async import system"""
         if cls.instance is None:
             cls.make_instance(shell, ns)
@@ -280,17 +276,12 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
             asyncio.create_task(cls.instance.interact())
             cls.console = cls.instance
 
-
     @classmethod
-    async def start_toplevel(cls, shell, console=True, ns='__main__'):
+    async def start_toplevel(cls, shell, console=True, ns="__main__"):
         """start async import system with optionnal async console"""
         if cls.instance is None:
             cls.make_instance(shell, ns)
             await cls.instance.async_repos()
 
         if console:
-            cls.start_console(shell, ns = ns)
-
-
-
-
+            cls.start_console(shell, ns=ns)

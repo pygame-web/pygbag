@@ -31,6 +31,9 @@ if (window.config) {
    config = {}
 }
 
+if (document.characterSet.toLowerCase() !== "utf-8")
+    alert("Host page encoding must be set to UTF-8 with tag :  meta charset=utf-8")
+
 window.addEventListener("error", function (e) {
    alert("Error occurred: " + e.error.message);
    return false;
@@ -473,9 +476,15 @@ const vm = {
 function run_pyrc(content) {
     const pyrc_file = "/data/data/org.python/assets/pythonrc.py"
     const main_file = "/data/data/org.python/assets/main.py"
-// TODO: concat blocks
-    vm.FS.writeFile(main_file, vm.script.blocks[0] )
+
     vm.FS.writeFile(pyrc_file, content )
+
+// TODO: concat blocks
+
+    if (vm.PyConfig.frozen)
+        FS.writeFile(vm.PyConfig.frozen, canvas.innerHTML);
+    else
+        vm.FS.writeFile(main_file, vm.script.blocks[0] )
 
     python.PyRun_SimpleString(`#!site
 PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
@@ -490,21 +499,7 @@ if os.path.isfile(__pythonrc__):
 
     exec(open(__pythonrc__).read(), globals(), globals())
     import asyncio
-    async def import_site(__file__="${main_file}"):
-        await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
-        tmpdir = Path(__import__("tempfile").gettempdir())
-        os.chdir(tmpdir)
-
-        TopLevel_async_handler.muted = True
-        await shell.source(__file__)
-        if sys.argv[0].endswith('.py'):
-            __file__ = str( tmpdir / sys.argv[0].rsplit('/',1)[-1] )
-            await shell.exec( shell.wget(f"-O{__file__}", sys.argv[0]) )
-            if not Path(__file__).is_file():
-                print("404: ",sys.argv)
-            else:
-                await shell.runpy(__file__)
-    asyncio.run(import_site())
+    asyncio.run(import_site("${main_file}"))
     del import_site
 else:
     print(f"510: invalid {__pythonrc__=}")
@@ -697,6 +692,7 @@ console.warn("TODO: user defined canvas")
     window.addEventListener('resize', window_resize_event);
     window.window_resize = window_resize
 
+    return canvas
 }
 
 
@@ -769,7 +765,6 @@ async function feat_fs(debug_hidden) {
         dlg_multifile.setAttribute("multiple",true)
         dlg_multifile.hidden = debug_hidden
         document.body.appendChild(dlg_multifile)
-        //br()
     }
     dlg_multifile.addEventListener("change", transfer_uploads );
 
@@ -792,7 +787,6 @@ async function feat_vt(debug_hidden) {
         stdio.hidden = debug_hidden
         stdio.setAttribute("tabIndex", 1)
         document.body.appendChild(stdio)
-        //br()
     }
 
     const { Terminal, helper, handlevt } = await import("./vt.js")
@@ -819,7 +813,6 @@ async function feat_vtx(debug_hidden) {
         terminal.style.zIndex = 0
         terminal.setAttribute("tabIndex", 1)
         document.body.appendChild(terminal)
-        //br()
     }
 
     const { WasmTerminal } = await import("./vtx.js")
@@ -1655,11 +1648,6 @@ async function onload() {
         console.warn("======= IFRAME =========")
     }
 
-
-    function br(){
-        document.body.appendChild( document.createElement('br') )
-    }
-
     feat_lifecycle()
 
     // container for html output
@@ -1673,17 +1661,31 @@ async function onload() {
     var has_vt = false
 
     for (const feature of vm.config.features) {
+        if (feature.startsWith("embed")) {
+
+            vm.config.user_canvas_managed = 1
+
+            const canvas = feat_gui(true)
+            if ( canvas.innerHTML.length > 20 ) {
+                vm.PyConfig.frozen = "/tmp/to_embed.py"
+            }
+
+            if ( canvas.dataset.path ) {
+                vm.PyConfig.frozen_path = canvas.dataset.src
+            } else {
+                vm.PyConfig.frozen_path = location.href.rsplit("/",1)  // current doc url as base
+            }
+            // only canvas when embedding, stdxxx go to console.
+            break
+        }
 
         if (feature.startsWith("snd")) {
             feat_snd(debug_hidden)
         }
 
-
-
         if (feature.startsWith("gui")) {
             feat_gui(debug_hidden)
         }
-
 
         // file upload widget
 
@@ -1742,8 +1744,8 @@ async function onload() {
     if (window.window_resize)
         window_resize(vm.config.gui_divider)
 
-
 // console.log("cleanup while loading wasm", "has_parent?", is_iframe(), "Parent:", window.parent)
+
     feat_snd = feat_gui = feat_fs = feat_vt = feat_vtx = feat_stdout = feat_lifecycle = onload = null
 
     if ( is_iframe() ) {

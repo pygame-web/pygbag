@@ -67,7 +67,7 @@ if hasattr(sys, "getandroidapilevel"):
 if sys.platform == "emscripten":
     platform_impl = defined("__EMSCRIPTEN__")
     if not platform_impl:
-        #pdb("importing platform_impl __EMSCRIPTEN__")
+        # pdb("importing platform_impl __EMSCRIPTEN__")
         try:
             import __EMSCRIPTEN__ as platform_impl
         except Exception as e:

@@ -15,15 +15,15 @@ try:
     import embed
 
     def pdb(*argv):
-        #print(*argv, file=sys.__stderr__)
+        # print(*argv, file=sys.__stderr__)
         pass
 
-    #builtins.pdb = embed.log
+    # builtins.pdb = embed.log
     builtins.pdb = pdb
 except:
 
     def pdb(*argv):
-        #print(*argv, file=sys.__stderr__)
+        # print(*argv, file=sys.__stderr__)
         pass
 
     builtins.pdb = pdb

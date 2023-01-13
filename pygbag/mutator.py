@@ -30,11 +30,26 @@ def transform_source(source: str) -> str:
 
     defcpp = {"include ": "include ", "if ": "when ", "else": "else:", "endif": "pass"}
 
+    nim_mode = False
+
     for idx, l in enumerate(lines):
         ll = l.lstrip(" ")
 
         if not len(ll):
             continue
+
+        if ll.startswith('"""#!nim'):
+            lines[idx] = "#nim:Begin"
+            nim_mode = True
+
+        elif ll.startswith('"""  #!nim'):
+            lines[idx] = "#nim:End"
+            nim_mode = False
+
+        # FIXME: before black
+        if not nim_mode:
+            if ll.strip() == "var" or ll.startswith("var "):
+                lines[idx] = l.replace("var", "if 1:")
 
         if ll.rstrip() == "...":
             lines[idx] = l.replace("...", "pass")
@@ -61,12 +76,6 @@ def transform_source(source: str) -> str:
             if ll.startswith("##nim "):
                 lines[idx] = l.replace("##nim ", "")
                 continue
-
-        if ll.startswith('"""#!nim'):
-            lines[idx] = "#nim:Begin"
-
-        elif ll.startswith('"""  #!nim'):
-            lines[idx] = "#nim:End"
 
         elif l.find(", end=") >= 0:
             # TODO: will fail on  , end="x", sep=","
@@ -169,8 +178,7 @@ def transform_source_repeat(source, callback_params=None, **_kwargs):
             last_token = token_utils.get_last(tokens)
             if last_token != ":":
                 raise RepeatSyntaxError(
-                    "Missing colon for repeat statement on line "
-                    + f"{first_token.start_row}\n    {first_token.line}."
+                    "Missing colon for repeat statement on line " + f"{first_token.start_row}\n    {first_token.line}."
                 )
 
             repeat_index = token_utils.get_first_index(tokens)

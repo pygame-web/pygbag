@@ -149,15 +149,10 @@ class CodeHandler(SimpleHTTPRequestHandler):
 
             # Use browser cache if possible
             if not cached:
-                if (
-                    "If-Modified-Since" in self.headers
-                    and "If-None-Match" not in self.headers
-                ):
+                if "If-Modified-Since" in self.headers and "If-None-Match" not in self.headers:
                     # compare If-Modified-Since and time of last file modification
                     try:
-                        ims = email.utils.parsedate_to_datetime(
-                            self.headers["If-Modified-Since"]
-                        )
+                        ims = email.utils.parsedate_to_datetime(self.headers["If-Modified-Since"])
                     except (TypeError, IndexError, OverflowError, ValueError):
                         # ignore ill-formed values
                         pass
@@ -168,9 +163,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
                             ims = ims.replace(tzinfo=datetime.timezone.utc)
                         if ims.tzinfo is datetime.timezone.utc:
                             # compare to UTC datetime of last modification
-                            last_modif = datetime.datetime.fromtimestamp(
-                                fs.st_mtime, datetime.timezone.utc
-                            )
+                            last_modif = datetime.datetime.fromtimestamp(fs.st_mtime, datetime.timezone.utc)
                             # remove microseconds, like in If-Modified-Since
                             last_modif = last_modif.replace(microsecond=0)
 
@@ -261,19 +254,13 @@ def code_server(
                 )
             except Exception as e:
                 print("can't start ssl", e)
-                print(
-                    "maybe 'openssl req -new -x509 -keyout key.pem -out server.pem -days 3650 -nodes'"
-                )
+                print("maybe 'openssl req -new -x509 -keyout key.pem -out server.pem -days 3650 -nodes'")
                 ssl = False
 
         if ssl:
-            serve_message = (
-                "Serving HTTPS on {host} port {port} (https://{host}:{port}/) ..."
-            )
+            serve_message = "Serving HTTPS on {host} port {port} (https://{host}:{port}/) ..."
         else:
-            serve_message = (
-                "Serving HTTP on {host} port {port} (http://{bind}:{port}/) ..."
-            )
+            serve_message = "Serving HTTP on {host} port {port} (http://{bind}:{port}/) ..."
 
         print(serve_message.format(host=sa[0], port=sa[1], bind=bind))
 

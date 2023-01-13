@@ -56,7 +56,7 @@ if hasattr(sys, "_emscripten_info"):
         pdb(__file__, ":47 no browser/emscripten modules yet", e)
 
     def ffi(arg):
-        return window.JSON.parse( json.dumps(arg) )
+        return window.JSON.parse(json.dumps(arg))
 
 else:
     is_browser = False
@@ -122,8 +122,8 @@ if is_browser:
 
     def new(oclass, *argv):
         from embed_browser import Reflect, Array
-        return Reflect.construct(oclass, Array(*argv) )
 
+        return Reflect.construct(oclass, Array(*argv))
 
     # dom events
     class EventTarget:
@@ -138,11 +138,12 @@ if is_browser:
             self.events.append([evt_name, json.loads(jsondata)])
 
         # def dispatchEvent
-        async def rpc(self, method, *argv ):
+        async def rpc(self, method, *argv):
             import inspect
-# TODO resolve whole path
-            if hasattr(__import__('__main__') , method):
-                client = getattr( __import__('__main__') , method)
+
+            # TODO resolve whole path
+            if hasattr(__import__("__main__"), method):
+                client = getattr(__import__("__main__"), method)
                 is_coro = inspect.iscoroutinefunction(client)
                 if is_coro:
                     await client(*argv)
@@ -161,9 +162,9 @@ if is_browser:
             while not aio.exit:
                 if len(self.events):
                     evtype, evdata = self.events.pop(0)
-                    if evtype == 'rpc':
-                        print("rpc.id", evdata.pop('rpcid') )
-                        await self.rpc(evdata.pop('call'), *evdata.pop('argv') )
+                    if evtype == "rpc":
+                        print("rpc.id", evdata.pop("rpcid"))
+                        await self.rpc(evdata.pop("call"), *evdata.pop("argv"))
                         continue
 
                     discarded = True
@@ -309,9 +310,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
             sys.path.insert(0, ROOTDIR)
             if loadermain:
                 if os.path.isfile("main.py"):
-                    print(
-                        f"315: running {ROOTDIR}/{loadermain} for {sys.argv[0]} (deferred)"
-                    )
+                    print(f"315: running {ROOTDIR}/{loadermain} for {sys.argv[0]} (deferred)")
                     aio.defer(execfile, [f"{ROOTDIR}/{loadermain}"], {})
                 else:
                     pdb(f"no {loadermain} found for {sys.argv[0]} in {ROOTDIR}")
@@ -339,13 +338,14 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
         print("341: EventTarget delayed by loader")
 
 
-#===============================================================================================
+# ===============================================================================================
 # platform
+
 
 def rcp(source, destination):
     import urllib
     import urllib.request
+
     filename = Path(destination)
     filename.parent.mkdir(parents=True, exist_ok=True)
     urllib.request.urlretrieve(source_url, str(filename))
-

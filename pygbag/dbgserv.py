@@ -121,9 +121,7 @@ class Channel(object):
 class Client(object):
     __linesep_regexp = re.compile(r"\r?\n")
     # The RFC limit for nicknames is 9 characters, but what the heck.
-    __valid_nickname_regexp = re.compile(
-        r"^[][\`_^{|}A-Za-z][][\`_^{|}A-Za-z0-9-]{0,50}$"
-    )
+    __valid_nickname_regexp = re.compile(r"^[][\`_^{|}A-Za-z][][\`_^{|}A-Za-z0-9-]{0,50}$")
     __valid_channelname_regexp = re.compile(r"^[&#+!][^\x00\x07\x0a\x0d ,:]{0,50}$")
 
     def __init__(self, server, socket):
@@ -232,14 +230,9 @@ class Client(object):
             return
         if self.nickname and self.user:
             self.reply("001 %s :Hi, welcome to IRC" % self.nickname)
-            self.reply(
-                "002 %s :Your host is %s, running version miniircd-%s"
-                % (self.nickname, server.name, VERSION)
-            )
+            self.reply("002 %s :Your host is %s, running version miniircd-%s" % (self.nickname, server.name, VERSION))
             self.reply("003 %s :This server was created sometime" % self.nickname)
-            self.reply(
-                "004 %s %s miniircd-%s o o" % (self.nickname, server.name, VERSION)
-            )
+            self.reply("004 %s %s miniircd-%s o o" % (self.nickname, server.name, VERSION))
             self.send_lusers()
             self.send_motd()
             self.__handle_command = self.__command_handler
@@ -264,10 +257,7 @@ class Client(object):
                 continue
             channel = server.get_channel(channelname)
             if channel.key is not None and channel.key != keys[i]:
-                self.reply(
-                    "475 %s %s :Cannot join channel (+k) - bad key"
-                    % (self.nickname, channelname)
-                )
+                self.reply("475 %s %s :Cannot join channel (+k) - bad key" % (self.nickname, channelname))
                 continue
 
             if for_join:
@@ -276,13 +266,9 @@ class Client(object):
                 self.message_channel(channel, "JOIN", channelname, True)
                 self.channel_log(channel, "joined", meta=True)
                 if channel.topic:
-                    self.reply(
-                        "332 %s %s :%s" % (self.nickname, channel.name, channel.topic)
-                    )
+                    self.reply("332 %s %s :%s" % (self.nickname, channel.name, channel.topic))
                 else:
-                    self.reply(
-                        "331 %s %s :No topic is set" % (self.nickname, channel.name)
-                    )
+                    self.reply("331 %s %s :No topic is set" % (self.nickname, channel.name))
             names_prefix = "353 %s = %s :" % (self.nickname, channelname)
             names = ""
             # Max length: reply prefix ":server_name(space)" plus CRLF in
@@ -337,10 +323,7 @@ class Client(object):
 
             sorted_channels = sorted(channels, key=lambda x: x.name)
             for channel in sorted_channels:
-                self.reply(
-                    "322 %s %s %d :%s"
-                    % (self.nickname, channel.name, len(channel.members), channel.topic)
-                )
+                self.reply("322 %s %s %d :%s" % (self.nickname, channel.name, len(channel.members), channel.topic))
             self.reply("323 %s :End of LIST" % self.nickname)
 
         def lusers_handler():
@@ -370,20 +353,14 @@ class Client(object):
                     key = arguments[2]
                     if irc_lower(channel.name) in self.channels:
                         channel.key = key
-                        self.message_channel(
-                            channel, "MODE", "%s +k %s" % (channel.name, key), True
-                        )
-                        self.channel_log(
-                            channel, "set channel key to %s" % key, meta=True
-                        )
+                        self.message_channel(channel, "MODE", "%s +k %s" % (channel.name, key), True)
+                        self.channel_log(channel, "set channel key to %s" % key, meta=True)
                     else:
                         self.reply("442 %s :You're not on that channel" % targetname)
                 elif flag == "-k":
                     if irc_lower(channel.name) in self.channels:
                         channel.key = None
-                        self.message_channel(
-                            channel, "MODE", "%s -k" % channel.name, True
-                        )
+                        self.message_channel(channel, "MODE", "%s -k" % channel.name, True)
                         self.channel_log(channel, "removed channel key", meta=True)
                     else:
                         self.reply("442 %s :You're not on that channel" % targetname)
@@ -412,9 +389,7 @@ class Client(object):
             if newnick == self.nickname:
                 pass
             elif client and client is not self:
-                self.reply(
-                    "433 %s %s :Nickname is already in use" % (self.nickname, newnick)
-                )
+                self.reply("433 %s %s :Nickname is already in use" % (self.nickname, newnick))
             elif not self.__valid_nickname_regexp.match(newnick):
                 self.reply("432 %s %s :Erroneous Nickname" % (self.nickname, newnick))
             else:
@@ -424,8 +399,7 @@ class Client(object):
                 self.nickname = newnick
                 server.client_changed_nickname(self, oldnickname)
                 self.message_related(
-                    ":%s!%s@%s NICK %s"
-                    % (oldnickname, self.user, self.host, self.nickname),
+                    ":%s!%s@%s NICK %s" % (oldnickname, self.user, self.host, self.nickname),
                     True,
                 )
 
@@ -440,19 +414,13 @@ class Client(object):
             message = arguments[1]
             client = server.get_client(targetname)
             if client:
-                client.message(
-                    ":%s %s %s :%s" % (self.prefix, command, targetname, message)
-                )
+                client.message(":%s %s %s :%s" % (self.prefix, command, targetname, message))
             elif server.has_channel(targetname):
                 channel = server.get_channel(targetname)
-                self.message_channel(
-                    channel, command, "%s :%s" % (channel.name, message)
-                )
+                self.message_channel(channel, command, "%s :%s" % (channel.name, message))
                 self.channel_log(channel, message)
             else:
-                self.reply(
-                    "401 %s %s :No such nick/channel" % (self.nickname, targetname)
-                )
+                self.reply("401 %s %s :No such nick/channel" % (self.nickname, targetname))
 
         def part_handler():
             if len(arguments) < 1:
@@ -466,15 +434,10 @@ class Client(object):
                 if not valid_channel_re.match(channelname):
                     self.reply_403(channelname)
                 elif not irc_lower(channelname) in self.channels:
-                    self.reply(
-                        "442 %s %s :You're not on that channel"
-                        % (self.nickname, channelname)
-                    )
+                    self.reply("442 %s %s :You're not on that channel" % (self.nickname, channelname))
                 else:
                     channel = self.channels[irc_lower(channelname)]
-                    self.message_channel(
-                        channel, "PART", "%s :%s" % (channelname, partmsg), True
-                    )
+                    self.message_channel(channel, "PART", "%s :%s" % (channelname, partmsg), True)
                     self.channel_log(channel, "left (%s)" % partmsg, meta=True)
                     del self.channels[irc_lower(channelname)]
                     server.remove_member_from_channel(self, channelname)
@@ -505,20 +468,13 @@ class Client(object):
                 if len(arguments) > 1:
                     newtopic = arguments[1]
                     channel.topic = newtopic
-                    self.message_channel(
-                        channel, "TOPIC", "%s :%s" % (channelname, newtopic), True
-                    )
+                    self.message_channel(channel, "TOPIC", "%s :%s" % (channelname, newtopic), True)
                     self.channel_log(channel, "set topic to %r" % newtopic, meta=True)
                 else:
                     if channel.topic:
-                        self.reply(
-                            "332 %s %s :%s"
-                            % (self.nickname, channel.name, channel.topic)
-                        )
+                        self.reply("332 %s %s :%s" % (self.nickname, channel.name, channel.topic))
                     else:
-                        self.reply(
-                            "331 %s %s :No topic is set" % (self.nickname, channel.name)
-                        )
+                        self.reply("331 %s %s :No topic is set" % (self.nickname, channel.name))
             else:
                 self.reply("442 %s :You're not on that channel" % channelname)
 
@@ -528,10 +484,7 @@ class Client(object):
                 return
             message = arguments[0]
             for client in server.clients.values():
-                client.message(
-                    ":%s NOTICE %s :Global notice: %s"
-                    % (self.prefix, client.nickname, message)
-                )
+                client.message(":%s NOTICE %s :Global notice: %s" % (self.prefix, client.nickname, message))
 
         def who_handler():
             if len(arguments) < 1:
@@ -570,10 +523,7 @@ class Client(object):
                         user.realname,
                     )
                 )
-                self.reply(
-                    "312 %s %s %s :%s"
-                    % (self.nickname, user.nickname, server.name, server.name)
-                )
+                self.reply("312 %s %s %s :%s" % (self.nickname, user.nickname, server.name, server.name))
                 self.reply(
                     "319 %s %s :%s"
                     % (
@@ -582,9 +532,7 @@ class Client(object):
                         "".join(x + " " for x in user.channels),
                     )
                 )
-                self.reply(
-                    "318 %s %s :End of WHOIS list" % (self.nickname, user.nickname)
-                )
+                self.reply("318 %s %s :End of WHOIS list" % (self.nickname, user.nickname))
             else:
                 self.reply("401 %s %s :No such nick" % (self.nickname, username))
 
@@ -635,18 +583,14 @@ class Client(object):
     def socket_writable_notification(self):
         try:
             sent = self.socket.send(buffer_to_socket(self.__writebuffer))
-            self.server.print_debug(
-                "[%s:%d] <- %r" % (self.host, self.port, self.__writebuffer[:sent])
-            )
+            self.server.print_debug("[%s:%d] <- %r" % (self.host, self.port, self.__writebuffer[:sent]))
             self.__writebuffer = self.__writebuffer[sent:]
         except socket.error as x:
             self.disconnect(x)
 
     def disconnect(self, quitmsg):
         self.message("ERROR :%s" % quitmsg)
-        self.server.print_info(
-            "Disconnected connection from %s:%s (%s)." % (self.host, self.port, quitmsg)
-        )
+        self.server.print_info("Disconnected connection from %s:%s (%s)." % (self.host, self.port, quitmsg))
         self.socket.close()
         self.server.remove_client(self, quitmsg)
 
@@ -694,18 +638,13 @@ class Client(object):
             client.message(msg)
 
     def send_lusers(self):
-        self.reply(
-            "251 %s :There are %d users and 0 services on 1 server"
-            % (self.nickname, len(self.server.clients))
-        )
+        self.reply("251 %s :There are %d users and 0 services on 1 server" % (self.nickname, len(self.server.clients)))
 
     def send_motd(self):
         server = self.server
         motdlines = server.get_motd_lines()
         if motdlines:
-            self.reply(
-                "375 %s :- %s Message of the day -" % (self.nickname, server.name)
-            )
+            self.reply("375 %s :- %s Message of the day -" % (self.nickname, server.name))
             for line in motdlines:
                 self.reply("372 %s :- %s" % (self.nickname, line.rstrip()))
             self.reply("376 %s :End of /MOTD command" % self.nickname)
@@ -745,9 +684,7 @@ class Server(object):
         # else: might exist in the chroot jail, so just continue
 
         if options.listen and self.ipv6:
-            self.address = socket.getaddrinfo(
-                options.listen, None, proto=socket.IPPROTO_TCP
-            )[0][4][0]
+            self.address = socket.getaddrinfo(options.listen, None, proto=socket.IPPROTO_TCP)[0][4][0]
         elif options.listen:
             self.address = socket.gethostbyname(options.listen)
         else:
@@ -839,9 +776,7 @@ class Server(object):
     def start(self):
         serversockets = []
         for port in self.ports:
-            s = socket.socket(
-                socket.AF_INET6 if self.ipv6 else socket.AF_INET, socket.SOCK_STREAM
-            )
+            s = socket.socket(socket.AF_INET6 if self.ipv6 else socket.AF_INET, socket.SOCK_STREAM)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 s.bind((self.address, port))
@@ -859,9 +794,7 @@ class Server(object):
         if self.setuid:
             os.setgid(self.setuid[1])
             os.setuid(self.setuid[0])
-            self.print_info(
-                "Setting uid:gid to %s:%s" % (self.setuid[0], self.setuid[1])
-            )
+            self.print_info("Setting uid:gid to %s:%s" % (self.setuid[0], self.setuid[1]))
 
         self.init_logging()
         try:
@@ -879,12 +812,8 @@ class Server(object):
         if self.debug:
             log_level = logging.DEBUG
         self.logger = logging.getLogger("miniircd")
-        formatter = logging.Formatter(
-            ("%(asctime)s - %(name)s[%(process)d] - " "%(levelname)s - %(message)s")
-        )
-        fh = RotatingFileHandler(
-            self.log_file, maxBytes=self.log_max_bytes, backupCount=self.log_count
-        )
+        formatter = logging.Formatter(("%(asctime)s - %(name)s[%(process)d] - " "%(levelname)s - %(message)s"))
+        fh = RotatingFileHandler(self.log_file, maxBytes=self.log_max_bytes, backupCount=self.log_count)
         fh.setLevel(log_level)
         fh.setFormatter(formatter)
         self.logger.setLevel(log_level)
@@ -913,16 +842,11 @@ class Server(object):
                                 keyfile=self.ssl_pem_file,
                             )
                         except Exception as e:
-                            self.print_error(
-                                "SSL error for connection from %s:%s: %s"
-                                % (addr[0], addr[1], e)
-                            )
+                            self.print_error("SSL error for connection from %s:%s: %s" % (addr[0], addr[1], e))
                             continue
                     try:
                         self.clients[conn] = Client(self, conn)
-                        self.print_info(
-                            "Accepted connection from %s:%s." % (addr[0], addr[1])
-                        )
+                        self.print_info("Accepted connection from %s:%s." % (addr[0], addr[1]))
                     except socket.error as e:
                         try:
                             conn.close()
@@ -939,9 +863,7 @@ class Server(object):
 
 
 _maketrans = str.maketrans if PY3 else string.maketrans
-_ircstring_translation = _maketrans(
-    string.ascii_lowercase.upper() + "[]\\^", string.ascii_lowercase + "{}|~"
-)
+_ircstring_translation = _maketrans(string.ascii_lowercase.upper() + "[]\\^", string.ascii_lowercase + "{}|~")
 
 
 def irc_lower(s):
@@ -949,12 +871,8 @@ def irc_lower(s):
 
 
 def main(argv):
-    op = OptionParser(
-        version=VERSION, description="miniircd is a small and limited IRC server."
-    )
-    op.add_option(
-        "--channel-log-dir", metavar="X", help="store channel log in directory X"
-    )
+    op = OptionParser(version=VERSION, description="miniircd is a small and limited IRC server.")
+    op.add_option("--channel-log-dir", metavar="X", help="store channel log in directory X")
     op.add_option("--ipv6", action="store_true", help="use IPv6")
     op.add_option("--debug", action="store_true", help="print debug messages to stdout")
     op.add_option("--listen", metavar="X", help="listen on specific IP address X")
@@ -989,8 +907,7 @@ def main(argv):
     op.add_option(
         "--ports",
         metavar="X",
-        help="listen to ports X (a list separated by comma or whitespace);"
-        " default: 6667 or 6697 if SSL is enabled",
+        help="listen to ports X (a list separated by comma or whitespace);" " default: 6667 or 6697 if SSL is enabled",
     )
     op.add_option(
         "-s",
@@ -1013,14 +930,12 @@ def main(argv):
         op.add_option(
             "--chroot",
             metavar="X",
-            help="change filesystem root to directory X after startup"
-            " (requires root)",
+            help="change filesystem root to directory X after startup" " (requires root)",
         )
         op.add_option(
             "--setuid",
             metavar="U[:G]",
-            help="change process user (and optionally group) after startup"
-            " (requires root)",
+            help="change process user (and optionally group) after startup" " (requires root)",
         )
 
     (options, args) = op.parse_args(argv[1:])
@@ -1048,15 +963,8 @@ def main(argv):
         elif len(matches) == 1:
             options.setuid = (getpwnam(matches[0]).pw_uid, getpwnam(matches[0]).pw_gid)
         else:
-            op.error(
-                "Specify a user, or user and group separated by a colon,"
-                " e.g. --setuid daemon, --setuid nobody:nobody"
-            )
-    if (
-        os.name == "posix"
-        and not options.setuid
-        and (os.getuid() == 0 or os.getgid() == 0)
-    ):
+            op.error("Specify a user, or user and group separated by a colon," " e.g. --setuid daemon, --setuid nobody:nobody")
+    if os.name == "posix" and not options.setuid and (os.getuid() == 0 or os.getgid() == 0):
         op.error(
             "Running this service as root is not recommended. Use the"
             " --setuid option to switch to an unprivileged account after"

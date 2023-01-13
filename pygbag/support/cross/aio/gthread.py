@@ -2,6 +2,7 @@ import aio
 import inspect
 import sys
 import threading as __threading__
+
 sys.modules["__threading__"] = __threading__
 from __threading__ import *
 
@@ -93,9 +94,7 @@ class Condition:
 
 
 class Thread:
-    def __init__(
-        self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None
-    ):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
         # def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
         self.args = args
         self.kwargs = kwargs
@@ -158,9 +157,7 @@ class Thread:
                 if self.delta < 0:
                     self.delta = 0
                 # no sleep_ms on cpy
-                yield from aio.sleep_ms(
-                    float(self.slice - int(self.delta / 2)) / 1_000
-                ).__await__()
+                yield from aio.sleep_ms(float(self.slice - int(self.delta / 2)) / 1_000).__await__()
                 # return aio.sleep( float(self.slice - int(self.delta / 2)) / 1_000 )
                 self.last = rtc
 
@@ -194,6 +191,7 @@ class Thread:
     def is_alive(self):
         return self.status is True
 
+
 class Timer:
     def __init__(self, interval, function, args=None, kwargs=None):
         self.abort = False
@@ -212,9 +210,6 @@ class Timer:
 
     def cancel(self):
         self.abort = True
-
-
-
 
 
 def service(srv, *argv, **kw):

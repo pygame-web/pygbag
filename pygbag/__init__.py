@@ -1,6 +1,6 @@
 """ packager+server for pygbag wasm loader """
 
-#last 0.6.6
+# last 0.6.6
 __version__ = "0.7.0"
 
 
