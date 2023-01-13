@@ -179,7 +179,7 @@ async def import_site():
         print(__name__, "sim repl ready for", __file__)
 
         await shell.runpy(__file__)
-        shell.interact()
+        shell.interactive()
 
         # if you don't reach that step
         # your main.py has an infinite sync loop somewhere !

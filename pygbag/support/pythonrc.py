@@ -219,7 +219,7 @@ if 1:  # defined("embed") and hasattr(embed, "readline"):
 
         # async top level instance compiler/runner
         runner = None
-        interactive = None
+        is_interactive = None
 
         if aio.cross.simulator:
             ROOT = os.getcwd()
@@ -618,8 +618,8 @@ ________________________
             return True
 
         @classmethod
-        def interact(cls):
-            if cls.interactive:
+        def interactive(cls,):
+            if cls.is_interactive:
                 return
             # if you don't reach that step
             # your main.py has an infinite sync loop somewhere !
@@ -629,7 +629,7 @@ ________________________
             TopLevel_async_handler.instance.banner()
 
             aio.create_task(platform.EventTarget.process())
-            cls.interactive = True
+            cls.is_interactive = True
 
             if not shell.pgzrunning:
                 del __import__("__main__").__file__
@@ -709,7 +709,7 @@ ________________________
             if not TopLevel_async_handler.muted:
                 print("going interactive")
                 DBG("643: TODO detect input/print to select repl debug")
-                cls.interact()
+                cls.interactive()
 
             return code
 
@@ -1046,7 +1046,7 @@ if not aio.cross.simulator:
 
         repodata = "repodata.json"
 
-        def raw_input(self, prompt):
+        def raw_input(self, prompt = ">>> "):
             if len(self.buffer):
                 return self.buffer.pop(0)
 
@@ -1505,87 +1505,32 @@ import aio.recycle
 #
 
 
-preload = []
-
-
-def FS(tree, base=".", silent=False, debug=False):
-    global preload
-    path = [base]
-    base_url = ""
-    last = 0
-    trail = False
-    for l in map(str.rstrip, tree.split("\n")):
-        if not l:
-            continue
-        if l == ".":
-            continue
-        if l.startswith('http'):
-            #found a base url
-            base_url = l.rstrip("/")+ "/"
-            continue
-
-        pos, elem = l.rsplit(" ", 1)
-        current = (1 + len(pos)) // 4
-        if not silent:
-            print(l[4:])
-        if current <= last:
-            preload.append([base_url + "/".join(path), "/".join(path)])
-            if debug:
-                print(preload[-1], "write", current, last)
-            while len(path) > current:
-                path.pop()
-        else:
-            trail = True
-
-        if debug:
-            print(f"{pos=} {elem=} {current=} {path=} {last=}")
-        if len(path) < current + 1:
-            path.append(elem)
-        path[current] = elem
-        last = current
-
-    if trail:
-        preload.append([base_url + "/".join(path), "/".join(path)])
-
-
-async def preload_fetch(silent=False, debug=False):
-    global preload
-    from pathlib import Path
-    base_url = ""
-
-    while len(preload):
-        url, strfilename = preload.pop(0)
-        if strfilename == ".":
-            base_url = url
-            continue
-        if base_url:
-            url = base_url + "/" + url
-
-        filename = Path(strfilename)
-        if debug:
-            print(f"{url} => {Path.cwd() / filename}")
-
-        if not filename.is_file():
-            filename.parent.mkdir(parents=True, exist_ok=True)
-            async with platform.fopen(url, "rb") as source:
-                with open(filename, "wb") as target:
-                    target.write(source.read())
-        if not silent:
-            print("FS:", filename)
-
-
 async def import_site(__file__):
+    embed = False
     source = getattr(PyConfig, "frozen", "")
     if source and Path(source).is_file():
         source_path = getattr(PyConfig, "frozen_path", "")
-        print("embed path", source_path)
-        print("will embed", source)
+        handler = getattr(PyConfig, "frozen_handler", "")
+        print("1514: embed path", source_path,"will embed", source, "handled by", handler)
         local = "/tmp/embed.py"
         with open(source, "r") as src:
             with open(local, "w") as file:
-                file.write("import pygame, sys;# import aio.fetch\n")
+                file.write("import sys, pygame;from aio.fetch import FS\n")
                 file.write( src.read() )
-        #local = source
+                # default handler is run()
+                if not handler:
+                    file.write("""
+async def main():
+    import aio.fetch
+    await aio.fetch.preload_fetch()
+    await run()
+asyncio.run(main())
+""")
+                else:
+                    async with fopen(handler) as handle:
+                        file.write("\n")
+                        file.write(handle.read())
+        embed = True
     else:
         local = None
         source = sys.argv[0]

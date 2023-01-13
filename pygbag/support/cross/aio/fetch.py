@@ -4,11 +4,10 @@ import asyncio
 import platform
 import json
 
-
 preload = []
 
 
-def FS(tree, base=".", silent=False, debug=False):
+def FS(tree, base=".", silent=True, debug=False):
     global preload
     path = [base]
     base_url = ""
@@ -48,10 +47,11 @@ def FS(tree, base=".", silent=False, debug=False):
         preload.append([base_url + "/".join(path), "/".join(path)])
 
 
-async def preload_fetch(silent=False, debug=False):
+async def preload_fetch(silent=True, debug=False):
     global preload
     from pathlib import Path
     base_url = ""
+    fileset = []
 
     while len(preload):
         url, strfilename = preload.pop(0)
@@ -70,8 +70,16 @@ async def preload_fetch(silent=False, debug=False):
             async with platform.fopen(url, "rb") as source:
                 with open(filename, "wb") as target:
                     target.write(source.read())
+
+        fileset.append(filename)
+
         if not silent:
             print("FS:", filename)
+
+    # TODO remove from memory after use
+    return fileset
+
+
 
 class RequestHandler:
     """
