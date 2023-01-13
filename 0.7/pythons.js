@@ -196,15 +196,11 @@ window.cross_dl = async function cross_dl(url, flags) {
     console.log("cross_dl len=", response.headers.get("Content-Length") )
     console.log("cross_dl.error", response.error )
     if (response.body) {
-        console.log("cross_dl.text", await response.text() )
-        /*
-        const reader = response.body.getReader();
-        const text = await reader.read();
-        console.log("cross_dl.text", text )
-        */
+        return await response.text()
     } else {
         console.error("cross_dl: no body")
     }
+    return ""
 }
 
 
@@ -473,18 +469,28 @@ const vm = {
 }
 
 
-function run_pyrc(content) {
+async function run_pyrc(content) {
     const pyrc_file = "/data/data/org.python/assets/pythonrc.py"
     const main_file = "/data/data/org.python/assets/main.py"
 
     vm.FS.writeFile(pyrc_file, content )
 
+// embedded canvas
+    if (vm.PyConfig.frozen) {
+        if ( canvas.dataset.path ) {
+            vm.PyConfig.frozen_path = canvas.dataset.src
+        } else {
+            vm.PyConfig.frozen_path = location.href.rsplit("/",1)  // current doc url as base
+        }
+        var frozencode = canvas.innerHTML
+        if (canvas.dataset.embed) {
+            vm.PyConfig.frozen_handler = canvas.dataset.embed
+        }
+        FS.writeFile(vm.PyConfig.frozen, frozencode)
+    } else {
 // TODO: concat blocks
-
-    if (vm.PyConfig.frozen)
-        FS.writeFile(vm.PyConfig.frozen, canvas.innerHTML);
-    else
         vm.FS.writeFile(main_file, vm.script.blocks[0] )
+    }
 
     python.PyRun_SimpleString(`#!site
 PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
@@ -526,11 +532,6 @@ async function custom_postrun() {
         .then( response => checkStatus(response) && response.arrayBuffer() )
         .then( buffer => run_pyrc(new Uint8Array(buffer)) )
         .catch(x => console.error(x))
-
-    store_file(
-        "https://pygame-web.github.io/archives/repo/repodata.json",
-        "/data/data/org.python/repodata.json"
-    )
 /*
     store_file(
         "https://pygame-web.github.io/archives/repo/repodata.json",
@@ -1668,12 +1669,6 @@ async function onload() {
             const canvas = feat_gui(true)
             if ( canvas.innerHTML.length > 20 ) {
                 vm.PyConfig.frozen = "/tmp/to_embed.py"
-            }
-
-            if ( canvas.dataset.path ) {
-                vm.PyConfig.frozen_path = canvas.dataset.src
-            } else {
-                vm.PyConfig.frozen_path = location.href.rsplit("/",1)  // current doc url as base
             }
             // only canvas when embedding, stdxxx go to console.
             break
