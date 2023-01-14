@@ -1199,7 +1199,7 @@ if not aio.cross.simulator:
         async def async_get_pkg(cls, want, ex, resume):
             pkg_file = ""
             for repo in PyConfig.pkg_repolist:
-                DBG(f"1204: {want=} found : {want in repo}")
+                DBG(f"1202: {want=} found : {want in repo}")
                 if want in repo:
                     pkg_url = f"{repo['-CDN-']}{repo[want]}"
 
@@ -1288,6 +1288,7 @@ if not aio.cross.simulator:
                     req = "PIL"
 
                 if req in cls.ignore or req in sys.modules:
+                    print("1291: {req=} in {cls.ignore=} or sys.modules")
                     continue
 
                 callback(req)
@@ -1298,10 +1299,10 @@ if not aio.cross.simulator:
                     msg = f"928: cannot download {req} pkg"
                     callback(req, error=msg)
                     continue
-
+# TODO: deadcode ?
                 if req in platform.patches:
-                    DBG("1299:", req, "requires patch")
-                    platform.patches[req]()
+                    print("1303:", req, "requires patch")
+                    platform.patches.pop(req)()
 
         async def pv(track, prefix="", suffix="", decimals=1, length=70, fill="X", printEnd="\r"):
 
@@ -1443,9 +1444,14 @@ def patch():
         print("panda3d: apply ShowBase.run patch")
         ShowBase.run = run
 
+    def patch_cwcwidth():
+        import cwcwidth
+        sys.modules["wcwidth"] = cwcwidth
+
     platform.patches = {
         "matplotlib": patch_matplotlib_pyplot,
         "panda3d": patch_panda3d_showbase,
+        "wcwidth" : patch_cwcwidth,
     }
 
 
