@@ -71,6 +71,7 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
             pdb(f"failed to install {pkg_file}")
             sys.print_exception(rx)
 
+
         await asyncio.sleep(0)
 
         try:
@@ -83,6 +84,10 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
             sys.print_exception(rx)
     else:
         print(f"84: {pkg_file} already installed")
+
+    if pkg in platform.patches:
+        print("89:", pkg, "requires patch")
+        platform.patches.pop(pkg)()
 
     if resume and ex:
         try:
