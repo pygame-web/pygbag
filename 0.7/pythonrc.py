@@ -1050,12 +1050,13 @@ if not aio.cross.simulator:
             if len(self.buffer):
                 return self.buffer.pop(0)
 
-            maybe = embed.readline()
+            # if program wants I/O do not empty buffers
+            if self.shell.is_interactive:
+                maybe = embed.readline()
 
-            if len(maybe):
-                return maybe
-            else:
-                return None
+                if len(maybe):
+                    return maybe
+            return None
             # raise EOFError
 
         def eval(self, source):
@@ -1381,9 +1382,12 @@ def patch():
 
     collections.MutableMapping = MutableMapping
 
+    # could use that ?
     # import _sqlite3
     # sys.modules['sqlite3'] = _sqlite3
 
+
+    # pyodide emulation
     def runPython(code):
         from textwrap import dedent
 
@@ -1391,6 +1395,8 @@ def patch():
 
     platform.runPython = runPython
 
+
+    # fake Decimal module for some wheel imports
     sys.modules["decimal"] = type(sys)("decimal")
 
     class Decimal:
@@ -1398,6 +1404,24 @@ def patch():
 
     sys.modules["decimal"].Decimal = Decimal
 
+
+    # patch builtins input()
+    async def async_input(prompt=""):
+        shell.is_interactive = False
+        if prompt:
+            print(prompt, end="")
+        maybe = ""
+        while not len(maybe):
+            maybe = embed.readline()
+            await asyncio.sleep(0)
+
+        shell.is_interactive = True
+        return maybe.rstrip("\n")
+
+    import builtins
+    builtins.input = async_input
+
+    #
     def patch_matplotlib_pyplot():
         import matplotlib
         import matplotlib.pyplot
@@ -1430,6 +1454,7 @@ def patch():
 
         matplotlib.pyplot.pause = patch_matplotlib_pyplot_pause
 
+    #
     def patch_panda3d_showbase():
         import panda3d
         import panda3d.core
@@ -1453,6 +1478,7 @@ def patch():
         "panda3d": patch_panda3d_showbase,
         "wcwidth" : patch_cwcwidth,
     }
+
 
 
 patch()
