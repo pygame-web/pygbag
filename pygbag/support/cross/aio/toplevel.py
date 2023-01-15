@@ -203,7 +203,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         self.write("\nPython %s on %s\n%s\n" % (sys.version, sys.platform, cprt))
 
 
-    def prompt(cls):
+    def prompt(self):
         if not self.__class__.muted and self.shell.is_interactive:
             embed.prompt()
 

@@ -481,7 +481,7 @@ main_iteration(void) {
     HOST_RETURN(0);
 }
 
-#define EGLTEST
+// #define EGLTEST
 
 #if defined(EGLTEST)
     #include <EGL/egl.h>
