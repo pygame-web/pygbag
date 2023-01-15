@@ -17,10 +17,10 @@ from threading import Thread
 
 
 # still bugs in that thread model
-class Moving_bmp(Thread):
+class Moving_svg(Thread):
     async def run(self):
         global count, screen
-        bmp = pygame.image.load_basic( "pygc.bmp" )
+        bmp = pygame.image.load( "img/tiger.svg" )
         way = 1
         while await self:
             decal = abs(count) % 100
@@ -37,7 +37,7 @@ def color_background(win):
 
 def moving_bmp(win):
     global count
-    bmp = pygame.image.load_basic( "pygc.bmp" )
+    bmp = pygame.image.load_basic( "img/pygc.bmp" )
     way = 1
     while not aio.exit:
         decal = abs(count) % 100
@@ -51,7 +51,7 @@ def moving_bmp(win):
 def moving_png(win):
     global count
     try:
-        png = pygame.image.load( "pygc.png" )
+        png = pygame.image.load( "img/pygc.png" )
     except:
         print("png support error upgrade SDL_image !")
         return

@@ -124,6 +124,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
             class shell:
                 coro = []
+                is_interactive = None
 
                 @classmethod
                 def parse_sync(shell, line, **env):
@@ -201,9 +202,9 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
         self.write("\nPython %s on %s\n%s\n" % (sys.version, sys.platform, cprt))
 
-    @classmethod
+
     def prompt(cls):
-        if not cls.muted:
+        if not self.__class__.muted and self.shell.is_interactive:
             embed.prompt()
 
     async def interact(self):
