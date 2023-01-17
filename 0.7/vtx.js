@@ -176,8 +176,14 @@ export class WasmTerminal {
                             //console.log("VT LEFT")
                             break;
 
+                        case 60:
+                            console.log("Mouse")
+                            this.input += data;
+                            this.xterm.write(data)
+                            break;
+
                         default:
-                            console.log(__FILE__,"VT arrow ? "+data.charCodeAt(2))
+                            console.log(__FILE__,"VT unhandled ? "+data.charCodeAt(2))
                     }
                     break
                 default:

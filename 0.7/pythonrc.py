@@ -618,7 +618,7 @@ ________________________
             return True
 
         @classmethod
-        def interactive(cls,):
+        def interactive(cls, prompt=False):
             if cls.is_interactive:
                 return
             # if you don't reach that step
@@ -633,6 +633,8 @@ ________________________
 
             if not shell.pgzrunning:
                 del __import__("__main__").__file__
+                if prompt:
+                    cls.runner.prompt()
             else:
                 shell.pgzrun()
 
@@ -1386,8 +1388,40 @@ def patch():
     # import _sqlite3
     # sys.modules['sqlite3'] = _sqlite3
 
+    #
+    import os
+    def patch_os_get_terminal_size():
+        return (132,25)
+
+    os.get_terminal_size = patch_os_get_terminal_size
+
+
+    # fake termios module for some wheel imports
+    termios = type(sys)("termios")
+    termios.block2 = [b'\x03', b'\x1c', b'\x7f', b'\x15', b'\x04', b'\x00', b'\x01', b'\x00', b'\x11', b'\x13', b'\x1a', b'\x00', b'\x12', b'\x0f', b'\x17', b'\x16', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00']
+    def patch_termios(*argv):
+        return [17664, 5, 191, 35387, 15, 15, termios.block2 ]
+
+
+    termios.tcgetattr = patch_termios
+    termios.tcsetattr = patch_termios
+    termios.TCSANOW = 0x5402
+    termios.TCSAFLUSH = 0x5410
+    termios.ECHO = 8
+    termios.ICANON = 2
+    termios.IEXTEN = 32768
+    termios.ISIG = 1
+    termios.IXON = 1024
+    termios.IXOFF = 4096
+    termios.ICRNL = 256
+    termios.INLCR = 64
+    termios.IGNCR = 128
+    termios.VMIN = 6
+
+    sys.modules["termios"] = termios
 
     # pyodide emulation
+    # TODO: implement loadPackage()/pyimport()
     def runPython(code):
         from textwrap import dedent
 
