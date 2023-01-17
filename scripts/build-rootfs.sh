@@ -98,6 +98,9 @@ try:
 except:
     print('_curses not built')
 
+#nurses_2
+import tty
+
 # cffi
 import copy
 
