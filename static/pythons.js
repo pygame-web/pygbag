@@ -442,6 +442,8 @@ const vm = {
         readline : function(line) {
             const ud = { "type" : "stdin", "data" : line }
             if (window.worker) {
+                //if (line.search(chr(0x1b)))
+                  //  console.log("446: non-printable", line)
                 window.worker.postMessage({ target: 'custom', userData: ud });
             } else {
                 this.postMessage(ud);

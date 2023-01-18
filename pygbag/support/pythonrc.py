@@ -1391,7 +1391,12 @@ def patch():
     #
     import os
     def patch_os_get_terminal_size():
-        return (132,25)
+        cols = os.environ.get('COLS', 80)
+        lines = os.environ.get('LINES', 25)
+        try:
+            return (int(cols), int(lines))
+        except:
+            return (80,25)
 
     os.get_terminal_size = patch_os_get_terminal_size
 
@@ -1551,16 +1556,18 @@ async def display(obj, target=None, **kw):
 
 
 # ======================================================
+# x10 mouse and xterm stuff
+# https://github.com/muesli/termenv/pull/104
+# https://xtermjs.org/docs/api/vtfeatures/
 def ESC(*argv):
     for arg in argv:
         sys.__stdout__.write(chr(0x1B))
         sys.__stdout__.write(arg)
+    embed.flush()
 
-
-def CSR(*argv):
+def CSI(*argv):
     for arg in argv:
-        ESC("[", arg)
-
+        ESC(f"[{arg}")
 
 import aio.recycle
 

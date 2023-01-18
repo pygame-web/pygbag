@@ -236,6 +236,9 @@ static PyObject *
 embed_readline(PyObject *self, PyObject *_null); //forward
 
 static PyObject *
+embed_os_read(PyObject *self, PyObject *_null); //forward
+
+static PyObject *
 embed_flush(PyObject *self, PyObject *_null) {
     fprintf( stdout, "%c", 4);
     fprintf( stderr, "%c", 4);
@@ -301,7 +304,9 @@ static PyMethodDef mod_embed_methods[] = {
     {"symlink", (PyCFunction)embed_symlink,  METH_VARARGS, "FS.symlink"},
     {"run_script", (PyCFunction)embed_run_script,  METH_VARARGS, "run js"},
     {"eval", (PyCFunction)embed_eval,  METH_VARARGS, "run js eval()"},
+
     {"readline", (PyCFunction)embed_readline,  METH_NOARGS, "get current line"},
+    {"os_read",  (PyCFunction)embed_os_read,  METH_NOARGS, "get current raw stdin"},
     {"flush", (PyCFunction)embed_flush,  METH_NOARGS, "flush stdio+stderr"},
 
     {"set_ps1", (PyCFunction)embed_set_ps1,  METH_NOARGS, "set prompt output to >>> "},
@@ -386,10 +391,20 @@ int wa_panic = 0;
 static int embed_readline_bufsize = 0;
 static int embed_readline_cursor = 0;
 
+static int embed_os_read_bufsize = 0;
+static int embed_os_read_cursor = 0;
+
+
+char buf[FD_BUFFER_MAX];
+
+// TODO: store input frame counter + timestamps for all I/O
+// for ascii app record/replay.
+
 static PyObject *
 embed_readline(PyObject *self, PyObject *_null) {
-#   define file io_file[0]
-    char buf[FD_BUFFER_MAX];
+#define file io_file[0]
+
+    //char buf[FD_BUFFER_MAX];
     buf[0]=0;
 
     fseek(file, embed_readline_cursor, SEEK_SET);
@@ -403,9 +418,33 @@ embed_readline(PyObject *self, PyObject *_null) {
         embed_readline_cursor = 0;
         embed_readline_bufsize = ftell(file);
     }
-#   undef file
     return Py_BuildValue("s", buf );
+#undef file
 }
+
+
+static PyObject *
+embed_os_read(PyObject *self, PyObject *_null) {
+#define file io_file[IO_RAW]
+    //char buf[FD_BUFFER_MAX];
+    buf[0]=0;
+
+    fseek(file, embed_os_read_cursor, SEEK_SET);
+    fgets(&buf[0], FD_BUFFER_MAX, file);
+
+    embed_os_read_cursor += strlen(buf);
+
+    if ( embed_os_read_cursor && (embed_os_read_cursor == embed_os_read_bufsize) ) {
+        rewind(file);
+        ftruncate(fileno(file), 0);
+        embed_os_read_cursor = 0;
+        embed_os_read_bufsize = ftell(file);
+    }
+    return Py_BuildValue("y", buf );
+#undef file
+}
+
+
 
 int io_file_select(int fdnum) {
     int datalen = strlen( io_shm[fdnum] );
@@ -464,7 +503,8 @@ main_iteration(void) {
     }
 
     if ( (datalen =  io_file_select(IO_RAW)) )
-        printf("raw data %i\n", datalen);
+        embed_os_read_bufsize += datalen;
+        //printf("raw data %i\n", datalen);
 
     if ( (datalen =  io_file_select(0)) ) {
         embed_readline_bufsize += datalen;
