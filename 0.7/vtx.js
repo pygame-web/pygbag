@@ -10,6 +10,11 @@ readline.complete = function (line) {
 
 }
 
+function rawstdin(line) {
+    //console.log("RAW:", line )
+    python.rawstdin(line)
+}
+
 
 if (!window.Terminal) {
     var xterm_cdn
@@ -177,9 +182,8 @@ export class WasmTerminal {
                             break;
 
                         case 60:
-                            console.log("Mouse")
-                            this.input += data;
-                            this.xterm.write(data)
+                            console.log("Term Report", data)
+                            rawstdin(data)
                             break;
 
                         default:
