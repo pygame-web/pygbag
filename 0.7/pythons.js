@@ -504,11 +504,9 @@ if os.path.isdir(pfx):
     os.chdir(pfx)
 __pythonrc__ = "${pyrc_file}"
 if os.path.isfile(__pythonrc__):
-
     exec(open(__pythonrc__).read(), globals(), globals())
     import asyncio
     asyncio.run(import_site("${main_file}"))
-    del import_site
 else:
     print(f"510: invalid {__pythonrc__=}")
 del pfx, verbose
