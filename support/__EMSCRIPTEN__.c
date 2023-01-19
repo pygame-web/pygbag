@@ -39,6 +39,10 @@ ZIP_LZMA ?
 self hosting:
     https://github.com/jprendes/emception
 
+debug:
+    https://developer.chrome.com/blog/wasm-debugging-2020/
+
+
 */
 
 
