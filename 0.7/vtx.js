@@ -182,7 +182,6 @@ export class WasmTerminal {
                             break;
 
                         case 60:
-                            console.log("Term Report", data)
                             rawstdin(data)
                             break;
 
