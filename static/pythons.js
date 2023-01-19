@@ -1202,6 +1202,11 @@ MM.pause = function pause(trackid) {
     MM[trackid].media.pause()
 }
 
+MM.unpause = function unpause(trackid) {
+    console.log("MM.unpause", trackid, MM[trackid] )
+    MM[trackid].media.play()
+}
+
 MM.set_volume = function set_volume(trackid, vol) {
     MM[trackid].media.volume = 1 * vol
 }

@@ -233,6 +233,26 @@ embed_eval(PyObject *self, PyObject *argv) {
 }
 
 static PyObject *
+embed_warn(PyObject *self, PyObject *argv) {
+    char *code = NULL;
+    if (!PyArg_ParseTuple(argv, "s", &code)) {
+        return NULL;
+    }
+    EM_ASM({ console.warn(UTF8ToString($0)); }, code);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+embed_error(PyObject *self, PyObject *argv) {
+    char *code = NULL;
+    if (!PyArg_ParseTuple(argv, "s", &code)) {
+        return NULL;
+    }
+    EM_ASM({ console.error(UTF8ToString($0)); }, code);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 embed_readline(PyObject *self, PyObject *_null); //forward
 
 static PyObject *
@@ -303,7 +323,11 @@ static PyMethodDef mod_embed_methods[] = {
 
     {"symlink", (PyCFunction)embed_symlink,  METH_VARARGS, "FS.symlink"},
     {"run_script", (PyCFunction)embed_run_script,  METH_VARARGS, "run js"},
+
     {"eval", (PyCFunction)embed_eval,  METH_VARARGS, "run js eval()"},
+    // log goes with unimplemented RT functions
+    {"warn", (PyCFunction)embed_warn,  METH_VARARGS, "console.warn()"},
+    {"error", (PyCFunction)embed_error,  METH_VARARGS, "console.error()"},
 
     {"readline", (PyCFunction)embed_readline,  METH_NOARGS, "get current line"},
     {"os_read",  (PyCFunction)embed_os_read,  METH_NOARGS, "get current raw stdin"},

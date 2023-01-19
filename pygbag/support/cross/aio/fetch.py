@@ -20,7 +20,14 @@ def FS(tree, base=".", silent=True, debug=False):
             continue
         if l.startswith('http'):
             #found a base url
-            base_url = l.rstrip("/")+ "/"
+            base_url = l
+            if base_url.find('/github.com/')>0:
+                base_url = base_url.replace("/github.com/","/raw.githubusercontent.com/",1)
+
+            if base_url.find('/tree/')>0:
+                base_url = base_url.replace("/tree/","/",1)
+
+            base_url = base_url.rstrip("/")+ "/"
             continue
 
         pos, elem = l.rsplit(" ", 1)

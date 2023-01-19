@@ -194,6 +194,11 @@ def patch_pygame_mixer_music_pause():
     if last:
         window.MM.pause(last)
 
+def patch_pygame_mixer_music_unpause():
+    last = tracks["current"]
+    if last:
+        window.MM.unpause(last)
+
 
 def patch_pygame_mixer_music_stop():
     last = tracks["current"]
@@ -202,6 +207,7 @@ def patch_pygame_mixer_music_stop():
 
 pygame.mixer.music.stop = patch_pygame_mixer_music_stop
 pygame.mixer.music.pause = patch_pygame_mixer_music_pause
+pygame.mixer.music.unpause = patch_pygame_mixer_music_unpause
 
 # TODO:
 # https://www.pygame.org/docs/ref/music.html#pygame.mixer.music.fadeout
@@ -214,7 +220,7 @@ pygame.mixer.music.pause = patch_pygame_mixer_music_pause
 
 
 # 0.2.0+ use huge buffer size instead of patching whole module.
-# pro: code compatibility
+# pro: full code compatibility
 # con: sound lag
 pygame.mixer.pre_init(buffer = BUFFERSIZE)
 
