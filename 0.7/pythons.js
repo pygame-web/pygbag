@@ -24,6 +24,18 @@ const FETCH_FLAGS = {
 }
 
 
+window.get_terminal_cols = function () {
+    return Number( ( terminal && terminal.dataset.cols) || 132)
+}
+
+window.get_terminal_console = function () {
+    return Number( (terminal && terminal.dataset.console) || 0 )
+}
+
+window.get_terminal_lines = function () {
+    return Number( (terminal && terminal.dataset.lines) || 42) + get_terminal_console()
+}
+
 
 if (window.config) {
    config = window.config
@@ -792,7 +804,7 @@ async function feat_vt(debug_hidden) {
 
     const { Terminal, helper, handlevt } = await import("./vt.js")
 
-    vm.vt.xterm = new Terminal("stdio", 132,25)
+    vm.vt.xterm = new Terminal("stdio", get_terminal_cols(), get_terminal_lines())
     vm.vt.xterm.set_vm_handler(vm, null, null)
 
     vm.vt.xterm.open()
@@ -818,7 +830,7 @@ async function feat_vtx(debug_hidden) {
 
     const { WasmTerminal } = await import("./vtx.js")
 
-    vm.vt = new WasmTerminal("terminal", terminal.dataset.cols || 132, terminal.dataset.rows || 42, [
+    vm.vt = new WasmTerminal("terminal", get_terminal_cols(), get_terminal_lines(), [
             { url : (config.cdn || "./") + "xtermjsixel/xterm-addon-image-worker.js", sixelSupport:true}
     ] )
 }
@@ -2002,22 +2014,6 @@ function auto_start(cfg) {
     console.error("auto_start done")
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
