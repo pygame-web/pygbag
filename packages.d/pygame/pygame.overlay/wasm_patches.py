@@ -58,7 +58,10 @@ pygame.time.set_timer = patch_set_timer
 def patch_pygame_quit():
     pygame.mixer.music.stop()
     pygame.mixer.music.unload()
-    pygame.display.update()
+    try:
+        pygame.display.update()
+    except:
+        pass
 
 
 pygame.quit = patch_pygame_quit

@@ -203,7 +203,9 @@ config = {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="height=device-height, initial-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
 
 
     <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
@@ -284,6 +286,15 @@ config = {
            border: 1px solid black;
         }
     </style>
+
+    <script>
+/*
+        if (navigator.serviceWorker)
+            navigator.serviceWorker.register("{{cookiecutter.cdn}}pygbag{{cookiecutter.version}}.js")
+        else
+            console.warn("Service workers not supported")
+*/
+    </script>
 
     <script src="{{cookiecutter.cdn}}/browserfs.min.js"></script>
 

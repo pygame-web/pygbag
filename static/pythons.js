@@ -1455,6 +1455,55 @@ if (navigator.connection) {
     }
 }
 
+window.io = {}
+// https://mpy-usb.zoic.org/serial.js
+window.io.open_serial = function * () {
+    var ports = []
+    const filters = [
+      { 'vendorId' : 0x0403, 'productId' : 0x6001}, // FT232
+      { 'vendorId' : 0x067B, 'productId' : 0x2303}, // prolific from Kyuchumimo#3941
+      { 'vendorId' : 0x239A }, // Adafruit boards
+      { 'vendorId' : 0x2e8a, 'productId': 0x0006 }, // Raspberry Pi
+      { 'vendorId' : 0xcafe }, // TinyUSB example
+      { 'vendorId' : 0x1209, 'productId': 0xADDA }, // MicroPython boards
+    ];
+
+    navigator.usb.requestDevice({ 'filters': filters }).then(
+        device => window.io.serial = device
+    );
+    while (!window.io.serial)
+        yield 0
+
+    const port = window.io.serial
+    port.open().then( () => {
+        console.log("serial port is opened")
+        // set receiver
+        port.data = ""
+        port.read = function * () {
+            port.transferIn(0, 64).then( packet => {
+                console.log(packet.data)
+                port.data += packet.data
+          }, error => {
+            console.error(error);
+          });
+
+        }
+        if (port.configuration === null) {
+            return port.selectConfiguration(1);
+        }
+    }).then( () => {
+        console.log("select config")
+    })
+
+
+    while (!port.read)
+        yield 0
+
+    yield port
+}
+
+
+
 
 
 //TODO: battery
@@ -1462,9 +1511,6 @@ if (navigator.connection) {
 
 //TODO: camera+audio cap
     //https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
-
-// https://developer.mozilla.org/en-US/docs/Web/API/Permissions_API
-    //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Feature-Policy/camera
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Accelerometer
 
