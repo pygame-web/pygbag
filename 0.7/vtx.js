@@ -114,6 +114,10 @@ export class WasmTerminal {
 
         const cx = this.xterm.buffer.active.cursorX
 
+// TODO: check mouse pos
+        if (window.RAW_MODE)
+            rawstdin(data)
+
         // TODO: Handle ANSI escape sequences
         if (ord === 0x1b) {
 
@@ -182,7 +186,8 @@ export class WasmTerminal {
                             break;
 
                         case 60:
-                            rawstdin(data)
+                            if (!window.RAW_MODE)
+                                rawstdin(data)
                             break;
 
                         default:

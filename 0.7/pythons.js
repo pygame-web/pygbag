@@ -29,7 +29,10 @@ window.get_terminal_cols = function () {
 }
 
 window.get_terminal_console = function () {
-    return Number( (terminal && terminal.dataset.console) || 0 )
+    var cdefault = 0
+    if (vm && vm.config.debug)
+        cdefault = 10
+    return Number( (terminal && terminal.dataset.console) || cdefault )
 }
 
 window.get_terminal_lines = function () {
@@ -2017,16 +2020,9 @@ function auto_start(cfg) {
 
 
 
-
-
-
-
-
-
-
-
-
-
+window.set_raw_mode = function (param) {
+    window.RAW_MODE = param || 0
+}
 
 
 
