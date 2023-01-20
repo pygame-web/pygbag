@@ -1448,21 +1448,26 @@ def patch():
     def patch_termios_getattr(*argv):
         return [17664, 5, 191, 35387, 15, 15, termios.block2 ]
 
+    def patch_termios_set_raw_mode():
+        #assume first set is raw mode
+        embed.warn(f"Term phy COLS : {int(platform.window.get_terminal_cols())}")
+        embed.warn(f"Term phy LINES : {int(platform.window.get_terminal_lines())}")
+        embed.warn(f"Term logical : {patch_os_get_terminal_size()}" )
+        # set console scrolling zone
+        embed.warn(f"Scroll zone start at {LINES=}")
+        CSI(f"{LINES+1};{LINES+CONSOLE}r",f"{LINES+2};1H>>> ")
+        platform.window.set_raw_mode(1)
+
     def patch_termios_setattr(*argv):
         if not termios.state:
-            #assume first set is raw mode
-            embed.warn(f"Term phy COLS : {int(platform.window.get_terminal_cols())}")
-            embed.warn(f"Term phy LINES : {int(platform.window.get_terminal_lines())}")
-            embed.warn(f"Term logical : {patch_os_get_terminal_size()}" )
-            # set console scrolling zone
-            embed.warn(f"Scroll zone start at {LINES=}")
-            CSI(f"{LINES+1};{LINES+CONSOLE}r",f"{LINES+2};1H>>> ")
+            patch_termios_set_raw_mode()
         else:
             embed.warn("RESETTING TERMINAL")
 
         termios.state += 1
         pass
 
+    termios.set_raw_mode = patch_termios_set_raw_mode
     termios.state = 0
     termios.tcgetattr = patch_termios_getattr
     termios.tcsetattr = patch_termios_setattr
