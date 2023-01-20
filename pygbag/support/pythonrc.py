@@ -1407,6 +1407,7 @@ except:
 
 # ======================================================
 def patch():
+    global COLS, LINES, CONSOLE
     import platform
 
     # DeprecationWarning: Using or importing the ABCs from 'collections'
@@ -1423,6 +1424,13 @@ def patch():
 
     #
     import os
+    COLS = platform.window.get_terminal_cols()
+    CONSOLE = platform.window.get_terminal_console()
+    LINES = platform.window.get_terminal_lines() - CONSOLE
+
+    os.environ['COLS'] = str(COLS)
+    os.environ['LINES'] = str(LINES)
+
     def patch_os_get_terminal_size():
         cols = os.environ.get('COLS', 80)
         lines = os.environ.get('LINES', 25)
@@ -1437,12 +1445,27 @@ def patch():
     # fake termios module for some wheel imports
     termios = type(sys)("termios")
     termios.block2 = [b'\x03', b'\x1c', b'\x7f', b'\x15', b'\x04', b'\x00', b'\x01', b'\x00', b'\x11', b'\x13', b'\x1a', b'\x00', b'\x12', b'\x0f', b'\x17', b'\x16', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00', b'\x00']
-    def patch_termios(*argv):
+    def patch_termios_getattr(*argv):
         return [17664, 5, 191, 35387, 15, 15, termios.block2 ]
 
+    def patch_termios_setattr(*argv):
+        if not termios.state:
+            #assume first set is raw mode
+            embed.warn(f"Term phy COLS : {int(platform.window.get_terminal_cols())}")
+            embed.warn(f"Term phy LINES : {int(platform.window.get_terminal_lines())}")
+            embed.warn(f"Term logical : {patch_os_get_terminal_size()}" )
+            # set console scrolling zone
+            embed.warn(f"Scroll zone start at {LINES=}")
+            CSI(f"{LINES+1};{LINES+CONSOLE}r",f"{LINES+2};1H>>> ")
+        else:
+            embed.warn("RESETTING TERMINAL")
 
-    termios.tcgetattr = patch_termios
-    termios.tcsetattr = patch_termios
+        termios.state += 1
+        pass
+
+    termios.state = 0
+    termios.tcgetattr = patch_termios_getattr
+    termios.tcsetattr = patch_termios_setattr
     termios.TCSANOW = 0x5402
     termios.TCSAFLUSH = 0x5410
     termios.ECHO = 8
@@ -1621,24 +1644,25 @@ async def import_site(__file__, run=True):
     LOCK = True
     from pathlib import Path
     embed = False
+    hint = "main.py"
 
     try:
         # always start async handler or we could not do imports.
         await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
 
         if Path(__file__).is_file():
-            print(f"1606: running {__file__=}")
+            DBG(f"1606: running {__file__=}")
             TopLevel_async_handler.muted = True
             await shell.source(__file__)
             # allow to set ENABLE_USER_SITE
             await asyncio.sleep(0)
             if ENABLE_USER_SITE:
-                print(f"1635: {__file__=} done, giving hand to user_site")
+                DBG(f"1635: {__file__=} done, giving hand to user_site")
                 return __file__
             else:
-                print(f"1638: {__file__=} done : now trying remote sources")
+                DBG(f"1638: {__file__=} done : now trying remote sources")
         else:
-            print(f"1640: {__file__=} NOT FOUND : now trying remote sources")
+            DBG(f"1640: {__file__=} NOT FOUND : now trying remote sources")
 
         # where to retrieve
         import tempfile
@@ -1649,7 +1673,7 @@ async def import_site(__file__, run=True):
             if Path(source).is_file():
                 source_path = getattr(PyConfig, "frozen_path", "")
                 handler = getattr(PyConfig, "frozen_handler", "")
-                print("1514: embed path", source_path,"will embed", source, "handled by", handler)
+                DBG("1514: embed path", source_path,"will embed", source, "handled by", handler)
                 local = tmpdir / "embed.py"
                 with open(source, "r") as src:
                     with open(local, "w") as file:
@@ -1674,21 +1698,33 @@ async def import_site(__file__, run=True):
                 return None
             # file has been retrieved stored in local
         else:
-            # no embed, try sys.argv[0]
             local = None
-            source = sys.argv[0]
-
+            # no embed, try sys.argv[0] first, but main.py can only  be a hint.
+            # or maybe select an archive
+            is_py = sys.argv[0].endswith('.py')
+            if sys.argv[0] == 'main.py' or not is_py:
+                source = PyConfig.orig_argv[-1]
+                if is_py:
+                    hint = sys.argv[0]
+            else:
+                source = sys.argv[0]
 
         if local is None:
+            ext = str(source).rsplit('.')[-1].lower()
 
-            if source.endswith(".py"):
+            if ext == "py":
                 local = tmpdir / source.rsplit("/", 1)[-1]
                 await shell.exec(shell.wget(f"-O{local}", source))
 
-            elif source.endswith(".zip"):
-                print(f"1664: found archive source {source=}")
+#TODO: test tar.bz2 lzma tar.xz
+            elif ext in ('zip','gz','tar', 'apk','jar'):
+                DBG(f"1664: found archive source {source=}")
                 #download and unpack into tmpdir
                 fname = tmpdir / source.rsplit('/')[-1]
+
+                if ext in ("apk","jar"):
+                    fname = fname + ".zip"
+
                 async with fopen(source,"rb") as zipdata:
                     with open(fname, "wb") as file:
                         file.write( zipdata.read() )
@@ -1696,11 +1732,13 @@ async def import_site(__file__, run=True):
                 shutil.unpack_archive(fname, tmpdir)
                 os.unlink(fname)
 
-                # locate entry point
-                for file in shell.grep("/main.py", *shell.find("/tmp") ):
-                    local =  tmpdir / file
-                    break
-                print("import_site: found ", local )
+                # locate for an entry point after decompression
+                hint = "/" + hint.strip('/')
+                for file in shell.find(tmpdir):
+                    if file.find(hint)>0:
+                        local =  tmpdir / file
+                        break
+                DBG("1725: import_site: found ", local )
             else:
                 # maybe base64 or frozen code in html.
                 ...
