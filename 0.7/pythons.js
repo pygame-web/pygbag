@@ -6,6 +6,7 @@
     js.FETCH   : async GET/POST via fetch
     js.MM      : media manager
     js.VT      : terminal creation
+    js.FTDI    : usb serial
     js.MISC    : todo
 
 */
@@ -1454,6 +1455,9 @@ if (navigator.connection) {
         console.warn("Connection:","Wired")
     }
 }
+
+
+// js.FTDI
 
 window.io = {}
 
