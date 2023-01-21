@@ -1456,54 +1456,42 @@ if (navigator.connection) {
 }
 
 window.io = {}
-// https://mpy-usb.zoic.org/serial.js
-window.io.open_serial = function * () {
-    var ports = []
-    const filters = [
-      { 'vendorId' : 0x0403, 'productId' : 0x6001}, // FT232
-      { 'vendorId' : 0x067B, 'productId' : 0x2303}, // prolific from Kyuchumimo#3941
-      { 'vendorId' : 0x239A }, // Adafruit boards
-      { 'vendorId' : 0x2e8a, 'productId': 0x0006 }, // Raspberry Pi
-      { 'vendorId' : 0xcafe }, // TinyUSB example
-      { 'vendorId' : 0x1209, 'productId': 0xADDA }, // MicroPython boards
-    ];
 
-    navigator.usb.requestDevice({ 'filters': filters }).then(
-        device => window.io.serial = device
-    );
-    while (!window.io.serial)
-        yield 0
+async function open_port() {
+    var device = new WebUSBSerialDevice();
+console.log("device", device)
+    var ports = await device.getAvailablePorts()
+console.log("ports", ports);
+    var port = await device.requestNewPort();
+    const codec = new TextDecoder
+    const coder = new TextEncoder()
 
-    const port = window.io.serial
-    port.open().then( () => {
-        console.log("serial port is opened")
-        // set receiver
-        port.data = ""
-        port.read = function * () {
-            port.transferIn(0, 64).then( packet => {
-                console.log(packet.data)
-                port.data += packet.data
-          }, error => {
-            console.error(error);
-          });
+    function cb(msg) {
+        const data = codec.decode(msg)
+        console.log("recv",data )
+        window.io.port.data = port.data + data
+    }
 
-        }
-        if (port.configuration === null) {
-            return port.selectConfiguration(1);
-        }
-    }).then( () => {
-        console.log("select config")
-    })
+    port.read = () => {
+        const data = window.io.port.data
+        window.io.port.data = ""
+        return data
+    }
 
+    port.write = (data) => {
+        port.send(coder.encode(data))
+    }
 
-    while (!port.read)
-        yield 0
-
-    yield port
+    var data = await port.connect(cb, (error)=>console.error(error) )
+    window.io.port = port
 }
 
-
-
+window.io.open_serial = function * () {
+    open_port()
+    while (!window.io.port)
+        yield 0
+    yield window.io.port
+}
 
 
 //TODO: battery
