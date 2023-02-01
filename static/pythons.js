@@ -690,21 +690,115 @@ console.warn("TODO: user defined canvas")
         }
     }
 
+
+    function window_canvas_adjust_3d(divider) {
+        divider = divider || 1
+        if ( (canvas.width==1) && (canvas.height==1) ){
+            console.log("canvas context not set yet")
+            setTimeout(window_canvas_adjust, 100, gui_divider);
+            return;
+        } else {
+            if (!vm.config.fb_ar) {
+                vm.config.fb_width = canvas.width
+                vm.config.fb_height = canvas.height
+                vm.config.fb_ar  =  canvas.width / canvas.height
+            }
+        }
+
+        console.warn("@@@@@@@@@@@@ RESIZE 3D @@@@@@@@@@@")
+
+        var want_w
+        var want_h
+
+        const ar = vm.config.fb_ar
+
+        const dpr = window.devicePixelRatio
+        if (dpr != 1 )
+            console.warn("Unsupported device pixel ratio", dpr)
+
+        // default is maximize
+        // default is maximize
+        var max_width = window.innerWidth
+        var max_height = window.innerHeight
+
+        want_w = max_width * 0.98
+        want_h = max_height * 0.98
+
+        //console.log("window_canvas_adjust:", want_w, want_h )
+
+        want_w = Math.trunc(want_w / divider )
+        want_h = Math.trunc(want_w / ar)
+
+        //console.log("window[DEBUG:CORRECTED]:", want_w, want_h, ar, divider)
+
+
+        // constraints
+        if (want_h > max_height) {
+            //console.warn ("Too much H")
+            want_h = max_height
+            want_w = want_h * ar
+        }
+
+        if (want_w > max_width) {
+            //console.warn("Too much W")
+            want_w = max_width
+            want_h = want_h / ar
+        }
+
+
+        // restore phy size
+        //if (vm.config.fb_width < canvas.width)
+            canvas.width  = vm.config.fb_width
+        //if (vm.config.fb_height < canvas.height)
+            canvas.height = vm.config.fb_height
+
+        // apply viewport size
+        canvas.style.width = want_w + "px"
+        canvas.style.height = want_h + "px"
+
+        // center canvas
+        canvas.style.position = "absolute"
+        canvas.style.left = 0
+        canvas.style.bottom = 0
+        canvas.style.top = 0
+        canvas.style.right = 0
+        canvas.style.margin= "auto"
+
+        const gl = canvas.getContext('webgl2')
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+
+//        console.log("w", max_width, want_w, gl.canvas.width)
+//        console.log("h", max_height, want_h, gl.canvas.height)
+
+    }
+
     function window_resize(gui_divider) {
         if (!window.canvas) {
-            console.warn("416: No canvas defined")
+            console.error("776: No canvas defined")
             return
         }
 
+        if (vm.config.user_canvas_managed==3) {
+            setTimeout(window_canvas_adjust_3d, 100, gui_divider);
+            setTimeout(window.focus, 300);
+            return 3
+        }
+
         // canvas is handled by user program
-        if (vm.config.user_canvas_managed)
-            return
+        if (vm.config.user_canvas_managed) {
+            return vm.config.user_canvas_managed
+        }
 
         setTimeout(window_canvas_adjust, 100, gui_divider);
         setTimeout(window.focus, 200);
     }
 
     function window_resize_event() {
+        if (vm.config.user_canvas_managed==3) {
+            console.log("@@@@@@@@@@@@ RESIZE 3D REQUEST @@@@@@@@@@@")
+            window_resize(vm.config.gui_divider)
+        }
+
         // don't interfere if program want to handle canvas placing/resizing
         if (!vm.config.user_canvas_managed)
             window_resize(vm.config.gui_divider)
