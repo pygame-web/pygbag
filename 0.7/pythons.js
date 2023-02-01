@@ -26,18 +26,20 @@ const FETCH_FLAGS = {
 
 
 window.get_terminal_cols = function () {
-    return Number( ( terminal && terminal.dataset.cols) || 132)
+
+    return Number( ( window.terminal && terminal.dataset.cols) || 132)
 }
 
 window.get_terminal_console = function () {
     var cdefault = 0
-    if (vm && vm.config.debug)
-        cdefault = 10
-    return Number( (terminal && terminal.dataset.console) || cdefault )
+    if (window.terminal)
+        if (vm && vm.config.debug)
+            cdefault = 10
+    return Number( (window.terminal && terminal.dataset.console) || cdefault )
 }
 
 window.get_terminal_lines = function () {
-    return Number( (terminal && terminal.dataset.lines) || 42) + get_terminal_console()
+    return Number( (window.terminal && terminal.dataset.lines) || 42) + get_terminal_console()
 }
 
 
@@ -249,8 +251,10 @@ function is_iframe() {
 }
 
 function prerun(VM) {
-
     console.warn("VM.prerun")
+
+    VM.FS = FS
+
 
     if (window.BrowserFS) {
         vm.BFS = new BrowserFS.EmscriptenFS()
@@ -260,7 +264,6 @@ function prerun(VM) {
     }
 
     const sixel_prefix = String.fromCharCode(27)+"Pq"
-
 
 
     var buffer_stdout = ""
@@ -361,6 +364,7 @@ function prerun(VM) {
     VM.arguments.push(VM.APK)
 
     VM.FS.init(stdin, stdout, stderr);
+
 }
 
 
