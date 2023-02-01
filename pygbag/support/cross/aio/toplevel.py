@@ -178,6 +178,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
             raise
 
         except ModuleNotFoundError as ex:
+            print("181: FIXME dependency table for manually built modules")
             get_pkg = self.opts.get("get_pkg", self.async_get_pkg)
             if get_pkg:
                 want = str(ex).split("'")[1]

@@ -4,7 +4,10 @@ import aio.gthread
 import asyncio
 import pygame
 
+
 pygame.init()
+
+import module
 
 def new_screen(title):
     global screen

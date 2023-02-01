@@ -1217,6 +1217,11 @@ if not aio.cross.simulator:
             if "numpy" in wants:
                 wants.remove("numpy")
                 wants.insert(0,"numpy")
+            if "igraph" in wants:
+                if "texttable" in wants:
+                    wants.remove("texttable")
+                wants.insert(0, "texttable")
+
             return wants
 
         # TODO: re order repo on failures
@@ -1302,6 +1307,18 @@ if not aio.cross.simulator:
             if ("matplotlib" in all) and ("pygame" not in sys.modules):
                 await cls.async_get_pkg("pygame.base", None, None)
                 __import__("pygame")
+
+# FIXME: automatically build a deps table for those with buildmap for archive/repo/pkg.
+            if "igraph" in all:
+                if not "texttable" in sys.modules:
+                    callback("texttable")
+                    try:
+                        await cls.async_get_pkg("texttable", None, None)
+                        __import__("texttable")
+                    except (IOError, zipfile.BadZipFile):
+                        pdb("1310: cannot load texttable")
+                if "texttable" in all:
+                    all.remove("texttable")
 
 
             # FIXME: numpy must be loaded first for some modules.

@@ -8,7 +8,7 @@ def filter(walked):
     for folder, filenames in walked:
         blocking = False
 
-        for block in ["/.git", "/.github", "/build", "/venv", "/ignore"]:
+        for block in ["/.git", "/.github", "/build", "/venv", "/ignore", "/.idea"]:
             if folder.match(block):
                 if dbg:
                     print("REJ 1", folder)

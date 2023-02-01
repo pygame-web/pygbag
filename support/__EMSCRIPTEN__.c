@@ -552,9 +552,13 @@ main_iteration(void) {
 // #define EGLTEST
 
 #if defined(EGLTEST)
+    #include <GLES2/gl2.h>
     #include <EGL/egl.h>
-   // #include <GLES2/gl2.h>
-    #include <SDL2/SDL_egl.h>
+
+    // #include <SDL2/SDL_egl.h>
+
+// for GL
+    #include <SDL2/SDL.h>
 
 
 EMSCRIPTEN_KEEPALIVE EGLBoolean
@@ -569,11 +573,15 @@ egl_GetCurrentDisplay (void) {
 
 
 EMSCRIPTEN_KEEPALIVE void egl_test() {
+    EGLContext context;
+    EGLSurface surface;
+    EGLConfig config;
+
     EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     assert(display != EGL_NO_DISPLAY);
     assert(eglGetError() == EGL_SUCCESS);
 
-    EGLint major = 0, minor = 0;
+    EGLint major = 2, minor = 0;
     EGLBoolean ret = eglInitialize(display, &major, &minor);
     assert(eglGetError() == EGL_SUCCESS);
     assert(ret == EGL_TRUE);
@@ -585,21 +593,48 @@ EMSCRIPTEN_KEEPALIVE void egl_test() {
     assert(ret == EGL_TRUE);
 
     EGLint attribs[] = {
+        /*
         EGL_RED_SIZE, 5,
         EGL_GREEN_SIZE, 6,
         EGL_BLUE_SIZE, 5,
+        */
+        EGL_CONTEXT_CLIENT_VERSION, 2,
+        EGL_NONE,
         EGL_NONE
     };
-    EGLConfig config;
-    ret = egl_ChooseConfig(display, attribs, &config, 1, &numConfigs);
+
+    ret = egl_ChooseConfig(display, attribs, &config, 0, &numConfigs);
     assert(eglGetError() == EGL_SUCCESS);
     assert(ret == EGL_TRUE);
 
     EGLNativeWindowType dummyWindow = 0;
-    EGLSurface surface = eglCreateWindowSurface(display, config, dummyWindow, NULL);
-    assert(eglGetError() == EGL_SUCCESS);
-    assert(surface != 0);
+
+    surface = eglCreateWindowSurface(display, config, dummyWindow, NULL);
+    if ( surface == EGL_NO_SURFACE ){
+        puts("EGL_NO_SURFACE");
+    }
+
+    // Create a GL context
+    context = eglCreateContext(display, config, EGL_NO_CONTEXT, attribs );
+    if ( context == EGL_NO_CONTEXT ) {
+        puts("EGL_NO_CONTEXT");
+    }
+
+       // Make the context current
+    if ( !eglMakeCurrent(display, surface, surface, context) ) {
+        puts("!eglMakeCurrent");
+        goto fail;
+    }
+
     puts("EGL test complete");
+
+
+    puts(glGetString(GL_VERSION));
+
+    return;
+
+fail:
+    puts("EGL test failed");
 }
 #endif
 

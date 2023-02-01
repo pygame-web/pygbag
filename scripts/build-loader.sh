@@ -205,7 +205,8 @@ then
     # --preload-file ${ROOT}/support/xterm@/etc/termcap \
 
 
-    LDFLAGS="$LD_VENDOR"
+    LDFLAGS="$LD_VENDOR -sOFFSCREENCANVAS_SUPPORT=1 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sFULL_ES2 -sFULL_ES3"
+    # -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES2 -sFULL_ES3"
 
     if echo ${PYBUILD}|grep -q 10$
     then
