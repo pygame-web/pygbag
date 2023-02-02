@@ -705,8 +705,6 @@ console.warn("TODO: user defined canvas")
             }
         }
 
-        console.warn("@@@@@@@@@@@@ RESIZE 3D @@@@@@@@@@@")
-
         var want_w
         var want_h
 
@@ -724,13 +722,9 @@ console.warn("TODO: user defined canvas")
         want_w = max_width * 0.98
         want_h = max_height * 0.98
 
-        //console.log("window_canvas_adjust:", want_w, want_h )
-
+        // innerXXXX is not ideal
         want_w = Math.trunc(want_w / divider )
         want_h = Math.trunc(want_w / ar)
-
-        //console.log("window[DEBUG:CORRECTED]:", want_w, want_h, ar, divider)
-
 
         // constraints
         if (want_h > max_height) {
@@ -747,10 +741,8 @@ console.warn("TODO: user defined canvas")
 
 
         // restore phy size
-        //if (vm.config.fb_width < canvas.width)
-            canvas.width  = vm.config.fb_width
-        //if (vm.config.fb_height < canvas.height)
-            canvas.height = vm.config.fb_height
+        canvas.width  = vm.config.fb_width
+        canvas.height = vm.config.fb_height
 
         // apply viewport size
         canvas.style.width = want_w + "px"
@@ -766,10 +758,6 @@ console.warn("TODO: user defined canvas")
 
         const gl = canvas.getContext('webgl2')
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-
-//        console.log("w", max_width, want_w, gl.canvas.width)
-//        console.log("h", max_height, want_h, gl.canvas.height)
-
     }
 
     function window_resize(gui_divider) {
@@ -794,9 +782,10 @@ console.warn("TODO: user defined canvas")
     }
 
     function window_resize_event() {
+        // special management for 3D ctx
         if (vm.config.user_canvas_managed==3) {
-            console.log("@@@@@@@@@@@@ RESIZE 3D REQUEST @@@@@@@@@@@")
             window_resize(vm.config.gui_divider)
+            return
         }
 
         // don't interfere if program want to handle canvas placing/resizing
