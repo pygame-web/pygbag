@@ -695,15 +695,17 @@ console.warn("TODO: user defined canvas")
         divider = divider || 1
         if ( (canvas.width==1) && (canvas.height==1) ){
             console.log("canvas context not set yet")
-            setTimeout(window_canvas_adjust, 100, gui_divider);
+            setTimeout(window_canvas_adjust_3d, 100, divider);
             return;
-        } else {
-            if (!vm.config.fb_ar) {
-                vm.config.fb_width = canvas.width
-                vm.config.fb_height = canvas.height
-                vm.config.fb_ar  =  canvas.width / canvas.height
-            }
         }
+
+        if (!vm.config.fb_ar) {
+            vm.config.fb_width = canvas.width
+            vm.config.fb_height = canvas.height
+            vm.config.fb_ar  =  canvas.width / canvas.height
+            console.warn("@@@@@@ GLES Canvas size",vm.config.fb_width,'x',vm.config.fb_height,"@@@@@@")
+        }
+
 
         var want_w
         var want_h
@@ -760,26 +762,27 @@ console.warn("TODO: user defined canvas")
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     }
 
-    function window_resize(gui_divider) {
+    function window_resize_3d(gui_divider) {
+        console.warn("@@@@@@@@@@ 3D resize mode request @@@@@@@@")
+        setTimeout(window_canvas_adjust_3d, 200, gui_divider);
+        setTimeout(window.focus, 300);
+    }
+
+    function window_resize_2d(gui_divider) {
+        // don't interfere if program want to handle canvas placing/resizing
+        if (vm.config.user_canvas_managed)
+            return vm.config.user_canvas_managed
+
         if (!window.canvas) {
-            console.error("776: No canvas defined")
+            console.warning("777: No canvas defined")
             return
         }
 
-        if (vm.config.user_canvas_managed==3) {
-            setTimeout(window_canvas_adjust_3d, 100, gui_divider);
-            setTimeout(window.focus, 300);
-            return 3
-        }
-
-        // canvas is handled by user program
-        if (vm.config.user_canvas_managed) {
-            return vm.config.user_canvas_managed
-        }
-
-        setTimeout(window_canvas_adjust, 100, gui_divider);
-        setTimeout(window.focus, 200);
+        setTimeout(window_canvas_adjust, 200, gui_divider);
+        setTimeout(window.focus, 300);
     }
+
+
 
     function window_resize_event() {
         // special management for 3D ctx
@@ -787,14 +790,14 @@ console.warn("TODO: user defined canvas")
             window_resize(vm.config.gui_divider)
             return
         }
-
-        // don't interfere if program want to handle canvas placing/resizing
-        if (!vm.config.user_canvas_managed)
-            window_resize(vm.config.gui_divider)
+        window_resize(vm.config.gui_divider)
     }
 
     window.addEventListener('resize', window_resize_event);
-    window.window_resize = window_resize
+    if (vm.config.user_canvas_managed==3)
+        window.window_resize = window_resize_3d
+    else
+        window.window_resize = window_resize_2d
 
     return canvas
 }
