@@ -332,6 +332,7 @@ if 1:  # defined("embed") and hasattr(embed, "readline"):
                 if ext.endswith(".six"):
                     cls.more(arg)
                     return
+
                 if ext.endswith(".bmp"):
                     surf = pygame.image.load_basic(arg)
                 else:
@@ -1064,7 +1065,7 @@ if not aio.cross.simulator:
             "pygame": "pygame.base",
         }
         may_need = []
-        ignore = ["distutils", "installer", "sysconfig"]
+        ignore = ["ctypes", "distutils", "installer", "sysconfig"]
         ignore += ["python-dateutil", "matplotlib-pyodide"]
         # ???
         ignore += ["pillow", "fonttools"]
@@ -1357,7 +1358,8 @@ if not aio.cross.simulator:
                     print("1303:", req, "requires patch")
                     platform.patches.pop(req)()
 
-        async def pv(track, prefix="", suffix="", decimals=1, length=70, fill="X", printEnd="\r"):
+        @classmethod
+        async def pv(cls, track, prefix="", suffix="", decimals=1, length=70, fill="X", printEnd="\r"):
 
             # Progress Bar Printing Function
             def print_pg_bar(total, iteration):

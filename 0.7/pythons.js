@@ -5,6 +5,7 @@
     js.SVG     : convert svg to png
     js.FETCH   : async GET/POST via fetch
     js.MM      : media manager
+        js.MM.CAMERA
     js.VT      : terminal creation
     js.FTDI    : usb serial
     js.MISC    : todo
@@ -26,8 +27,9 @@ const FETCH_FLAGS = {
 
 
 window.get_terminal_cols = function () {
-
-    return Number( ( window.terminal && terminal.dataset.cols) || 132)
+    var cdefault = vm.config.cols || 132
+    const cols = (window.terminal && terminal.dataset.cols) || cdefault
+    return Number(cols)
 }
 
 window.get_terminal_console = function () {
@@ -39,7 +41,7 @@ window.get_terminal_console = function () {
 }
 
 window.get_terminal_lines = function () {
-    return Number( (window.terminal && terminal.dataset.lines) || 42) + get_terminal_console()
+    return Number( (window.terminal && terminal.dataset.lines) || vm.config.lines) + get_terminal_console()
 }
 
 
@@ -142,6 +144,11 @@ window.defined = defined
 var prom = {}
 var prom_count = 0
 window.iterator = function * iterator(oprom) {
+    if (prom_count > 32000 ) {
+        console.warn("resetting prom counter")
+        prom_count = 0
+    }
+
     const mark = prom_count++;
     var counter = 0;
     oprom.then( (value) => prom[mark] = value )
@@ -575,6 +582,8 @@ function feat_gui(debug_hidden) {
         config.user_canvas_managed = config.user_canvas_managed || 0 //??=
         canvas = document.createElement("canvas")
         canvas.id = "canvas"
+        canvas.width = 1
+        canvas.height = 1
         canvas.style.position = "absolute"
         canvas.style.top = "0px"
         canvas.style.right = "0px"
@@ -703,7 +712,6 @@ console.warn("TODO: user defined canvas")
             vm.config.fb_width = canvas.width
             vm.config.fb_height = canvas.height
             vm.config.fb_ar  =  canvas.width / canvas.height
-            console.warn("@@@@@@ GLES Canvas size",vm.config.fb_width,'x',vm.config.fb_height,"@@@@@@")
         }
 
 
@@ -718,13 +726,12 @@ console.warn("TODO: user defined canvas")
 
         // default is maximize
         // default is maximize
-        var max_width = window.innerWidth
-        var max_height = window.innerHeight
+        var max_width = window.document.body.clientWidth
+        var max_height = window.document.body.clientHeight
+        want_w = max_width
+        want_h = max_height
 
-        want_w = max_width * 0.98
-        want_h = max_height * 0.98
-
-        // innerXXXX is not ideal
+        // keep fb ratio
         want_w = Math.trunc(want_w / divider )
         want_h = Math.trunc(want_w / ar)
 
@@ -741,7 +748,6 @@ console.warn("TODO: user defined canvas")
             want_h = want_h / ar
         }
 
-
         // restore phy size
         canvas.width  = vm.config.fb_width
         canvas.height = vm.config.fb_height
@@ -750,20 +756,28 @@ console.warn("TODO: user defined canvas")
         canvas.style.width = want_w + "px"
         canvas.style.height = want_h + "px"
 
-        // center canvas
         canvas.style.position = "absolute"
-        canvas.style.left = 0
-        canvas.style.bottom = 0
         canvas.style.top = 0
         canvas.style.right = 0
-        canvas.style.margin= "auto"
 
-        const gl = canvas.getContext('webgl2')
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+        if (!vm.config.debug) {
+            // center canvas
+            canvas.style.left = 0
+            canvas.style.bottom = 0
+            canvas.style.margin= "auto"
+        } else {
+            canvas.style.margin= "none"
+            canvas.style.left = "auto"
+            canvas.style.bottom = "auto"
+        }
+        queue_event("resize3d", { width : want_w, height : want_h } )
+
+        //const gl = canvas.getContext('webgl2')
+        //gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     }
 
     function window_resize_3d(gui_divider) {
-        console.warn("@@@@@@@@@@ 3D resize mode request @@@@@@@@")
+console.log(" @@@@@@@@@@@@@@@@@@@@@@ 3D CANVAS @@@@@@@@@@@@@@@@@@@@@@")
         setTimeout(window_canvas_adjust_3d, 200, gui_divider);
         setTimeout(window.focus, 300);
     }
@@ -1134,7 +1148,7 @@ window.cross_track = async function cross_track(trackid, url, flags) {
 
     const reader = response.body.getReader();
 
-    const len = +response.headers.get("Content-Length");
+    const len = Number(response.headers.get("Content-Length"));
     const track = MM[trackid]
 
     // concatenate chunks into single Uint8Array
@@ -1157,10 +1171,7 @@ window.cross_track = async function cross_track(trackid, url, flags) {
             track.pos = -1
             console.error("1396: cannot download", url)
         }
-
         track.pos += value.length
-
-        //console.log(`${trackid}:${url} Received ${track.pos} of ${track.len}`)
     }
 
     console.log(`${trackid}:${url} Received ${track.pos} of ${track.len} to ${track.path}`)
@@ -1324,10 +1335,14 @@ MM.set_socket = function set_socket(mode) {
     console.log("WebSocket default mode is now :", mode)
 }
 
-// TODO: https://ffmpegwasm.netlify.app/ https://github.com/ffmpegwasm
 // js.MM.CAMERA
+
+// TODO: https://ffmpegwasm.netlify.app/ https://github.com/ffmpegwasm
+// TODO: write png in a wasm pre allocated array
+// TODO: frame rate
+
 window.MM.camera.started = 0
-window.MM.camera.init = function * (width,height, preview, grabber) {
+window.MM.camera.init = function * (device, width,height, preview, grabber) {
     if (!MM.camera.started) {
         var done = 0
         var rc = null
@@ -1336,7 +1351,14 @@ window.MM.camera.init = function * (width,height, preview, grabber) {
         vidcap.autoplay = true
 
         width = width || 640
-        height = width || 480
+        height = height || 480
+
+        const device = MM.camera.device || "/dev/video0"
+
+        MM.camera.fd = {}
+
+        // 60 fps
+        MM.camera.frame = { device : undefined , rate : Number.parseInt(1000/30/4) }
 
         var framegrabber = null
 
@@ -1350,13 +1372,13 @@ window.MM.camera.init = function * (width,height, preview, grabber) {
 
             }
         }
+
         if (!framegrabber)
             framegrabber = new OffscreenCanvas(width, height)
         else {
             framegrabber.width = width
             framegrabber.height = height
         }
-
 
         var localMediaStream = null;
 
@@ -1372,8 +1394,6 @@ window.MM.camera.init = function * (width,height, preview, grabber) {
             }
         }
 
-        //btn_snapshot.addEventListener("click", MM.camera.get_image )
-
         const params = {
             audio: true,
             video: {
@@ -1384,24 +1404,36 @@ window.MM.camera.init = function * (width,height, preview, grabber) {
             }
         }
 
-        MM.camera.get_image = async function (device) {
-            device = device || "/dev/video0"
-            MM.camera.get_raw()
-            MM.camera.blob = await framegrabber.convertToBlob()
-            const reader = new FileReader()
-            reader.addEventListener("load", () => {
-                FS.writeFile(device,  new Int8Array(reader.result) )
-                console.log("frame ready in", device)
-                }, false
-            );
-            reader.readAsArrayBuffer(MM.camera.blob)
-            return device
+        const reader = new FileReader()
+
+        reader.addEventListener("load", () => {
+            const data = new Int8Array(reader.result)
+            FS.writeFile(device,  new Int8Array(reader.result) )
+            MM.camera.frame[device] = 1
+            setTimeout(GRABBER, MM.camera.frame["rate"])
+            }, false
+        )
+
+        async function GRABBER() {
+            if ( !FS.analyzePath(device).exists ) {
+                // get new frame !
+                MM.camera.frame[device] = undefined
+                MM.camera.get_raw()
+                MM.camera.blob = await framegrabber.convertToBlob({type:"image/png"})
+                reader.readAsArrayBuffer(MM.camera.blob)
+            } else {
+                // last image not yet consummed schedule deadline in next RaF loop
+                setTimeout(GRABBER, MM.camera.frame["rate"])
+            }
         }
+
+        window.GRABBER = GRABBER
 
         function connection(stream) {
             localMediaStream = vidcap // document.querySelector('video');
             localMediaStream.srcObject = stream
             localMediaStream.onloadedmetadata = function(e) {
+                GRABBER()
                 console.log("video stream ready")
                 MM.camera.started = 1
                 done =1
@@ -1414,6 +1446,11 @@ window.MM.camera.init = function * (width,height, preview, grabber) {
 
         while (!done)
             yield 0
+
+        // wait for first frame
+        while (!MM.camera.frame[device])
+            yield 0
+
     }
     yield window.MM.camera.started
 }
@@ -1810,9 +1847,13 @@ async function onload() {
     var has_vt = false
 
     for (const feature of vm.config.features) {
+        if (feature.startsWith("3d")) {
+            vm.config.user_canvas_managed = 3
+        }
+
         if (feature.startsWith("embed")) {
 
-            vm.config.user_canvas_managed = 1
+            vm.config.user_canvas_managed = vm.config.user_canvas_managed || 1
 
             const canvas = feat_gui(true)
             if ( canvas.innerHTML.length > 20 ) {
@@ -2006,8 +2047,11 @@ console.log("pythons found at", url , elems)
 
     config.debug = config.debug || (location.hash.search("#debug")>=0) //??=
 
-//FIXME: debug should force -i or just display vt ?
+//FIXME: should debug force -i or just display vt ?
 config.interactive = config.interactive || (location.search.search("-i")>=0) //??=
+
+    config.cols = cfg.cols || 132
+    config.lines = cfg.lines || 42
 
     config.gui_debug = config.gui_debug ||  2  //??=
 
@@ -2110,6 +2154,8 @@ function auto_start(cfg) {
                 cfg = {
                     module : false,
                     python : script.dataset.python,
+                    cols : script.dataset.cols,
+                    lines : script.dataset.lines,
                     url : script.src,
                     os : script.dataset.os,
                     text : code,
