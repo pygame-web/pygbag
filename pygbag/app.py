@@ -36,6 +36,8 @@ cdn_dot.pop()
 cdn_version = ".".join(cdn_dot)
 del cdn_dot
 
+AUTO_REBUILD = True
+
 if devmode:
     sys.argv.remove("--dev")
     DEFAULT_PORT = 8666

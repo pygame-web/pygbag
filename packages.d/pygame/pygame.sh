@@ -52,42 +52,24 @@ fi
 mkdir -p src
 pushd $(pwd)/src
 
-if false
+
+echo "
+* using main pygame-ce repo
+" 1>&2
+PG_BRANCH="main"
+PG_GIT="https://github.com/pygame-community/pygame-ce.git"
+
+if [ -d pygame-wasm ]
 then
-    echo "
-    * using pygame-wasm WIP repo
-" 1>&2
-    PG_BRANCH="pygame-wasm-upstream"
-    PG_GIT="https://github.com/pmp-p/pygame-wasm.git"
-
-    if [ -d pygame-wasm ]
-    then
-        pushd $(pwd)/pygame-wasm
-        git restore .
-        git pull
-    else
-        git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
-        pushd $(pwd)/pygame-wasm
-    fi
-
+    pushd $(pwd)/pygame-wasm
+    git restore .
+    git pull
 else
-    echo "
-    * using main pygame repo
-" 1>&2
-    PG_BRANCH="main"
-    PG_GIT="https://github.com/pygame/pygame.git"
-
-    if [ -d pygame-wasm ]
-    then
-        pushd $(pwd)/pygame-wasm
-        git restore .
-        git pull
-    else
-        git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
-        pushd $(pwd)/pygame-wasm
-    fi
-    wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-wasm/pull/7.diff | patch -p1
+    git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
+    pushd $(pwd)/pygame-wasm
 fi
+wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-wasm/pull/7.diff | patch -p1
+
 
 
 # test patches go here

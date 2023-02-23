@@ -30,13 +30,24 @@ import hashlib
 from pathlib import Path
 
 
+# on first load be verbose
 VERB = True
+
 CACHE = None
 
 try:
     from future_fstrings import fstring_decode
 except:
     fstring_decode = False
+
+
+try:
+    from . import app
+    if app.AUTO_REBUILD:
+        from . import pack
+        AUTO_REBUILD = pack.stream_pack_replay
+except:
+    AUTO_REBUILD = False
 
 
 class CodeHandler(SimpleHTTPRequestHandler):
@@ -68,7 +79,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
             f.close()
 
     def send_head(self):
-        global VERB, CDN, PROXY, BCDN, BPROXY
+        global VERB, CDN, PROXY, BCDN, BPROXY, AUTO_REBUILD
         path = self.translate_path(self.path)
         f = None
         if os.path.isdir(path):
@@ -97,13 +108,16 @@ class CodeHandler(SimpleHTTPRequestHandler):
 
         f = None
 
-        if not os.path.isfile(path) and not path.endswith(".map"):
+        # .map don't exist and apk is local and could be generated on the fly
+        invalid = path.endswith(".map") or path.endswith(".apk")
+
+        if not os.path.isfile(path) and not invalid :
             remote_url = CDN + self.path
             cache = hashlib.md5(remote_url.encode()).hexdigest()
             d_cache = CACHE.joinpath(cache + ".data")
             h_cache = CACHE.joinpath(cache + ".head")
             if not h_cache.is_file():
-                print("CACHING:", remote_url, "->", d_cache)
+                if VERB:print("CACHING:", remote_url, "->", d_cache)
                 try:
                     lf, headers = urllib.request.urlretrieve(remote_url, d_cache)
                     h_cache.write_text(str(headers))
@@ -111,7 +125,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
                     print("ERROR 404:", remote_url)
 
             if d_cache.is_file():
-                print("CACHED:", remote_url, "from", d_cache)
+                if VERB:print("CACHED:", remote_url, "from", d_cache)
                 self.send_response(HTTPStatus.OK)
                 f = d_cache.open("rb")
                 with h_cache.open() as fh:
@@ -131,6 +145,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
                             self.send_header(k, v)
                         else:
                             break
+                    # we have a cache so not first time, be less verbose
                     VERB = False
             cached = True
         else:
@@ -143,6 +158,16 @@ class CodeHandler(SimpleHTTPRequestHandler):
         if f is None:
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None
+
+
+        if self.path.endswith(".apk"):
+            if AUTO_REBUILD:
+                print()
+                print(self.path)
+                AUTO_REBUILD()
+                print()
+            else:
+                print(f"{AUTO_REBUILD=} {self.path}")
 
         try:
             fs = os.fstat(f.fileno())
@@ -180,7 +205,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
             file_size = fs[6]
 
             if self.path.endswith(".py"):
-                print(" --> do_GET(%s)" % path)
+                if VERB:print(" --> do_GET(%s)" % path)
                 if fstring_decode:
                     content, _ = fstring_decode(f.read())
                     content = content.encode("UTF-8")
@@ -189,13 +214,15 @@ class CodeHandler(SimpleHTTPRequestHandler):
 
                 file_size = len(content)
                 f = io.BytesIO(content)
+
             elif self.path.endswith(".json"):
-                print()
-                print(self.path)
-                print()
+                if VERB:
+                    print()
+                    print(self.path)
+                    print()
 
             elif path.endswith(".html"):
-                print("REPLACING", path, CDN, PROXY)
+                if VERB:print("REPLACING", path, CDN, PROXY)
                 content = f.read()
 
                 # redirect known CDN to relative path

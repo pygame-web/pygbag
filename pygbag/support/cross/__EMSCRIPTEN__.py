@@ -171,10 +171,11 @@ if is_browser:
                     for client in self.clients.get(evtype, []):
                         is_coro = inspect.iscoroutinefunction(client)
                         discarded = False
+                        sns = SimpleNamespace(**evdata)
                         if is_coro:
-                            await client(SimpleNamespace(**evdata))
+                            await client(sns)
                         else:
-                            client(SimpleNamespace(**evdata))
+                            client(sns)
                     if discarded:
                         console.log(f"221 DISCARD : {evtype} {evdata}")
 

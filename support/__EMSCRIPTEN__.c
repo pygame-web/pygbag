@@ -145,21 +145,10 @@ embed_test(PyObject *self, PyObject *args, PyObject *kwds)
 
 #include <emscripten/html5.h>
 #include <GLES2/gl2.h>
-static PyObject *
-embed_webgl(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    	// setting up EmscriptenWebGLContextAttributes
-	EmscriptenWebGLContextAttributes attr;
-	emscripten_webgl_init_context_attributes(&attr);
-	attr.alpha = 0;
 
-	// target the canvas selector
-	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#canvas", &attr);
-	emscripten_webgl_make_context_current(ctx);
-    glClearColor(0.984, 0.4627, 0.502, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
-    return Py_BuildValue("i", emscripten_webgl_get_current_context() );
-}
+
+static PyObject *embed_webgl(PyObject *self, PyObject *args, PyObject *kwds);
+
 
 void
 embed_preload_cb_onload(const char *fn) {
@@ -549,7 +538,9 @@ main_iteration(void) {
     HOST_RETURN(0);
 }
 
-// #define EGLTEST
+//#define EGLTEST
+
+
 
 #if defined(EGLTEST)
     #include <GLES2/gl2.h>
@@ -614,6 +605,11 @@ EMSCRIPTEN_KEEPALIVE void egl_test() {
         puts("EGL_NO_SURFACE");
     }
 
+    EGLint width, height;
+    eglQuerySurface(display, surface, EGL_WIDTH, &width);
+    eglQuerySurface(display, surface, EGL_HEIGHT, &height);
+    printf("(%d, %d)\n", width, height);
+
     // Create a GL context
     context = eglCreateContext(display, config, EGL_NO_CONTEXT, attribs );
     if ( context == EGL_NO_CONTEXT ) {
@@ -636,7 +632,28 @@ EMSCRIPTEN_KEEPALIVE void egl_test() {
 fail:
     puts("EGL test failed");
 }
+
 #endif
+
+static PyObject *
+embed_webgl(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    // setting up EmscriptenWebGLContextAttributes
+    #if defined(EGLTEST)
+    egl_test();
+    #endif
+
+	EmscriptenWebGLContextAttributes attr;
+	emscripten_webgl_init_context_attributes(&attr);
+	attr.alpha = 0;
+
+	// target the canvas selector
+	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#canvas", &attr);
+	emscripten_webgl_make_context_current(ctx);
+    glClearColor(0.984, 0.4627, 0.502, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT);
+    return Py_BuildValue("i", emscripten_webgl_get_current_context() );
+}
 
 PyStatus status;
 

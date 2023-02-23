@@ -5,6 +5,7 @@ from time import time as time_time
 
 
 DEBUG = True
+NICE = 0.010
 
 builtins.aio = sys.modules[__name__]
 
@@ -280,6 +281,10 @@ def delta(t=None):
     if t:
         return t - enter
     return time_time() - enter
+
+def shed_yield():
+    global enter, NICE
+    return ( time_time() - enter ) > NICE
 
 
 async def sleep_ms(ms=0):

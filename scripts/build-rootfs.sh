@@ -23,7 +23,7 @@ from __future__ import annotations
 import sys
 
 M1='os, json, builtins, shutil, zipimport, time, trace, traceback, '
-M2='asyncio, inspect, _thread, importlib, ctypes, tomllib'
+M2='asyncio, inspect, _thread, importlib, ctypes, tomllib, pathlib'
 for mod in (M1+M2).split(', '):
     try:
         __import__(mod)
@@ -36,7 +36,9 @@ try:
 except:
     pass
 
-import pathlib
+
+# sockets ????
+import asyncio.selector_events
 
 import multiprocessing
 
@@ -61,6 +63,9 @@ import urllib.request
 
 # installer "cp437"
 import compileall, csv, configparser
+
+#telemetrix
+import concurrent.futures.thread
 
 # micropip
 import importlib.metadata
@@ -119,6 +124,7 @@ from xml.dom import expatbuilder
 import pydoc
 
 
+
 if 0:
     import cffi
     from cffi import FFI
@@ -160,7 +166,9 @@ with open("build/stdlib.list","w") as tarlist:
             if name.endswith(sysconf):
                 name = name.replace(sysconf,"_sysconfigdata__emscripten_wasm32-emscripten.py")
 
-            name = name.replace('asyncio/selector_','asyncio/wasm_')
+            if name.find('asyncio/selector_')>=0:
+                #print(name, file=tarlist )
+                name = name.replace('asyncio/selector_','asyncio/wasm_')
             print(name, file=tarlist )
         else:
             stdlp = stdlp.replace('$(arch)','emsdk')

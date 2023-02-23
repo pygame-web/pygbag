@@ -9,6 +9,11 @@ from .html_embed import html_embed
 
 COUNTER = 0
 
+REPLAY_LIST = []
+REPLAY_APK = ""
+REPLAY_TARGET = ""
+
+
 
 async def pack_files(zf, packlist, zfolders, target_folder):
     global COUNTER
@@ -32,9 +37,32 @@ async def pack_files(zf, packlist, zfolders, target_folder):
         COUNTER += 1
         zf.write(zip_content, zip_name)
 
+def stream_pack_replay():
+    global COUNTER, REPLAY_LIST, REPLAY_APK, REPLAY_TARGET
+    if os.path.isfile(REPLAY_APK):
+        os.unlink(REPLAY_APK)
+    zfolders =  ["assets"]
+    with zipfile.ZipFile(REPLAY_APK, mode="x", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+        for asset in REPLAY_LIST:
+            zpath = list(zfolders)
+            zpath.insert(0, str(REPLAY_TARGET))
+            zpath.append(str(asset)[1:])
+
+            zip_content = REPLAY_TARGET / str(asset)[1:]
+            zpath = list(zfolders)
+            zpath.append(str(asset)[1:].replace("-pygbag.", "."))
+
+            if not zip_content.is_file():
+                print("32: ERROR", zip_content)
+                break
+            zip_name = Path("/".join(zpath))
+            zf.write(zip_content, zip_name)
+
+    print(f"replay packing {len(REPLAY_LIST)=} files complete for {REPLAY_APK}")
+
 
 async def archive(apkname, target_folder, build_dir=None):
-    global COUNTER
+    global COUNTER, REPLAY_LIST, REPLAY_APK, REPLAY_TARGET
 
     COUNTER = 0
 
@@ -76,6 +104,9 @@ async def archive(apkname, target_folder, build_dir=None):
             # pack_files(zf, Path.cwd(), ["assets"], target_folder)
             await pack_files(zf, packlist, ["assets"], target_folder)
 
+    REPLAY_LIST = packlist
+    REPLAY_APK = apkname
+    REPLAY_TARGET = target_folder
     print(f"packing {COUNTER} files complete")
 
 
