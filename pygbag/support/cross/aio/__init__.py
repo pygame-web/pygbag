@@ -282,9 +282,10 @@ def delta(t=None):
         return t - enter
     return time_time() - enter
 
+
 def shed_yield():
     global enter, NICE
-    return ( time_time() - enter ) > NICE
+    return (time_time() - enter) > NICE
 
 
 async def sleep_ms(ms=0):
@@ -335,11 +336,20 @@ def run(coro, *, debug=False):
     debug = debug or DEBUG
 
     if coro is not None:
-        task = loop.create_task(coro)
-        _set_task_name(task, coro.__name__)
+        wrapper = coro
+        if coro.__name__ == "main":
+            if "aio.fetch" in sys.modules:
 
-    elif debug:
-        pdb("253:None coro called, just starting loop")
+                async def __main__():
+                    import aio.fetch
+
+                    await aio.fetch.preload_fetch()
+                    await asyncio.sleep(0)
+                    await coro
+
+                wrapper = __main__()
+        task = loop.create_task(wrapper)
+        _set_task_name(task, coro.__name__)
 
     if not started:
         exit = False

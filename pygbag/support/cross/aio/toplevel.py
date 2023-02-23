@@ -71,7 +71,6 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
             pdb(f"failed to install {pkg_file}")
             sys.print_exception(rx)
 
-
         await asyncio.sleep(0)
 
         try:
@@ -202,7 +201,6 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
 
         self.write("\nPython %s on %s\n%s\n" % (sys.version, sys.platform, cprt))
-
 
     def prompt(self):
         if not self.__class__.muted and self.shell.is_interactive:

@@ -43,8 +43,10 @@ except:
 
 try:
     from . import app
+
     if app.AUTO_REBUILD:
         from . import pack
+
         AUTO_REBUILD = pack.stream_pack_replay
 except:
     AUTO_REBUILD = False
@@ -111,13 +113,14 @@ class CodeHandler(SimpleHTTPRequestHandler):
         # .map don't exist and apk is local and could be generated on the fly
         invalid = path.endswith(".map") or path.endswith(".apk")
 
-        if not os.path.isfile(path) and not invalid :
+        if not os.path.isfile(path) and not invalid:
             remote_url = CDN + self.path
             cache = hashlib.md5(remote_url.encode()).hexdigest()
             d_cache = CACHE.joinpath(cache + ".data")
             h_cache = CACHE.joinpath(cache + ".head")
             if not h_cache.is_file():
-                if VERB:print("CACHING:", remote_url, "->", d_cache)
+                if VERB:
+                    print("CACHING:", remote_url, "->", d_cache)
                 try:
                     lf, headers = urllib.request.urlretrieve(remote_url, d_cache)
                     h_cache.write_text(str(headers))
@@ -125,7 +128,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
                     print("ERROR 404:", remote_url)
 
             if d_cache.is_file():
-                if VERB:print("CACHED:", remote_url, "from", d_cache)
+                if VERB:
+                    print("CACHED:", remote_url, "from", d_cache)
                 self.send_response(HTTPStatus.OK)
                 f = d_cache.open("rb")
                 with h_cache.open() as fh:
@@ -158,7 +162,6 @@ class CodeHandler(SimpleHTTPRequestHandler):
         if f is None:
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None
-
 
         if self.path.endswith(".apk"):
             if AUTO_REBUILD:
@@ -205,7 +208,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
             file_size = fs[6]
 
             if self.path.endswith(".py"):
-                if VERB:print(" --> do_GET(%s)" % path)
+                if VERB:
+                    print(" --> do_GET(%s)" % path)
                 if fstring_decode:
                     content, _ = fstring_decode(f.read())
                     content = content.encode("UTF-8")
@@ -222,7 +226,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
                     print()
 
             elif path.endswith(".html"):
-                if VERB:print("REPLACING", path, CDN, PROXY)
+                if VERB:
+                    print("REPLACING", path, CDN, PROXY)
                 content = f.read()
 
                 # redirect known CDN to relative path

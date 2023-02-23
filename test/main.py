@@ -1,4 +1,4 @@
-#fixme should be auto
+# fixme should be auto
 import aio.gthread
 
 import asyncio
@@ -8,6 +8,7 @@ import pygame
 pygame.init()
 
 import module
+
 
 def new_screen(title):
     global screen
@@ -23,38 +24,41 @@ from threading import Thread
 class Moving_svg(Thread):
     async def run(self):
         global count, screen
-        bmp = pygame.image.load( "img/tiger.svg" )
+        bmp = pygame.image.load("img/tiger.svg")
         way = 1
         while await self:
             decal = abs(count) % 100
             if not decal:
                 way = -way
-            screen.blit( bmp, (50+(way*decal), 50 + (-way*decal)) )
+            screen.blit(bmp, (50 + (way * decal), 50 + (-way * decal)))
+
 
 # ok model
 
+
 def color_background(win):
     while not aio.exit:
-        win.fill( (count % 50, count % 50, count % 50) )
+        win.fill((count % 50, count % 50, count % 50))
         yield aio
+
 
 def moving_bmp(win):
     global count
-    bmp = pygame.image.load_basic( "img/pygc.bmp" )
+    bmp = pygame.image.load_basic("img/pygc.bmp")
     way = 1
     while not aio.exit:
         decal = abs(count) % 100
         if not decal:
             way = -way
 
-        win.blit( bmp, (50+(way*decal), 50 + (-way*decal)) )
+        win.blit(bmp, (50 + (way * decal), 50 + (-way * decal)))
         yield aio
 
 
 def moving_png(win):
     global count
     try:
-        png = pygame.image.load( "img/pygc.png" )
+        png = pygame.image.load("img/pygc.png")
     except:
         print("png support error upgrade SDL_image !")
         return
@@ -65,9 +69,8 @@ def moving_png(win):
         if not decal:
             way = -way
 
-        win.blit( png, (200+(way*decal), 100 + (way*decal) ) )
+        win.blit(png, (200 + (way * decal), 100 + (way * decal)))
         yield aio
-
 
 
 async def main():
@@ -79,8 +82,7 @@ async def main():
     count = 3
 
     # still bugs in that thread model
-    #mbmp = Moving_bmp()
-
+    # mbmp = Moving_bmp()
 
     # Green threads are ordered at runtime unlike system threads.
 
@@ -93,25 +95,25 @@ async def main():
     # 2nd
     Thread(target=moving_bmp, args=[win]).start()
 
-
     while True:
-        if count>=0:
+        if count >= 0:
             print(
-            f"""
+                f"""
 
     Hello[{count}] from Pygame
 
 """
-        )
+            )
 
         pygame.display.update()
         await asyncio.sleep(0)
 
-        if count < -60 * 30: # about * seconds
+        if count < -60 * 30:  # about * seconds
             break
 
         count = count - 1
 
     pygame.quit()
+
 
 asyncio.run(main())

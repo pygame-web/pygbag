@@ -225,8 +225,9 @@ aio.task = service
 def proc(srv):
     return aio.pstab.get(srv)
 
+
 def _register_atexit(proc):
-    print(__name__,"_register_atexit not implemented")
+    print(__name__, "_register_atexit not implemented")
 
 
 class Runnable:

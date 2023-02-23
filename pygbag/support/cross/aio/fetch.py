@@ -5,6 +5,7 @@ import platform
 import json
 
 preload = []
+preloaded = []
 
 
 def FS(tree, base=".", silent=True, debug=False):
@@ -18,16 +19,16 @@ def FS(tree, base=".", silent=True, debug=False):
             continue
         if l == ".":
             continue
-        if l.startswith('http'):
-            #found a base url
+        if l.startswith("http"):
+            # found a base url
             base_url = l
-            if base_url.find('/github.com/')>0:
-                base_url = base_url.replace("/github.com/","/raw.githubusercontent.com/",1)
+            if base_url.find("/github.com/") > 0:
+                base_url = base_url.replace("/github.com/", "/raw.githubusercontent.com/", 1)
 
-            if base_url.find('/tree/')>0:
-                base_url = base_url.replace("/tree/","/",1)
+            if base_url.find("/tree/") > 0:
+                base_url = base_url.replace("/tree/", "/", 1)
 
-            base_url = base_url.rstrip("/")+ "/"
+            base_url = base_url.rstrip("/") + "/"
             continue
 
         pos, elem = l.rsplit(" ", 1)
@@ -54,9 +55,10 @@ def FS(tree, base=".", silent=True, debug=False):
         preload.append([base_url + "/".join(path), "/".join(path)])
 
 
-async def preload_fetch(silent=True, debug=False):
-    global preload
+async def preload_fetch(silent=True, debug=False, standalone=False):
+    global preload, preloaded
     from pathlib import Path
+
     base_url = ""
     fileset = []
 
@@ -83,9 +85,10 @@ async def preload_fetch(silent=True, debug=False):
         if not silent:
             print("FS:", filename)
 
-    # TODO remove from memory after use
-    return fileset
-
+    preloaded.extend(fileset)
+    if standalone:
+        return fileset
+    return preloaded.copy()
 
 
 class RequestHandler:

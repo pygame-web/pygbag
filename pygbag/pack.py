@@ -14,7 +14,6 @@ REPLAY_APK = ""
 REPLAY_TARGET = ""
 
 
-
 async def pack_files(zf, packlist, zfolders, target_folder):
     global COUNTER
 
@@ -37,11 +36,12 @@ async def pack_files(zf, packlist, zfolders, target_folder):
         COUNTER += 1
         zf.write(zip_content, zip_name)
 
+
 def stream_pack_replay():
     global COUNTER, REPLAY_LIST, REPLAY_APK, REPLAY_TARGET
     if os.path.isfile(REPLAY_APK):
         os.unlink(REPLAY_APK)
-    zfolders =  ["assets"]
+    zfolders = ["assets"]
     with zipfile.ZipFile(REPLAY_APK, mode="x", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
         for asset in REPLAY_LIST:
             zpath = list(zfolders)
