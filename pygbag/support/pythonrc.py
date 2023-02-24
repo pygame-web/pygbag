@@ -1680,12 +1680,21 @@ def CSI(*argv):
     for arg in argv:
         ESC(f"[{arg}")
 
+try:
+    console
+except:
+    class console:
+        def log(*argv,**kw):
+            import io
+            kw["file"] = io.StringIO(newline="\r\n")
+            print(*argv, **kw)
+            embed.warn(kw["file"].getvalue())
+
 
 import aio.recycle
 
 # ============================================================
 # DO NOT ADD ANYTHING FROM HERE OR APP RECYCLING WILL TRASH IT
-
 
 #
 

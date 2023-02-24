@@ -57,7 +57,11 @@ if devmode:
     )
 
 else:
-    DEFAULT_CDN = f"https://pygame-web.github.io/archives/{cdn_version}/"
+    # use latest git build
+    if cdn_version == '0.0':
+        DEFAULT_CDN = f"https://pygame-web.github.io/pygbag/{cdn_version}/"
+    else:
+        DEFAULT_CDN = f"https://pygame-web.github.io/archives/{cdn_version}/"
     DEFAULT_PORT = 8000
     DEFAULT_TMPL = "default.tmpl"
 
