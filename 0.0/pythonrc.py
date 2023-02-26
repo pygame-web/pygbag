@@ -1350,6 +1350,7 @@ if not aio.cross.simulator:
                     msg = f"928: cannot download {req} pkg"
                     callback(req, error=msg)
                     continue
+
                 # TODO: deadcode ?
                 if req in platform.patches:
                     print("1303:", req, "requires patch")
@@ -1383,7 +1384,6 @@ if not aio.cross.simulator:
         async def async_repos(cls):
             abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
             for repo in PyConfig.pkg_indexes:
-                print("1340:", repo)
                 async with fopen(f"{repo}index.json", "r") as index:
                     try:
                         data = index.read()
@@ -1392,7 +1392,7 @@ if not aio.cross.simulator:
                         data = data.replace("<abi>", abitag)
                         repo = json.loads(data)
                     except:
-                        pdb(f"{repo}: malformed json index {data}")
+                        pdb(f"1394: {repo=}: malformed json index {data}")
                         continue
                     if repo not in PyConfig.pkg_repolist:
                         PyConfig.pkg_repolist.append(repo)
@@ -1824,6 +1824,17 @@ async def import_site(__file__, run=True):
         if local and local.is_file():
             pdir = str(local.parent)
             os.chdir(pdir)
+            if '-v' in PyConfig.orig_argv:
+                print()
+                print("_" * 70)
+                with open(local,"r") as source:
+                    for i, l in enumerate(source.readlines()):
+                        print(str(i).zfill(5), l, end="")
+                print()
+                print("_" * 70)
+                print()
+
+
             # TODO: check orig_argv for isolation parameters
             if not pdir in sys.path:
                 sys.path.insert(0, pdir)
