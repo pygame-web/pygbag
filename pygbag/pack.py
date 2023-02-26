@@ -8,11 +8,11 @@ from .optimizing import optimize
 from .html_embed import html_embed
 
 COUNTER = 0
-
-REPLAY_LIST = []
-REPLAY_APK = ""
-REPLAY_TARGET = ""
-
+class REPLAY:
+    HTML = False
+    LIST = []
+    APK = ""
+    TARGET = ""
 
 async def pack_files(zf, packlist, zfolders, target_folder):
     global COUNTER
@@ -38,17 +38,17 @@ async def pack_files(zf, packlist, zfolders, target_folder):
 
 
 def stream_pack_replay():
-    global COUNTER, REPLAY_LIST, REPLAY_APK, REPLAY_TARGET
-    if os.path.isfile(REPLAY_APK):
-        os.unlink(REPLAY_APK)
+    global COUNTER, REPLAY
+    if os.path.isfile(REPLAY.APK):
+        os.unlink(REPLAY.APK)
     zfolders = ["assets"]
-    with zipfile.ZipFile(REPLAY_APK, mode="x", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
-        for asset in REPLAY_LIST:
+    with zipfile.ZipFile(REPLAY.APK, mode="x", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+        for asset in REPLAY.LIST:
             zpath = list(zfolders)
-            zpath.insert(0, str(REPLAY_TARGET))
+            zpath.insert(0, str(REPLAY.TARGET))
             zpath.append(str(asset)[1:])
 
-            zip_content = REPLAY_TARGET / str(asset)[1:]
+            zip_content = REPLAY.TARGET / str(asset)[1:]
             zpath = list(zfolders)
             zpath.append(str(asset)[1:].replace("-pygbag.", "."))
 
@@ -58,11 +58,11 @@ def stream_pack_replay():
             zip_name = Path("/".join(zpath))
             zf.write(zip_content, zip_name)
 
-    print(f"replay packing {len(REPLAY_LIST)=} files complete for {REPLAY_APK}")
+    print(f"replay packing {len(REPLAY.LIST)=} files complete for {REPLAY.APK}")
 
 
 async def archive(apkname, target_folder, build_dir=None):
-    global COUNTER, REPLAY_LIST, REPLAY_APK, REPLAY_TARGET
+    global COUNTER, REPLAY
 
     COUNTER = 0
 
@@ -90,8 +90,14 @@ async def archive(apkname, target_folder, build_dir=None):
         packlist.append(filename)
         sched_yield()
 
+    REPLAY.LIST = packlist
+    REPLAY.APK = apkname
+    REPLAY.TARGET = target_folder
+
     if "--html" in sys.argv:
+        REPLAY.HTML = True
         html_embed(target_folder, packlist, apkname[:-4] + ".html")
+        return
 
     try:
         with zipfile.ZipFile(apkname, mode="x", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
@@ -104,9 +110,6 @@ async def archive(apkname, target_folder, build_dir=None):
             # pack_files(zf, Path.cwd(), ["assets"], target_folder)
             await pack_files(zf, packlist, ["assets"], target_folder)
 
-    REPLAY_LIST = packlist
-    REPLAY_APK = apkname
-    REPLAY_TARGET = target_folder
     print(f"packing {COUNTER} files complete")
 
 

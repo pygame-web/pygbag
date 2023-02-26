@@ -37,12 +37,8 @@ if sys.platform == "emscripten":
             print(f"camera {self.device=} {status=}")
 
         # queue a image request and pretend we have already the image.
-        async def query_image(self):
-            platform.window.MM.camera.get_raw()
-            if os.path.isfile(self.device):
-                return True
-            await asyncio.sleep(0)
-            return os.path.isfile(self.device)
+        def query_image(self):
+            return platform.window.MM.camera.query_image()
 
         def get_image(self, surface = None ):
             if surface:

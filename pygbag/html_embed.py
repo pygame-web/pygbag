@@ -91,40 +91,45 @@ def html_embed(target_folder, packlist: list, htmlfile: str):
     RUNPY = "asyncio.run(main())"
     SKIP = False
     MAX = 0
+
+    for packed_file in packlist:
+        print("HTML:", packed_file)
+
+    topack = "/main.py"
+
     with open(htmlfile, "w+", encoding="utf-8") as html:
-        for topack in packlist:
+        def main_py():
+            with open(target_folder / topack[1:], "r", encoding="utf-8") as file:
+                return enumerate(file.readlines())
 
-            if topack == "/main.py":
-                for lnum, line in enumerate(open(target_folder / topack[1:], "r", encoding="utf-8").readlines()):
-                    if line.rstrip().startswith("asyncio.run"):
-                        RUNPY = line
-                        MAX = lnum
-                        break
+        for lnum, line in main_py():
+            if line.rstrip().startswith("asyncio.run"):
+                RUNPY = line
+                MAX = lnum
+                break
 
-                for lnum, line in enumerate(open(target_folder / topack[1:], "r", encoding="utf-8").readlines()):
-                    if SKIP:
-                        if line.endswith("del fs_decode, PYGBAG_FS"):
-                            SKIP = False
-                    if line.startswith("PYGBAG_FS="):
-                        SKIP = True
+        for lnum, line in main_py():
+            if SKIP:
+                if line.endswith("del fs_decode, PYGBAG_FS"):
+                    SKIP = False
+            if line.startswith("PYGBAG_FS="):
+                SKIP = True
 
-                    if SKIP:
-                        continue
+            if SKIP:
+                continue
 
-                    # no msdos
-                    line = line.rstrip("\r\n")
+            # no msdos
+            line = line.rstrip("\r\n")
 
-                    if not lnum:
-                        make_header(html, line)
-                        dump_fs(html, target_folder, packlist)
-                        continue
-                    else:
-                        if lnum >= MAX:
-                            break
+            if not lnum:
+                make_header(html, line)
+                dump_fs(html, target_folder, packlist)
+                continue
+            else:
+                if lnum >= MAX:
+                    break
 
-                    print(line, end="\n", file=html)
-
-            break
+            print(line, end="\n", file=html)
 
         print(
             f"""

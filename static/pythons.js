@@ -1356,6 +1356,7 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
         const device = MM.camera.device || "/dev/video0"
 
         MM.camera.fd = {}
+        MM.camera.busy = 0
 
         // 60 fps
         MM.camera.frame = { device : undefined , rate : Number.parseInt(1000/30/4) }
@@ -1388,12 +1389,6 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
             done =1
         }
 
-        MM.camera.get_raw = function () {
-            if (localMediaStream) {
-                framegrabber.getContext("2d").drawImage(localMediaStream, 0, 0);
-            }
-        }
-
         const params = {
             audio: true,
             video: {
@@ -1404,27 +1399,50 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
             }
         }
 
+
+        MM.camera.query_image = function () {
+            // ok to use previous image
+            if ( FS.analyzePath(device).exists )
+                return true
+            if (MM.camera.busy>25)
+                console.error("frame grabber is stuck")
+            return false
+        }
+
+        // TODO: same but async
+        MM.camera.get_raw = function * () {
+            // capture next frame and wait conversion
+            setTimeout(GRABBER, 0)
+            while (!MM.camera.frame[device])
+                yield 0
+            return MM.camera.frame[device]
+        }
+
         const reader = new FileReader()
 
         reader.addEventListener("load", () => {
-            const data = new Int8Array(reader.result)
-            FS.writeFile(device,  new Int8Array(reader.result) )
-            MM.camera.frame[device] = 1
-            setTimeout(GRABBER, MM.camera.frame["rate"])
+                const data = new Int8Array(reader.result)
+                FS.writeFile(device,  data )
+                //console.log("frame ready at ", MM.camera.busy)
+                MM.camera.frame[device] = data.length
+                MM.camera.busy--
             }, false
         )
 
         async function GRABBER() {
-            if ( !FS.analyzePath(device).exists ) {
-                // get new frame !
-                MM.camera.frame[device] = undefined
-                MM.camera.get_raw()
-                MM.camera.blob = await framegrabber.convertToBlob({type:"image/png"})
-                reader.readAsArrayBuffer(MM.camera.blob)
-            } else {
-                // last image not yet consummed schedule deadline in next RaF loop
+            if (MM.camera.busy<25)
                 setTimeout(GRABBER, MM.camera.frame["rate"])
-            }
+
+            if (MM.camera.busy>0)
+                return
+
+            MM.camera.busy++
+            framegrabber.getContext("2d").drawImage(localMediaStream, 0, 0);
+
+            // convert the new frame !
+            MM.camera.frame[device] = undefined
+            MM.camera.blob = await framegrabber.convertToBlob({type:"image/png"})
+            reader.readAsArrayBuffer(MM.camera.blob)
         }
 
         window.GRABBER = GRABBER
@@ -1433,7 +1451,7 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
             localMediaStream = vidcap // document.querySelector('video');
             localMediaStream.srcObject = stream
             localMediaStream.onloadedmetadata = function(e) {
-                GRABBER()
+                setTimeout(GRABBER, 0)
                 console.log("video stream ready")
                 MM.camera.started = 1
                 done =1
@@ -1450,7 +1468,6 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
         // wait for first frame
         while (!MM.camera.frame[device])
             yield 0
-
     }
     yield window.MM.camera.started
 }
