@@ -144,7 +144,6 @@ then
         OBJS=$(find build/temp.wasm32-*/|grep o$)
 
 
-
         $SDKROOT/emsdk/upstream/emscripten/emar rcs ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a $OBJS
         for obj in $OBJS
         do
@@ -169,16 +168,26 @@ popd
 
 TAG=${PYMAJOR}${PYMINOR}
 
+
+echo "FIXME: build wheel"
+
+
 if [ -d testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten ]
 then
     TARGET=testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/pygame_static.cpython-${TAG}-wasm32-emscripten.so
+
     . ${SDKROOT}/emsdk/emsdk_env.sh
 
-    [ -f "$TARGET" ] && rm $TARGET
+    [ -f $TARGET ] && rm $TARGET
 
-    emcc -Os -g0 -shared -fpic -o $TARGET \
-     $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a
-    [ -f /data/git/archives/repo/norm.sh ] && /data/git/archives/repo/norm.sh
+    emcc -shared -Os -g0 -fpic -o $TARGET $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a
+
+    if [ -f /data/git/archives/repo/norm.sh ]
+    then
+        pushd testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten
+        /data/git/archives/repo/norm.sh
+        popd
+    fi
 fi
 
 
