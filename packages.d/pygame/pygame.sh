@@ -59,7 +59,7 @@ echo "
 PG_BRANCH="main"
 PG_GIT="https://github.com/pygame-community/pygame-ce.git"
 
-if false
+if true
 then
     if [ -d pygame-wasm ]
     then
@@ -70,7 +70,7 @@ then
         git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
         pushd $(pwd)/pygame-wasm
     fi
-    #wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-wasm/pull/7.diff | patch -p1
+
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/1.diff | patch -p1
 
     # FRect compat
