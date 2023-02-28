@@ -1351,11 +1351,6 @@ if not aio.cross.simulator:
                     callback(req, error=msg)
                     continue
 
-                # TODO: deadcode ?
-                if req in platform.patches:
-                    print("1303:", req, "requires patch")
-                    platform.patches.pop(req)()
-
         @classmethod
         async def pv(cls, track, prefix="", suffix="", decimals=1, length=70, fill="X", printEnd="\r"):
 
@@ -1623,10 +1618,18 @@ def patch():
 
         sys.modules["wcwidth"] = cwcwidth
 
+    def patch_pygame():
+        import pygame
+        import platform_wasm.pygame
+        import platform_wasm.pygame.vidcap
+        pygame.vidcap = platform_wasm.pygame.vidcap
+
+
     platform.patches = {
         "matplotlib": patch_matplotlib_pyplot,
         "panda3d": patch_panda3d_showbase,
         "wcwidth": patch_cwcwidth,
+        "pygame.base" : patch_pygame,
     }
 
 
