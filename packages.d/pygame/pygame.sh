@@ -171,13 +171,12 @@ TAG=${PYMAJOR}${PYMINOR}
 
 if [ -d testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten ]
 then
-
+    TARGET=testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/pygame_static.cpython-${TAG}-wasm32-emscripten.so
     . ${SDKROOT}/emsdk/emsdk_env.sh
 
-    rm testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/pygame_static.cpython-${TAG}-wasm32-emscripten.so
+    [ -f "$TARGET" ] && rm $TARGET
 
-    emcc -Os -g0 -shared -fpic -o \
-     testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/pygame_static.cpython-${TAG}-wasm32-emscripten.so \
+    emcc -Os -g0 -shared -fpic -o $TARGET \
      $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a
     [ -f /data/git/archives/repo/norm.sh ] && /data/git/archives/repo/norm.sh
 fi
