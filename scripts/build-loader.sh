@@ -93,6 +93,23 @@ else
 "
 fi
 
+if [ -d /data/git/platform_wasm ]
+then
+    cp -fr /data/git/platform_wasm ./
+else
+    if [ -d platform_wasm ]
+    then
+        pushd platform_wasm
+        git pull
+        popd
+    else
+        git clone https://github.com/pygame-web/platform_wasm
+    fi
+fi
+
+
+export PATCH_FS="--preload-file $(realpath platform_wasm/platform_wasm)@/data/data/org.python/assets/site-packages/platform_wasm"
+
 
 LOPTS="-sMAIN_MODULE --bind -fno-rtti"
 
@@ -239,12 +256,13 @@ then
     " 1>&2
 
     if emcc -m32 $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG\
-     -s TOTAL_MEMORY=256MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \
+     -sTOTAL_MEMORY=256MB -sSTACK_SIZE=4MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \
      $CF_SDL \
      --use-preload-plugins \
      $STDLIBFS \
      $ALWAYS_FS \
      $SUPPORT_FS \
+     $PATCH_FS \
      --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \
      -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \

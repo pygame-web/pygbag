@@ -154,14 +154,6 @@ class CodeHandler(SimpleHTTPRequestHandler):
             cached = True
         else:
             cached = False
-            try:
-                f = open(path, "rb")
-            except OSError:
-                pass
-
-        if f is None:
-            self.send_error(HTTPStatus.NOT_FOUND, "File not found")
-            return None
 
         if self.path.endswith(".apk"):
             if AUTO_REBUILD:
@@ -171,6 +163,16 @@ class CodeHandler(SimpleHTTPRequestHandler):
                 print()
             else:
                 print(f"{AUTO_REBUILD=} {self.path}")
+
+        if f is None:
+            try:
+                f = open(path, "rb")
+            except OSError:
+                pass
+
+        if f is None:
+            self.send_error(HTTPStatus.NOT_FOUND, "File not found")
+            return None
 
         try:
             fs = os.fstat(f.fileno())

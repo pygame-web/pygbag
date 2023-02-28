@@ -85,7 +85,7 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
         print(f"84: {pkg_file} already installed")
 
     if pkg in platform.patches:
-        print("89:", pkg, "requires patch")
+        print("88:", pkg, "requires patch")
         platform.patches.pop(pkg)()
 
     if resume and ex:

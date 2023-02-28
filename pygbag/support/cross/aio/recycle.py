@@ -11,6 +11,8 @@ def cleanup():
     import sys, random
 
     for mod in list(sys.modules.keys()):
+        if mod in ('asyncio'):
+            continue
         if not mod in MODULES:
             sys.modules.pop(mod, None)
 
@@ -38,3 +40,7 @@ def cleanup():
         platform.prompt()
     except:
         pass
+    def resume():
+        aio.paused
+
+

@@ -128,6 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+/0.0
+/.eric6project
 /src
 /dist
 /ATTIC
+/platform_wasm

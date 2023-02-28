@@ -59,18 +59,43 @@ echo "
 PG_BRANCH="main"
 PG_GIT="https://github.com/pygame-community/pygame-ce.git"
 
-if [ -d pygame-wasm ]
+if false
 then
-    pushd $(pwd)/pygame-wasm
-    git restore .
-    git pull
+    if [ -d pygame-wasm ]
+    then
+        pushd $(pwd)/pygame-wasm
+        git restore .
+        git pull
+    else
+        git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
+        pushd $(pwd)/pygame-wasm
+    fi
+    #wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-wasm/pull/7.diff | patch -p1
+    wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/1.diff | patch -p1
+
+    # FRect compat
+    #wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/1944.diff | patch -p1
 else
-    git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
     pushd $(pwd)/pygame-wasm
+    echo "
+
+
+
+
+
+
+                NOT UPDATING PYGAME, TEST MODE
+
+
+
+
+
+
+"
+    read
+
+
 fi
-wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-wasm/pull/7.diff | patch -p1
-
-
 
 # test patches go here
 # ===================
@@ -149,11 +174,13 @@ then
 
     . ${SDKROOT}/emsdk/emsdk_env.sh
 
+    rm testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/pygame_static.cpython-${TAG}-wasm32-emscripten.so
+
     emcc -Os -g0 -shared -fpic -o \
      testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/pygame_static.cpython-${TAG}-wasm32-emscripten.so \
      $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a
+    [ -f /data/git/archives/repo/norm.sh ] && /data/git/archives/repo/norm.sh
 fi
-
 
 
 
