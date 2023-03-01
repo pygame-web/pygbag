@@ -59,7 +59,7 @@ echo "
 PG_BRANCH="main"
 PG_GIT="https://github.com/pygame-community/pygame-ce.git"
 
-if true
+if false
 then
     if [ -d pygame-wasm ]
     then
@@ -186,6 +186,7 @@ then
     then
         pushd testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten
         /data/git/archives/repo/norm.sh
+        rm $TARGET
         popd
     fi
 fi

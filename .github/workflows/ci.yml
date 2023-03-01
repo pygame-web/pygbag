@@ -47,20 +47,6 @@ jobs:
             PYBUILD=3.11 bash ./scripts/build-loader.sh
 
 
-
-
-    - name: build 3.12 packages
-      run: |
-            cd $GITHUB_WORKSPACE
-            PYBUILD=3.12 bash ./scripts/build-pkg.sh
-
-    - name: build 3.12 loader
-      run: |
-            cd $GITHUB_WORKSPACE
-            PYBUILD=3.12 bash ./scripts/build-loader.sh
-
-
-
     - name: publishing
       run: |
             cd $GITHUB_WORKSPACE
