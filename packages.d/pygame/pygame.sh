@@ -59,7 +59,7 @@ echo "
 PG_BRANCH="main"
 PG_GIT="https://github.com/pygame-community/pygame-ce.git"
 
-if false
+if ${TESTMODE:-false}
 then
     if [ -d pygame-wasm ]
     then
@@ -73,8 +73,6 @@ then
 
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/1.diff | patch -p1
 
-    # FRect compat
-    #wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/1944.diff | patch -p1
 else
     pushd $(pwd)/pygame-wasm
     echo "
@@ -93,7 +91,6 @@ else
 
 "
     read
-
 
 fi
 
