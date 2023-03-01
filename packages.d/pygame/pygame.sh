@@ -59,7 +59,7 @@ echo "
 PG_BRANCH="main"
 PG_GIT="https://github.com/pygame-community/pygame-ce.git"
 
-if ${TESTMODE:-false}
+if ${CI:-true}
 then
     if [ -d pygame-wasm ]
     then
