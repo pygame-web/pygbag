@@ -72,6 +72,7 @@ then
     fi
 
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/1.diff | patch -p1
+    wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/2.diff | patch -p1
 
 else
     pushd $(pwd)/pygame-wasm

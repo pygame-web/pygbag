@@ -95,7 +95,7 @@ fi
 
 if [ -d /data/git/platform_wasm ]
 then
-    cp -fr /data/git/platform_wasm ./
+    cp -Rf /data/git/platform_wasm ./
 else
     if [ -d platform_wasm ]
     then

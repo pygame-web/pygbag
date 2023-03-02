@@ -1168,7 +1168,7 @@ if not aio.cross.simulator:
             file = file or "<stdin>"
 
             for want in cls.scan_imports(code, file):
-                print(f"1044: requesting module {want=} for {file=} ")
+                # DBG(f"1171: requesting module {want=} for {file=} ")
                 repo = None
                 for repo in PyConfig.pkg_repolist:
                     if want in cls.may_need:
@@ -1176,12 +1176,12 @@ if not aio.cross.simulator:
                         break
 
                     if want in sys.modules:
-                        DBG(f"1049: skip module {want=} reason: sys.modules")
+                        DBG(f"1179: skip module {want=} reason: sys.modules")
                         break
 
                     if want in repo:
                         cls.may_need.append(want)
-                        DBG(f"1055: module {want=} requested")
+                        # DBG(f"1184: module {want=} requested")
                         yield want
                         break
                 else:
@@ -1217,10 +1217,29 @@ if not aio.cross.simulator:
             if "numpy" in wants:
                 wants.remove("numpy")
                 wants.insert(0, "numpy")
+# FIXME !
+# FIXME !
+# FIXME !
+# FIXME !
+# FIXME !
+# FIXME !
+
             if "igraph" in wants:
                 if "texttable" in wants:
                     wants.remove("texttable")
                 wants.insert(0, "texttable")
+
+            if 'pygame_gui' in wants:
+                wants.insert(0,"i18n")
+# FIXME !
+# FIXME !
+# FIXME !
+# FIXME !
+# FIXME !
+# FIXME !
+# FIXME !
+# FIXME !
+# FIXME !
 
             return wants
 

@@ -33,13 +33,6 @@ async def import_site():
 
     sys.path.insert(0, str(support / "cross"))
 
-    #    try:
-    #        import pymunk4 as pymunk
-    #
-    #        sys.modules["pymunk"] = pymunk
-    #    except:
-    #        print("pymunk4 was not build for simulator")
-
     # need them earlier than aio
 
     def pdb(*argv):
