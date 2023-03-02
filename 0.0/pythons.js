@@ -1350,10 +1350,15 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
         vidcap.id = "vidcap"
         vidcap.autoplay = true
 
+        window.vidcap = vidcap
         width = width || 640
         height = height || 480
 
+        vidcap.width = width
+        vidcap.height = height
         const device = MM.camera.device || "/dev/video0"
+
+
 
         MM.camera.fd = {}
         MM.camera.busy = 0
@@ -1381,7 +1386,7 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
             framegrabber.height = height
         }
 
-        var localMediaStream = null;
+        window.framegrabber = framegrabber
 
         function onCameraFail(e) {
             console.log('924: Camera did not start.', e)
@@ -1390,12 +1395,10 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
         }
 
         const params = {
-            audio: true,
+            audio: false,
             video: {
-                mandatory: {
-                    maxWidth: width,
-                    maxHeight: height
-                }
+                "width": { ideal: width },
+                "height": {  ideal: height },
             }
         }
 
@@ -1437,7 +1440,7 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
                 return
 
             MM.camera.busy++
-            framegrabber.getContext("2d").drawImage(localMediaStream, 0, 0);
+            framegrabber.getContext("2d").drawImage(vidcap, 0, 0);
 
             // convert the new frame !
             MM.camera.frame[device] = undefined
@@ -1448,9 +1451,8 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
         window.GRABBER = GRABBER
 
         function connection(stream) {
-            localMediaStream = vidcap // document.querySelector('video');
-            localMediaStream.srcObject = stream
-            localMediaStream.onloadedmetadata = function(e) {
+            vidcap.srcObject = stream
+            vidcap.onloadedmetadata = function(e) {
                 setTimeout(GRABBER, 0)
                 console.log("video stream ready")
                 MM.camera.started = 1
