@@ -575,23 +575,25 @@ async function custom_postrun() {
 
 function feat_gui(debug_hidden) {
 
-    var canvas = document.getElementById("canvas")
+    var canvas2d = document.getElementById("canvas")
 
-    if (!canvas) {
+    function add_canvas(name, width, height) {
+        const new_canvas = document.createElement("canvas")
+        new_canvas.id = name
+        new_canvas.width = width || 1
+        new_canvas.height = height || 1
+        document.body.appendChild(new_canvas)
+        return new_canvas
+    }
+
+    if (!canvas2d) {
         config.user_canvas = config.user_canvas || 0 //??=
         config.user_canvas_managed = config.user_canvas_managed || 0 //??=
-        canvas = document.createElement("canvas")
-        canvas.id = "canvas"
-        canvas.width = 1
-        canvas.height = 1
-        canvas.style.position = "absolute"
-        canvas.style.top = "0px"
-        canvas.style.right = "0px"
-        canvas.tabindex = 0
-        document.body.appendChild(canvas)
-console.warn("TODO: test 2D/3D reservation")
-
-
+        canvas2d =  add_canvas("canvas")
+        canvas2d.style.position = "absolute"
+        canvas2d.style.top = "0px"
+        canvas2d.style.right = "0px"
+        canvas2d.tabindex = 0
         //var ctx = canvas.getContext("2d")
     } else {
         // user managed canvas
@@ -600,7 +602,18 @@ console.warn("TODO: test 2D/3D reservation")
 console.warn("TODO: user defined canvas")
     }
 
-    vm.canvas = canvas
+    vm.canvas2d = canvas2d
+
+    var canvas3d = document.getElementById("canvas3d")
+    if (!canvas3d) {
+        canvas3d = add_canvas("canvas3d", 128, 128)
+        canvas3d.style.position = "absolute"
+        canvas3d.style.bottom = "0px"
+        canvas3d.style.left = "0px"
+
+    }
+    vm.canvas3d = canvas3d
+
 /*
 
 
@@ -625,6 +638,7 @@ console.warn("TODO: user defined canvas")
 
     // window resize
     function window_canvas_adjust(divider) {
+        const canvas = vm.canvas2d
         var want_w
         var want_h
 
@@ -660,9 +674,6 @@ console.warn("TODO: user defined canvas")
         want_w = Math.trunc(want_w / divider )
         want_h = Math.trunc(want_w / ar)
 
-        if (vm.config.debug)
-            console.log("window[DEBUG:CORRECTED]:", want_w, want_h, ar, divider)
-
 
         // constraints
         if (want_h > max_height) {
@@ -675,10 +686,6 @@ console.warn("TODO: user defined canvas")
                 want_h = want_h / ar
         }
 
-        // apply
-
-        canvas.style.width = want_w + "px"
-        canvas.style.height = want_h + "px"
 
         if (vm.config.debug) {
             canvas.style.margin= "none"
@@ -697,10 +704,20 @@ console.warn("TODO: user defined canvas")
             canvas.style.right = 0
             canvas.style.margin= "auto"
         }
+
+        // apply
+        canvas.style.width = want_w + "px"
+        canvas.style.height = want_h + "px"
+
+        if (vm.config.debug)
+            console.log(`window[DEBUG:CORRECTED]: ${want_w}, ${want_h}, ar=${ar}, div=${divider}`)
+
+
     }
 
 
     function window_canvas_adjust_3d(divider) {
+        const canvas = vm.canvas3d
         divider = divider || 1
         if ( (canvas.width==1) && (canvas.height==1) ){
             console.log("canvas context not set yet")
@@ -731,6 +748,10 @@ console.warn("TODO: user defined canvas")
         want_w = max_width
         want_h = max_height
 
+
+        if (vm.config.debug)
+            console.log("window3D[DEBUG:CORRECTED]:", want_w, want_h, ar, divider)
+
         // keep fb ratio
         want_w = Math.trunc(want_w / divider )
         want_h = Math.trunc(want_w / ar)
@@ -752,10 +773,6 @@ console.warn("TODO: user defined canvas")
         canvas.width  = vm.config.fb_width
         canvas.height = vm.config.fb_height
 
-        // apply viewport size
-        canvas.style.width = want_w + "px"
-        canvas.style.height = want_h + "px"
-
         canvas.style.position = "absolute"
         canvas.style.top = 0
         canvas.style.right = 0
@@ -770,10 +787,13 @@ console.warn("TODO: user defined canvas")
             canvas.style.left = "auto"
             canvas.style.bottom = "auto"
         }
+
+        // apply viewport size
+        canvas.style.width = want_w + "px"
+        canvas.style.height = want_h + "px"
+
         queue_event("resize3d", { width : want_w, height : want_h } )
 
-        //const gl = canvas.getContext('webgl2')
-        //gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
     }
 
     function window_resize_3d(gui_divider) {
@@ -813,7 +833,8 @@ console.log(" @@@@@@@@@@@@@@@@@@@@@@ 3D CANVAS @@@@@@@@@@@@@@@@@@@@@@")
     else
         window.window_resize = window_resize_2d
 
-    return canvas
+    vm.canvas = canvas2d || canvas3d
+    return vm.canvas
 }
 
 
@@ -1369,8 +1390,10 @@ window.MM.camera.init = function * (device, width,height, preview, grabber) {
         var framegrabber = null
 
         if (window.stdout) {
+
             if (preview)
                 stdout.appendChild(vidcap)
+
             if (grabber) {
                 framegrabber = document.createElement('canvas')
                 stdout.appendChild(framegrabber)
@@ -1874,11 +1897,11 @@ async function onload() {
 
             vm.config.user_canvas_managed = vm.config.user_canvas_managed || 1
 
-            const canvas = feat_gui(true)
-            if ( canvas.innerHTML.length > 20 ) {
+            const canvasXd = feat_gui(true)
+            if ( canvasXd.innerHTML.length > 20 ) {
                 vm.PyConfig.frozen = "/tmp/to_embed.py"
             }
-            // only canvas when embedding, stdxxx go to console.
+            // only canvas when embedding 2D/3D, stdxxx go to console.
             break
         }
 
@@ -2070,7 +2093,7 @@ console.log("pythons found at", url , elems)
 config.interactive = config.interactive || (location.search.search("-i")>=0) //??=
 
     config.cols = cfg.cols || 132
-    config.lines = cfg.lines || 42
+    config.lines = cfg.lines || 32
 
     config.gui_debug = config.gui_debug ||  2  //??=
 

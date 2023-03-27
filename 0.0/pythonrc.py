@@ -2,9 +2,13 @@
 
 import os, sys, json, builtins
 
+
 # to be able to access aio.cross.simulator
 import aio
 import aio.cross
+
+# placeholder until v1.0
+sys.modules["pygbag"] = aio
 
 import time
 import inspect
@@ -120,7 +124,6 @@ except:
                 varname = l.split("=", 1)[0].strip(" []()")
 
                 for varname in map(str.strip, varname.split(",")):
-
                     if varname.find(" ") > 0:
                         continue
 
@@ -212,7 +215,6 @@ PyConfig["pygbag"] = 0
 
 
 class shell:
-
     # pending async tasks
     coro = []
 
@@ -535,7 +537,6 @@ ________________________
     # TODO: use run interactive c-api to run this one.
     @classmethod
     def run(cls, *argv, **env):
-
         __main__ = __import__("__main__")
         __main__dict = vars(__main__)
 
@@ -854,7 +855,6 @@ if not aio.cross.simulator:
     del fix_url
 
     def apply_patches():
-
         # use shell generators instead of subprocesses
         # ==========================================================
 
@@ -877,7 +877,6 @@ if not aio.cross.simulator:
         import webbrowser
 
         def browser_open(url, new=0, autoraise=True):
-
             platform.window.open(url, "_blank")
 
         def browser_open_new(url):
@@ -950,7 +949,6 @@ if not aio.cross.simulator:
         from platform import window, document, ffi
 
         class fopen:
-
             flags = {
                 #                'mode': "no-cors",
                 "redirect": "follow",
@@ -1087,7 +1085,6 @@ if not aio.cross.simulator:
             # raise EOFError
 
         def eval(self, source):
-
             for count, line in enumerate(source.split("\n")):
                 if not count:
                     if line.startswith("<"):
@@ -1155,7 +1152,6 @@ if not aio.cross.simulator:
 
         @classmethod
         def list_imports(cls, code=None, file=None):
-
             if code is None:
                 if file:
                     with open(file) as fcode:
@@ -1195,7 +1191,6 @@ if not aio.cross.simulator:
             unseen = False
             for mod in mods:
                 for dep in cls.repos[0]["packages"].get(mod, {}).get("depends", []):
-
                     if mod in sys.modules:
                         continue
 
@@ -1217,29 +1212,29 @@ if not aio.cross.simulator:
             if "numpy" in wants:
                 wants.remove("numpy")
                 wants.insert(0, "numpy")
-# FIXME !
-# FIXME !
-# FIXME !
-# FIXME !
-# FIXME !
-# FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
 
             if "igraph" in wants:
                 if "texttable" in wants:
                     wants.remove("texttable")
                 wants.insert(0, "texttable")
 
-            if 'pygame_gui' in wants:
-                wants.insert(0,"i18n")
-# FIXME !
-# FIXME !
-# FIXME !
-# FIXME !
-# FIXME !
-# FIXME !
-# FIXME !
-# FIXME !
-# FIXME !
+            if "pygame_gui" in wants:
+                wants.insert(0, "i18n")
+            # FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
 
             return wants
 
@@ -1372,7 +1367,6 @@ if not aio.cross.simulator:
 
         @classmethod
         async def pv(cls, track, prefix="", suffix="", decimals=1, length=70, fill="X", printEnd="\r"):
-
             # Progress Bar Printing Function
             def print_pg_bar(total, iteration):
                 if iteration > total:
@@ -1423,7 +1417,6 @@ if not aio.cross.simulator:
 
 
 else:
-
     pdb("TODO: js simulator")
 
 
@@ -1641,14 +1634,14 @@ def patch():
         import pygame
         import platform_wasm.pygame
         import platform_wasm.pygame.vidcap
-        pygame.vidcap = platform_wasm.pygame.vidcap
 
+        sys.modules["pygame.vidcap"] = platform_wasm.pygame.vidcap
 
     platform.patches = {
         "matplotlib": patch_matplotlib_pyplot,
         "panda3d": patch_panda3d_showbase,
         "wcwidth": patch_cwcwidth,
-        "pygame.base" : patch_pygame,
+        "pygame.base": patch_pygame,
     }
 
 
@@ -1702,12 +1695,15 @@ def CSI(*argv):
     for arg in argv:
         ESC(f"[{arg}")
 
+
 try:
     console
 except:
+
     class console:
-        def log(*argv,**kw):
+        def log(*argv, **kw):
             import io
+
             kw["file"] = io.StringIO(newline="\r\n")
             print(*argv, **kw)
             embed.warn(kw["file"].getvalue())
@@ -1846,16 +1842,15 @@ async def import_site(__file__, run=True):
         if local and local.is_file():
             pdir = str(local.parent)
             os.chdir(pdir)
-            if '-v' in PyConfig.orig_argv:
+            if "-v" in PyConfig.orig_argv:
                 print()
                 print("_" * 70)
-                with open(local,"r") as source:
+                with open(local, "r") as source:
                     for i, l in enumerate(source.readlines()):
                         print(str(i).zfill(5), l, end="")
                 print()
                 print("_" * 70)
                 print()
-
 
             # TODO: check orig_argv for isolation parameters
             if not pdir in sys.path:
