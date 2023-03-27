@@ -6,6 +6,9 @@ import aio.prepro
 
 aio.prepro.DEBUG = DEBUG
 
+#
+platform_impl = False
+
 # that sym cannot be overloaded in a simulator
 
 if not defined("__WASM__"):
@@ -21,12 +24,10 @@ if not defined("__WASM__"):
 
 
 if not defined("__wasi__"):
-    if sys.platform in ["wasi"]:
+    if sys.platform == "wasi":
         import __wasi__
     else:
         __wasi__ = False
-
-    define("__wasi__", __wasi__)
 
     # setup exception display with same syntax as upy
     import traceback
@@ -37,6 +38,8 @@ if not defined("__wasi__"):
 
     sys.print_exception = print_exception
     del print_exception
+
+define("__wasi__", __wasi__)
 
 
 # this *is* the cpython way
@@ -63,11 +66,12 @@ if hasattr(sys, "getandroidapilevel"):
     except:
         defined("__ANDROID_API__", sys.getandroidapilevel())
 
+define("__ANDROID__", platform_impl)
+
 
 if sys.platform == "emscripten":
     platform_impl = defined("__EMSCRIPTEN__")
     if not platform_impl:
-        # pdb("importing platform_impl __EMSCRIPTEN__")
         try:
             import __EMSCRIPTEN__ as platform_impl
         except Exception as e:
@@ -81,7 +85,8 @@ if sys.platform == "emscripten":
 
             # fake it
             platform_impl == __import__("__main__")
-        define("__EMSCRIPTEN__", platform_impl)
+
+define("__EMSCRIPTEN__", platform_impl)
 
 
 driver = defined("embed")
@@ -89,31 +94,31 @@ try:
     if not driver:
         import embed as driver
 except:
-    # use the simulator defined platform_impl value as the embed.
+    # else use the simulator defined platform_impl value as the embed.
     driver = platform_impl
+if driver:
+    # just in case it was not a module
+    sys.modules.setdefault("embed", driver)
 
-# just in case it was not a module
-sys.modules.setdefault("embed", driver)
+    try:
+        # check it the embedding module was finished for that platform_impl.
+        # the least shoulbe syslog ( js console / adb logcat )
+        driver.log
+    except:
+        pdb(
+            """\
+    WARNING: embed softrt/syslog functions not found
+    WARNING: also not in __main__ or simulator provided platform_impl module
+    """
+        )
+        driver.enable_irq = print
+        driver.disable_irq = print
+        driver.log = print
 
-try:
-    # check it the embedding module was finished for that platform_impl.
-    # the least shoulbe syslog ( js console / adb logcat )
-    driver.log
-except:
-    pdb(
-        """\
-WARNING: embed softrt/syslog functions not found
-WARNING: also not in __main__ or simulator provided platform_impl module
-"""
-    )
-    driver.enable_irq = print
-    driver.disable_irq = print
-    driver.log = print
+    define("embed", driver)
 
-define("embed", driver)
-
-platform_impl.init_platform(driver)
-sys.modules["platform"] = platform_impl
+    platform_impl.init_platform(driver)
+    sys.modules["platform"] = platform_impl
 
 
 # ================== leverage known python implementations ====================

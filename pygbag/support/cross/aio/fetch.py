@@ -1,24 +1,62 @@
 import sys
-from urllib.parse import urlencode
+import os
 import asyncio
 import platform
 import json
+import warnings
+import shutil
 
-preload = []
+from pathlib import Path
+from urllib.parse import urlencode
+
+preload_list = []
 preloaded = []
 
 
-def FS(tree, base=".", silent=True, debug=False):
-    global preload
-    path = [base]
+def FS(tree, silent=False, debug=True):
+    global preload_list
+
+    target = [""]
+    path = [""]
+
     base_url = ""
+    base_path = ""
+
     last = 0
     trail = False
+
+    def make_src_dst(base_url, path, target):
+        global preload_list
+        nonlocal debug
+        dst = target.copy()
+        dst.extend(path[1:])
+
+        preload_list.append([base_url + "/".join(path), "/".join(dst)])
+        if debug:
+            print(preload_list[-1], "write", current, last)
+
     for l in map(str.rstrip, tree.split("\n")):
+        # skip blanks
         if not l:
             continue
+
+        # skip root of tree, use current url as base_url
         if l == ".":
+            preload_list.append(["", "."])
             continue
+
+        if l.find(" ~") > 0:
+            # reset source
+            path = [""]
+
+            base_path, trail = map(str.strip, l.split("~", 1))
+
+            # set destination
+            target = [trail]
+            if debug:
+                print(base_path, target)
+            continue
+
         if l.startswith("http"):
             # found a base url
             base_url = l
@@ -29,16 +67,21 @@ def FS(tree, base=".", silent=True, debug=False):
                 base_url = base_url.replace("/tree/", "/", 1)
 
             base_url = base_url.rstrip("/") + "/"
+
+            if not silent:
+                print("HTMLFS:", base_url, base_path, "=>", target)
+
+            preload_list.append([base_url, "."])
             continue
 
         pos, elem = l.rsplit(" ", 1)
         current = (1 + len(pos)) // 4
+
         if not silent:
             print(l[4:])
+
         if current <= last:
-            preload.append([base_url + "/".join(path), "/".join(path)])
-            if debug:
-                print(preload[-1], "write", current, last)
+            make_src_dst(base_path, path, target)
             while len(path) > current:
                 path.pop()
         else:
@@ -52,33 +95,59 @@ def FS(tree, base=".", silent=True, debug=False):
         last = current
 
     if trail:
-        preload.append([base_url + "/".join(path), "/".join(path)])
+        make_src_dst(base_path, path, target)
+    print("-" * 80)
+    for x in preload_list:
+        print(x)
+    print("-" * 80)
+    return preload_list
 
 
-async def preload_fetch(silent=True, debug=False, standalone=False):
-    global preload, preloaded
-    from pathlib import Path
+async def preload(chroot=None, chdir=True, silent=True, debug=False, standalone=False):
+    global preload_list, preloaded
+
+    # if not using FS, do not change directory
+    if not len(preload_list):
+        return
+
+    cwd = Path.cwd()
+
+    # if using FS, always go to tempdir
+    if chroot is None:
+        chroot = __import__("tempfile").gettempdir()
+
+    target = Path(chroot)
 
     base_url = ""
     fileset = []
 
-    while len(preload):
-        url, strfilename = preload.pop(0)
+    while len(preload_list):
+        url, strfilename = preload_list.pop(0)
+        filename = target / strfilename
+
         if strfilename == ".":
             base_url = url
+            if debug:
+                print("{base_url=} set")
             continue
-        if base_url:
-            url = base_url + "/" + url
 
-        filename = Path(strfilename)
         if debug:
-            print(f"{url} => {Path.cwd() / filename}")
+            print(f"{base_url=}{url=} => {filename=}")
 
         if not filename.is_file():
             filename.parent.mkdir(parents=True, exist_ok=True)
-            async with platform.fopen(url, "rb") as source:
-                with open(filename, "wb") as target:
-                    target.write(source.read())
+            if sys.platform in ("emscripten", "wasi"):
+                async with platform.fopen(url, "rb") as source:
+                    with open(filename, "wb") as destination:
+                        destination.write(source.read())
+            else:
+                localfile = Path(cwd.as_posix() + "/" + url)
+                if localfile.is_file():
+                    if debug:
+                        print(f"GET {localfile=} {chroot=} {filename=}")
+                    shutil.copy(localfile, filename)
+                else:
+                    warnings.warn(f"{localfile=} not found")
 
         fileset.append(filename)
 
@@ -86,8 +155,14 @@ async def preload_fetch(silent=True, debug=False, standalone=False):
             print("FS:", filename)
 
     preloaded.extend(fileset)
+
+    if chdir:
+        os.chdir(chroot)
+
     if standalone:
         return fileset
+
+    await asyncio.sleep(0)
     return preloaded.copy()
 
 

@@ -24,7 +24,7 @@ export DYNLOAD=${SDKROOT}/prebuilt/emsdk/${PYBUILD}/lib-dynload
 
 echo "
     *   building loader $(pwd) for ${VENDOR} / ${PACKAGES}
-            PYBUILD=$PYBUILD
+            PYBUILD=$PYBUILD python${PYMAJOR}${PYMINOR}
             EMFLAVOUR=$EMFLAVOUR
             EMSDK=$EMSDK
             SDKROOT=$SDKROOT
@@ -32,6 +32,7 @@ echo "
             HPY=$HPY
             LD_VENDOR=$LD_VENDOR
 " 1>&2
+
 
 
 # SDL2_image turned off : -ltiff
@@ -221,9 +222,15 @@ then
     # --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \
     # --preload-file ${ROOT}/support/xterm@/etc/termcap \
 
+
+# TODO: test -sWEBGL2_BACKWARDS_COMPATIBILITY_EMULATION
+
+#
+#  -sWEBGL2_BACKWARDS_COMPATIBILITY_EMULATION
+
     LDFLAGS="$LD_VENDOR -sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
-#    LDFLAGS="$LD_VENDOR -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES2"
-#NOT OK    LDFLAGS="$LD_VENDOR -sMAX_WEBGL_VERSION=1 -sFULL_ES2"
+
+#    LDFLAGS="$LD_VENDOR -sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES2"
 
     if echo ${PYBUILD}|grep -q 10$
     then
@@ -255,26 +262,46 @@ then
 
     " 1>&2
 
-    if emcc -m32 $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG\
-     -sTOTAL_MEMORY=256MB -sSTACK_SIZE=4MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \
-     $CF_SDL \
-     --use-preload-plugins \
-     $STDLIBFS \
-     $ALWAYS_FS \
-     $SUPPORT_FS \
-     $PATCH_FS \
-     --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \
-     --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \
-     -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \
+    cat > final_link.sh <<END
+#!/bin/bash
+emcc -m32 $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG \\
+     -sTOTAL_MEMORY=256MB -sSTACK_SIZE=4MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
+     $CF_SDL \\
+     --use-preload-plugins \\
+     $STDLIBFS \\
+     $ALWAYS_FS \\
+     $SUPPORT_FS \\
+     $PATCH_FS \\
+     --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \\
+     --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \\
+     -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \\
      $LDFLAGS
+
+END
+    chmod +x ./final_link.sh
+    if ./final_link.sh
     then
         rm build/${MODE}.o
         du -hs ${DIST_DIR}/*
         echo Total
         echo _________
+
         if $CI
         then
-            cp -r static/* ${DIST_DIR}/
+            if [ -f /pp ]
+            then
+                USECP=false
+            else
+                USECP=true
+            fi
+        else
+            USECP=false
+        fi
+
+
+        if $USECP
+        then
+            cp -R static/* ${DIST_DIR}/
             cp pygbag/support/pythonrc.py ${DIST_DIR}/pythonrc.py
             # for simulator
             cp pygbag/support/pythonrc.py ${SDKROOT}/support/
@@ -294,8 +321,14 @@ then
             done
             popd
         fi
-
-        du -hs ${DIST_DIR}
+#echo "
+#    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#    emsdk tot js gen temp fix
+#    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#"
+#        sed -i 's/_glfwSetWindowContentScaleCallback_sig=iii/_glfwSetWindowContentScaleCallback_sig="iii"/g' \
+#         ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js
+        du -hs ${DIST_DIR}/python*
     else
         echo "pymain+loader linking failed"
         exit 178

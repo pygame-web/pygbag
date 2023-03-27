@@ -63,6 +63,7 @@ import urllib.request
 
 # installer "cp437"
 import compileall, csv, configparser
+from email.policy import compat32
 
 #telemetrix
 import concurrent.futures.thread
@@ -123,6 +124,8 @@ import xml.dom.minidom
 from xml.dom import expatbuilder
 import pydoc
 
+# Box2D
+import optparse
 
 
 if 0:

@@ -3,6 +3,14 @@
 # last 0.7.0
 __version__ = "0.0.0"
 
+import sys
+from pathlib import Path
+
+# make aio available
+
+
+sys.path.append(str(Path(__file__).parent / "support/cross"))
+
 
 # WaPy=>CPython compat
 
@@ -28,13 +36,12 @@ def ESC(*argv):
     for arg in argv:
         sys.__stdout__.write(chr(0x1B))
         sys.__stdout__.write(arg)
+    embed.flush()
 
 
 def CSI(*argv):
     for arg in argv:
-        sys.__stdout__.write(chr(0x1B))
-        sys.__stdout__.write("[")
-        sys.__stdout__.write(arg)
+        ESC(f"[{arg}")
 
 
 builtins.ESC = ESC

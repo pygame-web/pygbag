@@ -98,6 +98,7 @@ def html_embed(target_folder, packlist: list, htmlfile: str):
     topack = "/main.py"
 
     with open(htmlfile, "w+", encoding="utf-8") as html:
+
         def main_py():
             with open(target_folder / topack[1:], "r", encoding="utf-8") as file:
                 return enumerate(file.readlines())

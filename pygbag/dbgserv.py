@@ -249,7 +249,7 @@ class Client(object):
         else:
             keys = []
         keys.extend((len(channelnames) - len(keys)) * [None])
-        for (i, channelname) in enumerate(channelnames):
+        for i, channelname in enumerate(channelnames):
             if for_join and irc_lower(channelname) in self.channels:
                 continue
             if not valid_channel_re.match(channelname):
@@ -304,7 +304,7 @@ class Client(object):
                 self.reply_461("JOIN")
                 return
             if arguments[0] == "0":
-                for (channelname, channel) in self.channels.items():
+                for channelname, channel in self.channels.items():
                     self.message_channel(channel, "PART", channelname, True)
                     self.channel_log(channel, "left", meta=True)
                     server.remove_member_from_channel(self, channelname)

@@ -6,16 +6,16 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.33.0
+        SDK_VERSION: 3.1.34.1
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: emsdk pygame
         STATIC: false
         BUILDS: 3.11
-        CYTHON: Cython-3.0.0a11-py2.py3-none-any.whl
+        CYTHON: Cython-3.0.0b1-py2.py3-none-any.whl
         LD_VENDOR: -sUSE_GLFW=3 
 
     steps:
-    - uses: actions/checkout@v3.0.2
+    - uses: actions/checkout@v3.3.0
     - name: pygame-wasm-builder prepare
       run: |
             pwd
@@ -54,7 +54,7 @@ jobs:
 
 
     - name : "Upload to GitHub pages"
-      uses: JamesIves/github-pages-deploy-action@4.1.7
+      uses: JamesIves/github-pages-deploy-action@v4.4.1
       with:
         branch: gh-pages
         folder: build/web/archives

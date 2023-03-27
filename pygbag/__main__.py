@@ -118,7 +118,6 @@ async def import_site():
     from pathlib import Path
 
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
-
         HTML_MARK = '""" # BEGIN -->'
 
         @classmethod
@@ -163,7 +162,6 @@ async def import_site():
         mutator.transform_file(sourcefile, f"{sourcefile[:-3]}.pn")
 
     else:
-
         import aio.clock
 
         # asyncio.create_task( aio.clock.loop() )

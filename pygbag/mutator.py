@@ -222,13 +222,13 @@ def transform_source_switch(source, callback_params=None, **_kwargs):
 
         var_name = EXPR
         if var_name == EXPR_1:
-                SUITE
+            SUITE
         elif var_name == EXPR_2:
-                SUITE
+            SUITE
         elif var_name in EXPR_3, EXPR_4, ...:
-                SUITE
+            SUITE
         else:
-                SUITE
+            SUITE
         del var_name
 
     Limitation: switch blocks cannot be part of a SUITE of another switch block.
@@ -317,3 +317,68 @@ def transform_source_sched_yield(source, **_kwargs):
         new_tokens.append(token)
 
     return token_utils.untokenize(new_tokens)
+
+
+# =============================================================================
+
+
+def transform_coordinates(source, **_kwargs):
+    """This adds a multiplication symbol where it would be understood as
+    being implicit by the normal way algebraic equations are written but would
+    be a SyntaxError in Python. Thus we have::
+        2n  -> 2*n
+        n 2 -> n* 2
+        2(a+b) -> 2*(a+b)
+        (a+b)2 -> (a+b)*2
+        2 3 -> 2* 3
+        m n -> m* n
+        (a+b)c -> (a+b)*c
+    The obvious one (in algebra) being left out is something like ``n(...)``
+    which is a function call - and thus valid Python syntax.
+    """
+
+    tokens = token_utils.tokenize(source)
+    if not tokens:
+        return tokens
+
+    prev_token = tokens[0]
+    new_tokens = [prev_token]
+
+    store = []
+    flush = False
+
+    def do_flush(tok):
+        nonlocal flush, store
+        flush = True
+        store.append(tok)
+
+    for token in tokens[1:]:
+        # The code has been written in a way to demonstrate that this type of
+        # transformation could be done as the source is tokenized by Python.
+        if prev_token.is_number() and (token.is_identifier() or token.is_number() or token == "("):
+            do_flush(" x1 ")
+
+        if prev_token.is_identifier() and (token.is_identifier() or token.is_number()):
+            do_flush(" x2 ")
+
+        if prev_token == ")" and (token.is_identifier() or token.is_number()):
+            do_flush(" x3 ")
+
+        if flush:
+            new_tokens.extend(store)
+            store.clear()
+            flush = False
+        else:
+            new_tokens.append(token)
+
+        prev_token = token
+
+    return token_utils.untokenize(new_tokens)
+
+
+if __name__ == "__main__":
+    import sys
+
+    print(sys.argv[-1])
+    with open(sys.argv[-1], "rb") as file:
+        print(transform_coordinates(file.read().decode("utf-8")))

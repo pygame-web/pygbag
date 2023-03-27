@@ -8,11 +8,14 @@ from .optimizing import optimize
 from .html_embed import html_embed
 
 COUNTER = 0
+
+
 class REPLAY:
     HTML = False
     LIST = []
     APK = ""
     TARGET = ""
+
 
 async def pack_files(zf, packlist, zfolders, target_folder):
     global COUNTER

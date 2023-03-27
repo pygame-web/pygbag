@@ -58,7 +58,7 @@ if devmode:
 
 else:
     # use latest git build
-    if cdn_version == '0.0':
+    if cdn_version == "0.0":
         DEFAULT_CDN = f"https://pygame-web.github.io/pygbag/{cdn_version}/"
     else:
         DEFAULT_CDN = f"https://pygame-web.github.io/archives/{cdn_version}/"
@@ -455,7 +455,6 @@ now packing application ....
             return
 
         elif not args.build:
-
             from . import testserver
 
             testserver.run_code_server(args, CC)

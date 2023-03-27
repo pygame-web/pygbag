@@ -188,6 +188,7 @@ def defer(fn, argv=(), kw={}, delay=0, framerate=60):
 
 inloop = False
 
+
 # this runs both asyncio loop and the arduino style stepper
 def step(*argv):
     global inloop, last_state, paused, started, loop, oneshots, protect
@@ -206,7 +207,6 @@ def step(*argv):
         return
 
     try:
-
         # TODO: OPTIM: remove later
         if inloop:
             pdb("97: FATAL: aio loop not re-entrant !")
@@ -322,15 +322,11 @@ def create_task(coro, *, name=None, context=None):
     return task
 
 
-# save orignal asyncio.run in case platform does not support readline hooks.
-# __run__ = run
-
 #
 run_called = False
 
 
 def run(coro, *, debug=False):
-
     global paused, loop, started, step, DEBUG, run_called, exit
 
     debug = debug or DEBUG
@@ -343,8 +339,7 @@ def run(coro, *, debug=False):
                 async def __main__():
                     import aio.fetch
 
-                    await aio.fetch.preload_fetch()
-                    await asyncio.sleep(0)
+                    await aio.fetch.preload()
                     await coro
 
                 wrapper = __main__()
@@ -377,8 +372,14 @@ def run(coro, *, debug=False):
 
         # fallback to blocking asyncio
         else:
-            loop.run_forever()
-        print(f"364: asyncio.run({coro=})")
+            asyncio.events._set_running_loop(None)
+            # TODO: implement RaF from here
+            try:
+                loop.run_forever()
+            except KeyboardInterrupt:
+                loop.close()
+
+        print(f"378: asyncio.run({coro=})")
     elif run_called:
         pdb("273: aio.run called twice !!!")
 

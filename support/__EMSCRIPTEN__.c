@@ -346,7 +346,11 @@ static struct PyModuleDef mod_embed = {
     "embed",
     NULL,
     -1,
-    mod_embed_methods
+    mod_embed_methods,
+    NULL, // m_slots
+    NULL, // m_traverse
+    NULL, // m_clear
+    NULL, // m_free
 };
 
 static PyObject *embed_dict;
@@ -538,7 +542,7 @@ main_iteration(void) {
     HOST_RETURN(0);
 }
 
-//#define EGLTEST
+#define EGLTEST
 
 
 
@@ -564,11 +568,15 @@ egl_GetCurrentDisplay (void) {
 
 
 EMSCRIPTEN_KEEPALIVE void egl_test() {
-    EGLContext context;
-    EGLSurface surface;
+    EGLContext context = NULL;
+    EGLSurface surface = NULL;
+    EGLDisplay display = NULL;
+    EGLNativeWindowType dummyWindow = 0;
     EGLConfig config;
 
-    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+#if 0
+
+    display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     assert(display != EGL_NO_DISPLAY);
     assert(eglGetError() == EGL_SUCCESS);
 
@@ -598,7 +606,7 @@ EMSCRIPTEN_KEEPALIVE void egl_test() {
     assert(eglGetError() == EGL_SUCCESS);
     assert(ret == EGL_TRUE);
 
-    EGLNativeWindowType dummyWindow = 0;
+    dummyWindow = 0;
 
     surface = eglCreateWindowSurface(display, config, dummyWindow, NULL);
     if ( surface == EGL_NO_SURFACE ){
@@ -611,19 +619,43 @@ EMSCRIPTEN_KEEPALIVE void egl_test() {
     printf("(%d, %d)\n", width, height);
 
     // Create a GL context
+
     context = eglCreateContext(display, config, EGL_NO_CONTEXT, attribs );
-    if ( context == EGL_NO_CONTEXT ) {
-        puts("EGL_NO_CONTEXT");
+
+    surface = eglCreateWindowSurface(display, config, dummyWindow, NULL);
+    if ( surface == EGL_NO_SURFACE ){
+        puts("EGL_NO_SURFACE");
     }
 
-       // Make the context current
+    // Make the context current
     if ( !eglMakeCurrent(display, surface, surface, context) ) {
         puts("!eglMakeCurrent");
-        goto fail;
+        //goto fail;
+    }
+
+#else
+    EmscriptenWebGLContextAttributes attr;
+	emscripten_webgl_init_context_attributes(&attr);
+	attr.alpha = 0;
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#canvas3d", &attr);
+    emscripten_webgl_make_context_current(ctx);
+
+    context = (EGLContext)emscripten_webgl_get_current_context();
+
+    display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    assert(display != EGL_NO_DISPLAY);
+    assert(eglGetError() == EGL_SUCCESS);
+
+#endif
+
+
+    if ( context == EGL_NO_CONTEXT ) {
+        puts("EGL_NO_CONTEXT");
+    } else {
+        puts("EGL_CONTEXT");
     }
 
     puts("EGL test complete");
-
 
     puts(glGetString(GL_VERSION));
 
@@ -643,14 +675,11 @@ embed_webgl(PyObject *self, PyObject *args, PyObject *kwds)
     egl_test();
     #endif
 
-	EmscriptenWebGLContextAttributes attr;
-	emscripten_webgl_init_context_attributes(&attr);
-	attr.alpha = 0;
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_get_current_context();
+	//EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#canvas3d", &attr);
+	//emscripten_webgl_make_context_current(ctx);
 
-	// target the canvas selector
-	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#canvas", &attr);
-	emscripten_webgl_make_context_current(ctx);
-    glClearColor(0.984, 0.4627, 0.502, 1.0);
+    glClearColor(0.9, 0.5, 0.5, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
     return Py_BuildValue("i", emscripten_webgl_get_current_context() );
 }
@@ -814,7 +843,7 @@ EM_ASM({
 
 
 #   if defined(EGLTEST)
-    egl_test();
+//    egl_test();
 #   endif // EGLTEST
 
 
@@ -849,26 +878,11 @@ EM_ASM({
 
     // SDL2 basic init
     {
-        //SDL_Init(SDL_INIT_EVERYTHING); //SDL_INIT_VIDEO | SDL_INIT_TIMER);
-
         if (TTF_Init())
             fprintf(stderr, "ERROR: TTF_Init error");
 
         const char *target = "1";
         SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, target);
-
-/*
-        note for self : typical sdl2 init ( emscripten samples are sdl1 )
-        SDL_CreateWindow("default", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, 0);
-        window = SDL_CreateWindow("CheckKeys Test",
-                                  SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                  800, 600, 0);
-        renderer = SDL_CreateRenderer(window, -1, 0);
-        SDL_RenderPresent(renderer);
-
-        emscripten_set_keypress_callback_on_thread(target, NULL, false, &on_keyboard_event, NULL);
-        emscripten_set_keypress_callback(target, NULL, false, &on_keyboard_event);
-*/
     }
 
     emscripten_set_main_loop( (em_callback_func)main_iteration, 0, 1);
