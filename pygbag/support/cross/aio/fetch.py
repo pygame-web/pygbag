@@ -204,7 +204,10 @@ window.Fetch.POST = function * POST (url, data)
 {
     // post info about the request
     console.log("POST: " + url + "\nData: " + data);
-    var request = new Request(url, {method: 'POST', body: JSON.stringify(data)})
+    // add headers for POST accept: application/json
+    var request = new Request(url, {headers: {'Accept': 'application/json','Content-Type': 'application/json'},
+        method: 'POST', 
+        body: JSON.stringify(data)});
     var content = 'undefined';
     fetch(request)
    .then(resp => resp.text())
