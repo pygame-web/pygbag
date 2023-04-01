@@ -195,19 +195,16 @@ class RequestHandler:
         if self.is_emscripten:
             self._js_code = """
 window.Fetch = {}
-
 // generator functions for async fetch API
 // script is meant to be run at runtime in an emscripten environment
-
 // Fetch API allows data to be posted along with a POST request
 window.Fetch.POST = function * POST (url, data)
 {
     // post info about the request
-    console.log("POST: " + url + "\nData: " + data);
-    // add headers for POST accept: application/json
+    console.log('POST: ' + url + 'Data: ' + data);
     var request = new Request(url, {headers: {'Accept': 'application/json','Content-Type': 'application/json'},
         method: 'POST', 
-        body: JSON.stringify(data)});
+        body: data});
     var content = 'undefined';
     fetch(request)
    .then(resp => resp.text())
@@ -220,17 +217,16 @@ window.Fetch.POST = function * POST (url, data)
          console.log("An Error Occurred:")
          console.log(err);
     });
-
     while(content == 'undefined'){
-        yield content;
+        yield;
     }
+    yield content;
 }
-
 // Only URL to be passed
 // when called from python code, use urllib.parse.urlencode to get the query string
 window.Fetch.GET = function * GET (url)
 {
-    console.log("GET: " + url);
+    console.log('GET: ' + url);
     var request = new Request(url, { method: 'GET' })
     var content = 'undefined';
     fetch(request)
@@ -244,11 +240,12 @@ window.Fetch.GET = function * GET (url)
          console.log("An Error Occurred:");
          console.log(err);
     });
-
     while(content == 'undefined'){
         // generator
-        yield content;
+        yield;
     }
+
+    yield content;
 }
             """
             try:
@@ -304,7 +301,7 @@ window.Fetch.GET = function * GET (url)
                 self.print(content)
             self.result = content
         else:
-            self.result = self.requests.post(url, data).text
+            self.result = self.requests.post(url, data, headers={'Accept': 'application/json','Content-Type': 'application/json'}).text
         return self.result
 
     # def post(self, url, data=None):
