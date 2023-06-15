@@ -1455,7 +1455,8 @@ def patch():
     os.environ["COLS"] = str(COLS)
     os.environ["LINES"] = str(LINES)
 
-    def patch_os_get_terminal_size():
+
+    def patch_os_get_terminal_size(fd=0):
         cols = os.environ.get("COLS", 80)
         lines = os.environ.get("LINES", 25)
         try:
