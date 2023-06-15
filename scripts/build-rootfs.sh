@@ -36,6 +36,7 @@ try:
 except:
     pass
 
+import multiprocessing.connection
 
 # sockets ????
 import asyncio.selector_events

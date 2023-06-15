@@ -1,5 +1,8 @@
 # fixme should be auto
-import aio.gthread
+try:
+    import aio.gthread as threading
+except:
+    ...
 
 import asyncio
 import pygame

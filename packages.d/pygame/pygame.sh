@@ -71,7 +71,6 @@ then
         pushd $(pwd)/pygame-wasm
     fi
 
-    #wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/1.diff | patch -p1
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
 
 else

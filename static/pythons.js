@@ -67,7 +67,7 @@ function reverse(s){
     return s.split("").reverse().join("");
 }
 
-// please comment if you find a bug
+// please comment here if you find a bug
 // https://stackoverflow.com/questions/5202085/javascript-equivalent-of-pythons-rsplit
 
 String.prototype.rsplit = function(sep, maxsplit) {
@@ -92,12 +92,14 @@ String.prototype.rsplit = function(sep, maxsplit) {
     if (result.length) {
         result.reverse()
         if (data.length>1) {
-            return [data.join(sep), result ]
+            // thx @imkzh
+            return [data.join(sep), ...result ]
         }
         return result
     }
     return [this]
 }
+
 
 function jsimport(url, sync) {
     const jsloader=document.createElement('script')
