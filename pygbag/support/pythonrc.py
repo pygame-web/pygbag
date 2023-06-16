@@ -1460,9 +1460,10 @@ def patch():
         cols = os.environ.get("COLS", 80)
         lines = os.environ.get("LINES", 25)
         try:
-            return (int(cols), int(lines))
+            res= (int(cols), int(lines),)
         except:
-            return (80, 25)
+            res (80, 25,)
+        return os.terminal_size(res)
 
     os.get_terminal_size = patch_os_get_terminal_size
 
