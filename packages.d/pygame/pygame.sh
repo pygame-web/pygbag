@@ -32,7 +32,7 @@ else
 
     # update cython
     TEST_CYTHON=$($HPY -m cython -V 2>&1)
-    if echo $TEST_CYTHON| grep -q 3.0.0a11$
+    if echo $TEST_CYTHON| grep -q 3.0.0$
     then
         echo "  * not upgrading cython $TEST_CYTHON
 " 1>&2

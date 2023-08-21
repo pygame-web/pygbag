@@ -6,7 +6,7 @@ export PACKAGES=${PACKAGES:-emsdk pygame}
 
 export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
 export SDK_VERSION=${SDK_VERSION:-3.1.22.0}
-export CYTHON=${CYTHON:-Cython-3.0.0b1-py2.py3-none-any.whl}
+export CYTHON=${CYTHON:-Cython-3.0.0-py2.py3-none-any.whl}
 export PYBUILD=${PYBUILD:-3.11}
 export LC_ALL=C
 
