@@ -13,7 +13,7 @@ preload_list = []
 preloaded = []
 
 
-def FS(tree, silent=False, debug=True):
+def FS(tree, silent=False, debug=False):
     global preload_list
 
     target = [""]
@@ -88,7 +88,8 @@ def FS(tree, silent=False, debug=True):
             trail = True
 
         if debug:
-            print(f"{pos=} {elem=} {current=} {path=} {last=}")
+            print(f"91: {pos=} {elem=} {current=} {path=} {last=}")
+
         if len(path) < current + 1:
             path.append(elem)
         path[current] = elem
@@ -203,7 +204,7 @@ window.Fetch.POST = function * POST (url, data)
     // post info about the request
     console.log('POST: ' + url + 'Data: ' + data);
     var request = new Request(url, {headers: {'Accept': 'application/json','Content-Type': 'application/json'},
-        method: 'POST', 
+        method: 'POST',
         body: data});
     var content = 'undefined';
     fetch(request)

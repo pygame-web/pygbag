@@ -240,7 +240,16 @@ then
 
     LDFLAGS="$LDFLAGS $LD_SDL2 -lffi -lbz2 -lz -ldl -lm"
 
-    for lib in python mpdec expat
+    LINKPYTHON="python mpdec expat"
+
+
+    if  echo $PYBUILD|grep -q 3.12
+    then
+        LINKPYTHON="Hacl_Hash_SHA2 $LINKPYTHON"
+    fi
+
+
+    for lib in $LINKPYTHON
     do
         cpylib=${SDKROOT}/prebuilt/emsdk/lib${lib}${PYBUILD}.a
         if [ -f $cpylib ]
@@ -248,6 +257,7 @@ then
             LDFLAGS="$LDFLAGS $cpylib"
         fi
     done
+
 
     for lib in $PACKAGES
     do

@@ -37,12 +37,12 @@ else
         echo "  * not upgrading cython $TEST_CYTHON
 " 1>&2
     else
-        echo "  * upgrading cython $TEST_CYTHON to 3.0.0b1
+        echo "  * upgrading cython $TEST_CYTHON to 3.0.0
 "  1>&2
         #$SYS_PYTHON -m pip install --user --upgrade git+https://github.com/cython/cython.git
-        CYTHON=${CYTHON:-Cython-3.0.0b1-py2.py3-none-any.whl}
+        CYTHON=${CYTHON:-Cython-3.0.0-py2.py3-none-any.whl}
         pushd build
-        wget -q -c https://github.com/cython/cython/releases/download/3.0.0b1/${CYTHON}
+        wget -q -c https://github.com/cython/cython/releases/download/3.0.0/${CYTHON}
         $HPY -m pip install $CYTHON
         popd
 
@@ -71,7 +71,13 @@ then
         pushd $(pwd)/pygame-wasm
     fi
 
+    #unsure
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
+
+
+    # cython3
+    wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2395.diff | patch -p1
+
 
 else
     pushd $(pwd)/pygame-wasm

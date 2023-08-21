@@ -71,7 +71,6 @@ debug:
 
 #include "../build/gen_inittab.h"
 
-
 static int preloads = 0;
 static long long loops = 0;
 
@@ -357,6 +356,7 @@ static PyObject *embed_dict;
 
 PyMODINIT_FUNC init_embed(void) {
 
+// activate javascript bindings that were moved from libpython to pymain.
 #if defined(PYDK_emsdk)
     int res;
     sysmod = PyImport_ImportModule("sys"); // must call Py_DECREF when finished
@@ -374,18 +374,20 @@ err_occurred:;
 type_init_failed:;
 #endif
 
+// helper module for pygbag api not well defined and need clean up.
+// callable as "platform" module.
     PyObject *embed_mod = PyModule_Create(&mod_embed);
     embed_dict = PyModule_GetDict(embed_mod);
     PyDict_SetItemString(embed_dict, "js2py", PyUnicode_FromString("{}"));
     return embed_mod;
-
 
 }
 
 
 struct timeval time_last, time_current, time_lapse;
 
-// "files"
+// crude "files" used for implementing "os level" communications with host.
+
 
 #define FD_MAX 64
 #define FD_BUFFER_MAX 4096
@@ -510,16 +512,19 @@ main_iteration(void) {
                 fprintf( stderr, "%d: %s", lines, buf );
         }
 
-        //printf("rcon data %i lines=%i\n", datalen, lines);
+
 
         rewind(file);
+
         if (lines>1)  {
             PyRun_SimpleFile( file, "<stdin>");
         } else {
             lines = 0;
             while( !PyRun_InteractiveOne( file, "<stdin>") ) lines++;
         }
+
         rewind(file);
+
 #       undef file
     }
 
@@ -635,8 +640,8 @@ EMSCRIPTEN_KEEPALIVE void egl_test() {
 
 #else
     EmscriptenWebGLContextAttributes attr;
-	emscripten_webgl_init_context_attributes(&attr);
-	attr.alpha = 0;
+    emscripten_webgl_init_context_attributes(&attr);
+    attr.alpha = 0;
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#canvas3d", &attr);
     emscripten_webgl_make_context_current(ctx);
 
@@ -676,11 +681,11 @@ embed_webgl(PyObject *self, PyObject *args, PyObject *kwds)
     #endif
 
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_get_current_context();
-	//EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#canvas3d", &attr);
-	//emscripten_webgl_make_context_current(ctx);
+    //EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#canvas3d", &attr);
+    //emscripten_webgl_make_context_current(ctx);
 
     glClearColor(0.9, 0.5, 0.5, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
     return Py_BuildValue("i", emscripten_webgl_get_current_context() );
 }
 
@@ -773,8 +778,8 @@ main(int argc, char **argv)
     io_shm[IO_RAW] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
     io_shm[IO_RCON] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
 
-
 EM_ASM({
+    const FD_BUFFER_MAX = $0;
     const shm_stdin = $1;
     const shm_rawinput = $2;
     const shm_rcon = $3;
@@ -801,26 +806,26 @@ EM_ASM({
         Module['onCustomMessage'] = onCustomMessage;
 
     } else {
-        console.log("PyMain: running in main thread");
+        console.log("PyMain: running in main thread, faking onCustomMessage");
         Module.postMessage = function custom_postMessage(event) {
             switch (event.type) {
                 case "raw" :  {
-                    stringToUTF8( event.data, shm_rawinput, $0);
+                    stringToUTF8( event.data, shm_rawinput, FD_BUFFER_MAX);
                     break;
                 }
 
                 case "stdin" :  {
-                    stringToUTF8( event.data, shm_stdin, $0);
+                    stringToUTF8( event.data, shm_stdin, FD_BUFFER_MAX);
                     break;
                 }
                 case "rcon" :  {
-                    stringToUTF8( event.data, shm_rcon, $0);
+                    stringToUTF8( event.data, shm_rcon, FD_BUFFER_MAX);
                     break;
                 }
                 default : console.warn("custom_postMessage?", event);
             }
         };
-        window.main_chook = true;
+
     }
 
     if (!is_worker && window.BrowserFS) {
@@ -831,49 +836,17 @@ EM_ASM({
     } else {
         console.error("PyMain: BrowserFS not found");
     }
+
     if (1) {
         SYSCALLS.getStreamFromFD(0).tty = true;
         SYSCALLS.getStreamFromFD(1).tty = true;
         SYSCALLS.getStreamFromFD(2).tty = true;
     }
+
 }, FD_BUFFER_MAX, io_shm[0], io_shm[IO_RAW], io_shm[IO_RCON]);
 
 
     PyRun_SimpleString("import sys, os, json, builtins, shutil, time;");
-
-
-#   if defined(EGLTEST)
-//    egl_test();
-#   endif // EGLTEST
-
-
-/*
-    #if 1
-        // display a nice six logo python-powered in xterm.js
-        #define MAX 132
-        char buf[MAX];
-        FILE *six = fopen("/data/data/org.python/assets/cpython.six","r");
-        while (six) {
-            fgets(buf, MAX, six);
-            if (!buf[0]) {
-                fclose(six);
-                puts("");
-                break;
-            }
-            fputs(buf, stdout);
-            buf[0]=0;
-        }
-
-    #else
-        // same but with python
-        // repl banner
-        PyRun_SimpleString("print(open('/data/data/org.python/assets/cpython.six').read());");
-    #endif
-
-    PyRun_SimpleString("print('CPython',sys.version, '\\n', file=sys.stderr);");
-
-    //embed_flush(NULL,NULL);
-*/
 
 
     // SDL2 basic init
@@ -886,5 +859,6 @@ EM_ASM({
     }
 
     emscripten_set_main_loop( (em_callback_func)main_iteration, 0, 1);
+
     return 0;
 }
