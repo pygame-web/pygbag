@@ -2068,15 +2068,23 @@ console.log("pythons found at", url , elems)
         console.warn("1601: no inlined code found")
     }
 
-    // default
-    vm.script.interpreter = "cpython"
+    // resolve python executable
 
     if (vm.cpy_argv.length) {
         var orig_argv_py
-        if ( vm.cpy_argv[0].search('cpython3')>=0 || vm.cpy_argv[0].search('wapy')>=0 )
-            orig_argv_py = vm.script.interpreter
-        vm.script.interpreter = orig_argv_py || config.python || vm.script.interpreter
-        console.log("no python implementation specified, using default :",vm.script.interpreter)
+        if (vm.cpy_argv[0].search('cpython3')>=0) {
+            vm.script.interpreter = "cpython"
+            config.PYBUILD = vm.cpy_argv[0].substr(7) || "3.11"
+        } else {
+            if (vm.cpy_argv[0].search('wapy')>=0) {
+// TODO wapy is not versionned
+                vm.script.interpreter = "wapy"
+            } else {
+                vm.script.interpreter = config.python || "cpython"
+                config.PYBUILD = vm.cpy_argv[0].substr(7) || "3.11"
+                console.log("no python implementation specified in ",vm.cpy_argv,", using default :",vm.script.interpreter)
+            }
+        }
     }
 
     // running pygbag proxy, lan testing or a module url ?
@@ -2085,6 +2093,12 @@ console.log("pythons found at", url , elems)
     }
 
     config.cdn     = config.cdn || url.split(module_name, 1)[0]  //??=
+    config.pydigits =  config.pydigits || config.PYBUILD.replace(".","") //??=
+    config.executable = config.executable || `${config.cdn}python${config.pydigits}/main.js` //??=
+
+
+    // resolve arguments
+
     config.xtermjs = config.xtermjs || 0
 
     config.archive = config.archive || (location.search.search(".apk")>=0)  //??=
@@ -2106,15 +2120,14 @@ config.interactive = config.interactive || (location.search.search("-i")>=0) //?
     config.can_close = config.can_close || 0
     config.autorun  = config.autorun || 0 //??=
     config.features = config.features || cfg.os.split(",") //??=
-// TODO wapy is not versionned
-    config.PYBUILD  = config.PYBUILD || vm.script.interpreter.substr(7) || "3.11" //??=
+
     config._sdl2    = config._sdl2 || "canvas" //??=
 
     if (config.ume_block === undefined)
         config.ume_block || true //??=
 
-    config.pydigits =  config.pydigits || config.PYBUILD.replace(".","") //??=
-    config.executable = config.executable || `${config.cdn}python${config.pydigits}/main.js` //??=
+    console.log(JSON.stringify(config))
+
 
     // https://docs.python.org/3/c-api/init_config.html#initialization-with-pyconfig
 
