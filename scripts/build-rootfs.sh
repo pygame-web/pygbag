@@ -30,7 +30,10 @@ for mod in (M1+M2).split(', '):
     except:
         pass
 try:
+    # installer
     sys.stdout.reconfigure(encoding='cp437')
+    # bokeh
+    sys.stdout.reconfigure(encoding='unicode-escape')
     sys.stdout.reconfigure(encoding='utf-16')
     sys.stdout.reconfigure(encoding='utf-8')
 except:
@@ -127,6 +130,9 @@ import pydoc
 
 # Box2D
 import optparse
+
+# bokeh
+import hmac
 
 
 if 0:

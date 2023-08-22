@@ -1069,7 +1069,7 @@ if not aio.cross.simulator:
         ignore += ["pillow", "fonttools"]
 
         manual_deps = {
-            "bokeh": ["yaml", "typing_extensions"],
+            "bokeh": ["jinja2", "markupsafe", "yaml", "typing_extensions", "numpy"],
             "igraph": ["texttable"],
             "pygame_gui": ["i18n"],
         }
@@ -1264,7 +1264,7 @@ if not aio.cross.simulator:
             if want in miss_list:
                 miss_list.remove(want)
             if len(miss_list):
-                DBG(f"1263: FIXME dependency table for manually built modules {miss_list=}")
+                DBG(f"1267: FIXME dependency table for manually built modules {miss_list=}")
                 await cls.async_imports(None, *miss_list)
 
             for repo in PyConfig.pkg_repolist:
@@ -1321,10 +1321,9 @@ if not aio.cross.simulator:
         @classmethod
         async def async_imports(cls, callback, *wanted, **kw):
             def default_cb(pkg, error=None):
+                DBG(f"\tinstalling {pkg}")
                 if error:
                     pdb(msg)
-                else:
-                    DBG(f"\tinstalling {pkg}")
 
             callback = callback or default_cb
 

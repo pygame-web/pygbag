@@ -126,19 +126,25 @@ Using them while testing ensure proper operation on all browsers
 
 
 NOTES:
- - pygbag only provide support for pygame-ce ( pygame community edition )
+ - pygbag only provides support for pygame-ce ( pygame community edition )
 
- - safari mobile audio auto handling is broken, do not use sound at game start
-and use option : --ume_block 0
+ - safari mobile audio auto-start handling is broken
+so do not play ANY sound at game start and use option : --ume_block 0
 
  - first load will be slower, because setting up local cache from cdn to avoid
 useless network transfer for getting pygame and cpython prebuilts.
 
- - each time there's a change in the code or template
-you must run `pygbag your.app.folder` but cache is not destroyed.
+ - each time there's a major change in the code/assets/template
+you must run `pygbag your.app.folder` but
+cache will not be destroyed to save bandwidth.
 
  - if you want to reset prebuilts cache, remove the build/web-cache folder in
-   your.app.folder
+your.app.folder
+
+ - pyodide wheels (non-standard wasm) aren't compatible ootb with pygbag runtime
+
+HISTORY:
+ - pygbag's concepts took roots in a 2016 Panda3D community experiment.
 
 
 BUILDING:
@@ -151,24 +157,26 @@ https://github.com/pygame-web/python-wasm-sdk  <= build CPython (not pyodide)
 The default is to build only pygame, but feel free to fork and add yours.
 
 So read/use pygbag CI to see how to build pygame + the C loader (pymain) and
-how it is linked it to libpython + libpygame.
+how it is linked it to libpython.
+For modules loading since 0.6 the default is to use wasm dynamic libraries.
+[wasm wheels info here](https://github.com/pygame-web/pkg-porting-wasm)
 
 https://github.com/pygame-web/pygbag
 
-Default prebuilts CPython + pygame-ce used by pygbag are stored on github pages
+Default prebuilts CPython + pygame-ce used by pygbag are stored via github pages
 from the repo https://github.com/pygame-web/archives under versioned folders.
 
 TEST REPL:
 
-    [interactive repl](http://pygame-web.github.io/showroom/python311.html?-i&noapp#pygame-scripts/hello.py%20arg1%20arg2)
+    [interactive repl](http://pygame-web.github.io/showroom/pygbag.html?cpython311&-i&noapp#src/hello.py%20arg1%20arg2)
 
 
-ADDING STATIC MODULES:
+ADDING STATIC/DYNAMIC MODULES:
 
     see in package.d directory and use vendor/vendor.sh
 
 
-SUPPORT FOR STATIC MODULES :
+SUPPORT FOR STATIC/DYNAMIC MODULES:
 
     see in package.d/<vendor>/README.md for module <vendor> specific support
 
