@@ -9,28 +9,32 @@ Runs python code directly in modern web browsers, including mobile versions.
 ```py
 import asyncio
 
-# Try explicitly to declare all your globals at once to facilitate compilation later.
+# Try to declare all your globals at once to facilitate compilation later.
 COUNT_DOWN = 3
 
-# Do init here and load any assets right now to avoid lag at runtime or network errors.
+# Do init here
+# Load any assets right now to avoid lag at runtime or network errors.
 
 
 async def main():
     global COUNT_DOWN
 
+    # avoid this kind declaration, prefer the way above
     COUNT_DOWN = 3
 
     while True:
 
         # Do your rendering here, note that it's NOT an infinite loop,
         # and it is fired only when VSYNC occurs
-        # Usually 1/60 or more times per seconds on desktop, maybe less on some mobile devices
+        # Usually 1/60 or more times per seconds on desktop
+        # could be less on some mobile devices
 
         print(f"""
 
             Hello[{COUNT_DOWN}] from Python
 
 """)
+        # pygame.display.update() should go right next line
 
         await asyncio.sleep(0)  # Very important, and keep it 0
 
@@ -42,8 +46,9 @@ async def main():
 # This is the program entry point:
 asyncio.run(main())
 
-# Do not add anything from here
-# asyncio.run is non-blocking on pygame-wasm
+# Do not add anything from here, especially sys.exit/pygame.quit
+# asyncio.run is non-blocking on pygame-wasm and code would be executed
+# right before program start main()
 ```
 
 Usage:
@@ -60,13 +65,13 @@ Example :
 
 ```
 user@pp /data/git/pygbag $ python3 -m pygbag --help your.app.folder
- *pygbag 0.6.0*
+ *pygbag 0.7.2*
 
 Serving python files from [/data/git/pygbag/your.app.folder/build/web]
 
 with no security/performance in mind, i'm just a test tool : don't rely on me
-usage: __main__.py [-h] [--bind ADDRESS] [--directory DIRECTORY] [--PYBUILD PYBUILD] [--app_name APP_NAME] [--ume_block UME_BLOCK] [--can_close CAN_CLOSE] [--cache CACHE] [--package PACKAGE] [--title TITLE] [--version VERSION] [--build] [--html] [--no_opt]
-                   [--archive] [--icon ICON] [--cdn CDN] [--template TEMPLATE] [--ssl SSL] [--port [PORT]]
+usage: __main__.py [-h] [--bind ADDRESS] [--directory DIRECTORY] [--PYBUILD PYBUILD] [--app_name APP_NAME] [--ume_block UME_BLOCK] [--can_close CAN_CLOSE] [--cache CACHE] [--package PACKAGE] [--title TITLE] [--version VERSION] [--build] [--html] [--no_opt] [--archive] [--icon ICON] [--cdn CDN]
+                   [--template TEMPLATE] [--ssl SSL] [--port [PORT]]
 
 options:
   -h, --help            show this help message and exit
@@ -82,39 +87,52 @@ options:
   --cache CACHE         md5 based url cache directory
   --package PACKAGE     package name, better make it unique
   --title TITLE         App nice looking name
-  --version VERSION     override prebuilt version path [default:0.6.0]
+  --version VERSION     override prebuilt version path [default:0.7.2]
   --build               build only, do not run test server
   --html                build as html with embedded assets (pygame-script)
   --no_opt              turn off assets optimizer
   --archive             make build/web.zip archive for itch.io
   --icon ICON           icon png file 32x32 min should be favicon.png
-  --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/archives/0.6/]
+  --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/archives/0.7/]
   --template TEMPLATE   index.html template [default:default.tmpl]
   --ssl SSL             enable ssl with server.pem and key.pem
-  --port [PORT]         Specify alternate port [default: 8000]
-```
+  --port [PORT]         Specify alternate port [default: 8000]```
+
+developper options:
+
+    --git               force cdn use of pygbag current git github CI build
+    --dev               change port to 8666 and use local build served on 8000
+
+
 
 Now navigate to http://localhost:8000 with a modern Browser.
 
 Use http://localhost:8000#debug for getting a terminal and a sized down canvas.
 
-For pygame-script go to http://localhost:8000/test.html for a game folder named "test".
-
+For pygame-script go to http://localhost:8000/test.html
+( for a game folder named "test" with option --html )
 
 
 V8 based browsers are preferred ( chromium/brave/chrome ... )
 starting with 81.0.4044 ( android 4.4 ).
 Because they set baseline restrictions on WebAssembly loading.
-Using them while testing ensure proper operation on all browsers.
+Using them while testing ensure proper operation on all browsers
+
+
+
 
 
 NOTES:
+ - pygbag only provide support for pygame-ce ( pygame community edition )
+
+ - safari mobile audio auto handling is broken, do not use sound at game start
+and use option : --ume_block 0
 
  - first load will be slower, because setting up local cache from cdn to avoid
 useless network transfer for getting pygame and cpython prebuilts.
 
- - each time there's a change in the code or template you must run `pygbag your.app.folder`
-   but cache is not destroyed.
+ - each time there's a change in the code or template
+you must run `pygbag your.app.folder` but cache is not destroyed.
 
  - if you want to reset prebuilts cache, remove the build/web-cache folder in
    your.app.folder
@@ -122,7 +140,8 @@ useless network transfer for getting pygame and cpython prebuilts.
 
 BUILDING:
 
-Pygbag is not only a python module, and rebuilding all the toolchain can be quite hard.
+Pygbag is not only a python module and its python runtimes are stored online !
+Rebuilding all the toolchain can be quite hard.
 
 https://github.com/pygame-web/python-wasm-sdk  <= build CPython (not pyodide)
 
@@ -133,12 +152,12 @@ how it is linked it to libpython + libpygame.
 
 https://github.com/pygame-web/pygbag
 
-Default prebuilts (pygame) used by pygbag are stored on github
+Default prebuilts CPython + pygame-ce used by pygbag are stored on github pages
 from the repo https://github.com/pygame-web/archives under versioned folders.
 
 TEST REPL:
 
-    [interactive repl](http://pygame-web.github.io/showroom/python310.html?-d&noapp#pygame-scripts/hello.py%20arg1%20arg2)
+    [interactive repl](http://pygame-web.github.io/showroom/python311.html?-i&noapp#pygame-scripts/hello.py%20arg1%20arg2)
 
 
 ADDING STATIC MODULES:

@@ -1,15 +1,25 @@
 """ packager+server for pygbag wasm loader """
 
-# last 0.7.2
-__version__ = "0.0.0"
-
 import sys
 from pathlib import Path
 
+
+__version__ = "0.7.2"
+
 # make aio available
 
-
 sys.path.append(str(Path(__file__).parent / "support/cross"))
+
+# hack to test git cdn build without upgrading pygbag
+# beware can have side effects when file packager behaviour must change !
+if '--git' in sys.argv:
+    print("""
+
+    ******* forcing git cdn *********
+
+""")
+    __version__ = "0.0.0"
+    sys.argv.remove('--git')
 
 
 # WaPy=>CPython compat
