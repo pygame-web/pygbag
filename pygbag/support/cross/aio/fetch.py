@@ -302,7 +302,9 @@ window.Fetch.GET = function * GET (url)
                 self.print(content)
             self.result = content
         else:
-            self.result = self.requests.post(url, data, headers={'Accept': 'application/json','Content-Type': 'application/json'}).text
+            self.result = self.requests.post(
+                url, data, headers={"Accept": "application/json", "Content-Type": "application/json"}
+            ).text
         return self.result
 
     # def post(self, url, data=None):

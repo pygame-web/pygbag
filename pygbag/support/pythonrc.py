@@ -1051,9 +1051,6 @@ if not aio.cross.simulator:
     import ast
     from pathlib import Path
 
-
-
-
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
         # be re entrant
         import_lock = []
@@ -1071,9 +1068,9 @@ if not aio.cross.simulator:
         ignore += ["pillow", "fonttools"]
 
         manual_deps = {
-            "bokeh" : ["yaml","typing_extensions"],
-            "igraph" : ["texttable"],
-            "pygame_gui" : ["i18n"],
+            "bokeh": ["yaml", "typing_extensions"],
+            "igraph": ["texttable"],
+            "pygame_gui": ["i18n"],
         }
 
         from pathlib import Path
@@ -1226,9 +1223,9 @@ if not aio.cross.simulator:
                 wants.remove("numpy")
                 wants.insert(0, "numpy")
 
-# FIXME !
-# FIXME !
-# FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
             for mod in mods:
                 if mod not in cls.manual_deps:
                     continue
@@ -1243,9 +1240,9 @@ if not aio.cross.simulator:
                     wants.insert(0, missing)
                     DBG(f"1244: added {missing=} for {mod=}")
 
-# FIXME !
-# FIXME !
-# FIXME !
+            # FIXME !
+            # FIXME !
+            # FIXME !
 
             return wants
 
@@ -1271,7 +1268,7 @@ if not aio.cross.simulator:
 
             for repo in PyConfig.pkg_repolist:
                 DBG(f"1202: {want=} found : {want in repo}")
-                #await add_missing(want)
+                # await add_missing(want)
 
                 if want in repo:
                     pkg_url = f"{repo['-CDN-']}{repo[want]}"
@@ -1341,7 +1338,6 @@ if not aio.cross.simulator:
             if ("matplotlib" in all) and ("pygame" not in sys.modules):
                 await cls.async_get_pkg("pygame.base", None, None)
                 __import__("pygame")
-
 
             for req in all:
                 if req == "pyyaml":
@@ -1456,14 +1452,19 @@ def patch():
     os.environ["COLS"] = str(COLS)
     os.environ["LINES"] = str(LINES)
 
-
     def patch_os_get_terminal_size(fd=0):
         cols = os.environ.get("COLS", 80)
         lines = os.environ.get("LINES", 25)
         try:
-            res= (int(cols), int(lines),)
+            res = (
+                int(cols),
+                int(lines),
+            )
         except:
-            res (80, 25,)
+            res(
+                80,
+                25,
+            )
         return os.terminal_size(res)
 
     os.get_terminal_size = patch_os_get_terminal_size
