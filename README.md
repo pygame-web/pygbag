@@ -98,16 +98,19 @@ options:
   --ssl SSL             enable ssl with server.pem and key.pem
   --port [PORT]         Specify alternate port [default: 8000]```
 
-developper options:
+```
+
+unlisted developper options:
 
     --git               force cdn use of pygbag current git github CI build
     --dev               change port to 8666 and use local build served on 8000
 
 
 
-Now navigate to http://localhost:8000 with a modern Browser.
+Now navigate to http://localhost:8000 with a modern internet browser.
 
-Use http://localhost:8000#debug for getting a terminal and a sized down canvas.
+Use http://localhost:8000?-i for getting a terminal with repl
+ and a sized down canvas ( http://localhost:8000#debug also does the same )
 
 For pygame-script go to http://localhost:8000/test.html
 ( for a game folder named "test" with option --html )
