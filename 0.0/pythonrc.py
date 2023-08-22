@@ -1051,6 +1051,9 @@ if not aio.cross.simulator:
     import ast
     from pathlib import Path
 
+
+
+
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
         # be re entrant
         import_lock = []
@@ -1066,6 +1069,12 @@ if not aio.cross.simulator:
         ignore += ["python-dateutil", "matplotlib-pyodide"]
         # ???
         ignore += ["pillow", "fonttools"]
+
+        manual_deps = {
+            "bokeh" : ["yaml","typing_extensions"],
+            "igraph" : ["texttable"],
+            "pygame_gui" : ["i18n"],
+        }
 
         from pathlib import Path
 
@@ -1190,6 +1199,10 @@ if not aio.cross.simulator:
         def imports(cls, *mods, lvl=0, wants=[]):
             unseen = False
             for mod in mods:
+                # better safe than sorry
+                if mod in wants:
+                    wants.remove(mod)
+
                 for dep in cls.repos[0]["packages"].get(mod, {}).get("depends", []):
                     if mod in sys.modules:
                         continue
@@ -1212,29 +1225,27 @@ if not aio.cross.simulator:
             if "numpy" in wants:
                 wants.remove("numpy")
                 wants.insert(0, "numpy")
-            # FIXME !
-            # FIXME !
-            # FIXME !
-            # FIXME !
-            # FIXME !
-            # FIXME !
 
-            if "igraph" in wants:
-                if "texttable" in wants:
-                    wants.remove("texttable")
-                wants.insert(0, "texttable")
+# FIXME !
+# FIXME !
+# FIXME !
+            for mod in mods:
+                if mod not in cls.manual_deps:
+                    continue
 
-            if "pygame_gui" in wants:
-                wants.insert(0, "i18n")
-            # FIXME !
-            # FIXME !
-            # FIXME !
-            # FIXME !
-            # FIXME !
-            # FIXME !
-            # FIXME !
-            # FIXME !
-            # FIXME !
+                for missing in cls.manual_deps[mod]:
+                    if missing in wants:
+                        wants.remove(missing)
+                    # no need to request
+                    if missing in sys.modules:
+                        continue
+                    # prio missing
+                    wants.insert(0, missing)
+                    DBG(f"1244: added {missing=} for {mod=}")
+
+# FIXME !
+# FIXME !
+# FIXME !
 
             return wants
 
@@ -1250,8 +1261,18 @@ if not aio.cross.simulator:
         @classmethod
         async def async_get_pkg(cls, want, ex, resume):
             pkg_file = ""
+
+            miss_list = cls.imports(want)
+            if want in miss_list:
+                miss_list.remove(want)
+            if len(miss_list):
+                DBG(f"1263: FIXME dependency table for manually built modules {miss_list=}")
+                await cls.async_imports(None, *miss_list)
+
             for repo in PyConfig.pkg_repolist:
                 DBG(f"1202: {want=} found : {want in repo}")
+                #await add_missing(want)
+
                 if want in repo:
                     pkg_url = f"{repo['-CDN-']}{repo[want]}"
 
@@ -1261,7 +1282,7 @@ if not aio.cross.simulator:
                         break
 
                     cfg = {"io": "url", "type": "fs", "path": pkg_file}
-                    print("pkg :", pkg_url)
+                    print(f"1205: async_get_pkg({pkg_url})")
 
                     track = platform.window.MM.prepare(pkg_url, json.dumps(cfg))
 
@@ -1270,7 +1291,7 @@ if not aio.cross.simulator:
                         zipfile.ZipFile(pkg_file).close()
                         break
                     except (IOError, zipfile.BadZipFile):
-                        pdb(f"960: network error on {repo['-CDN-']}, cannot install {pkg_file}")
+                        pdb(f"1294: network error on {repo['-CDN-']}, cannot install {pkg_file}")
             else:
                 print(f"PKG NOT FOUND : {want=}, {resume=}, {ex=}")
                 return None
@@ -1288,7 +1309,7 @@ if not aio.cross.simulator:
 
             # print(json.dumps(cls.repos[0]["packages"], sort_keys=True, indent=4))
 
-            print("referenced packages :", len(cls.repos[0]["packages"]))
+            DBG("referenced packages :", len(cls.repos[0]["packages"]))
 
             if not len(PyConfig.pkg_repolist):
                 await cls.async_repos()
@@ -1321,31 +1342,11 @@ if not aio.cross.simulator:
                 await cls.async_get_pkg("pygame.base", None, None)
                 __import__("pygame")
 
-            # FIXME: automatically build a deps table for those with buildmap for archive/repo/pkg.
-            if "igraph" in all:
-                if not "texttable" in sys.modules:
-                    callback("texttable")
-                    try:
-                        await cls.async_get_pkg("texttable", None, None)
-                        __import__("texttable")
-                    except (IOError, zipfile.BadZipFile):
-                        pdb("1310: cannot load texttable")
-                if "texttable" in all:
-                    all.remove("texttable")
-
-            # FIXME: numpy must be loaded first for some modules.
-            # FIXME: THIS IS RE-ENTRANT IN SOME CASES
-            if "numpy" in all:
-                if not "numpy" in sys.modules:
-                    callback("numpy")
-                    try:
-                        await cls.async_get_pkg("numpy", None, None)
-                        __import__("numpy")
-                    except (IOError, zipfile.BadZipFile):
-                        pdb("1305: cannot load numpy")
-                all.remove("numpy")
 
             for req in all:
+                if req == "pyyaml":
+                    req = "yaml"
+
                 if req == "python-dateutil":
                     req = "dateutil"
 
@@ -1353,7 +1354,7 @@ if not aio.cross.simulator:
                     req = "PIL"
 
                 if req in cls.ignore or req in sys.modules:
-                    print("1291: {req=} in {cls.ignore=} or sys.modules")
+                    print(f"1373: {req=} in {cls.ignore=} or sys.modules")
                     continue
 
                 callback(req)
