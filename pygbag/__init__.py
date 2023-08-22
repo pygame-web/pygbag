@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 
-__version__ = "0.7.2"
+__version__ = "0.0.0"
 
 # make aio available
 

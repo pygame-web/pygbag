@@ -71,6 +71,7 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
             pdb(f"failed to install {pkg_file}")
             sys.print_exception(rx)
 
+        # let wasm compilation happen
         await asyncio.sleep(0)
 
         try:
