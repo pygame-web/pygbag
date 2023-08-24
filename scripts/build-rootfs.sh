@@ -39,6 +39,9 @@ try:
 except:
     pass
 
+import sysconfig
+sysconfig.get_paths()
+
 import multiprocessing.connection
 
 # sockets ????
@@ -81,7 +84,7 @@ import importlib.readers
 
 #pymunk+tests
 import unittest, locale
-import imp, platform
+import platform
 import numbers, random
 
 #pgzero
@@ -134,6 +137,14 @@ import optparse
 # bokeh
 import hmac
 
+#ursina
+import imghdr
+
+try:
+    import imp
+except:
+    # python 3.12 !
+    pass
 
 if 0:
     import cffi

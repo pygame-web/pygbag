@@ -122,7 +122,7 @@ Because they set baseline restrictions on WebAssembly loading.
 Using them while testing ensure proper operation on all browsers
 
 
-
+____
 
 
 NOTES:
@@ -143,7 +143,9 @@ your.app.folder
 
  - pyodide wheels (non-standard wasm) aren't compatible ootb with pygbag runtime
 
+
 HISTORY:
+
  - pygbag's concepts took roots in a 2016 Panda3D community experiment.
 
 
@@ -166,9 +168,8 @@ https://github.com/pygame-web/pygbag
 Default prebuilts CPython + pygame-ce used by pygbag are stored via github pages
 from the repo https://github.com/pygame-web/archives under versioned folders.
 
-TEST REPL:
 
-    [interactive repl](http://pygame-web.github.io/showroom/pygbag.html?cpython311&-i&noapp#src/hello.py%20arg1%20arg2)
+[TEST INTERACTIVE REPL](http://pygame-web.github.io/showroom/pygbag.html?cpython311&-i&noapp#src/hello.py%20arg1%20arg2)
 
 
 ADDING STATIC/DYNAMIC MODULES:
@@ -181,8 +182,9 @@ SUPPORT FOR STATIC/DYNAMIC MODULES:
     see in package.d/<vendor>/README.md for module <vendor> specific support
 
 
-[vendor readme (if applicable)](vendor/README.md)
+____
 
+[vendor readme (if applicable)](vendor/README.md)
 
 
 GENERIC PYGBAG SUPPORT OR PYGAME MODULE:

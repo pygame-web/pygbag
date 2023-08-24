@@ -238,7 +238,8 @@ then
         LDFLAGS="$LDFLAGS -lsqlite3"
     fi
 
-    LDFLAGS="$LDFLAGS $LD_SDL2 -lffi -lbz2 -lz -ldl -lm"
+#    LDFLAGS="$LDFLAGS $LD_SDL2 -lffi -lbz2 -lz -ldl -lm"
+    LDFLAGS="$LDFLAGS $LD_SDL2 -lssl -lcrypto -lffi -lbz2 -lz -ldl -lm"
 
     LINKPYTHON="python mpdec expat"
 

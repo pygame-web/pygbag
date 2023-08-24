@@ -156,6 +156,13 @@ then
         # to install python part (unpatched)
         cp -r src_py/. ${PKGDIR:-${SDKROOT}/prebuilt/emsdk/${PYBUILD}/site-packages/pygame/}
 
+        # prepare testsuite
+        [ -d ${ROOT}/build/pygame-test ] && rm -fr ${ROOT}/build/pygame-test
+        mkdir ${ROOT}/build/pygame-test
+        cp -r test ${ROOT}/build/pygame-test/tests
+        cp -r examples ${ROOT}/build/pygame-test/tests
+        cp ${ROOT}/packages.d/pygame/tests/main.py ${ROOT}/build/pygame-test/tests/
+
     else
         echo "ERROR: pygame configuration failed" 1>&2
         exit 109
@@ -177,7 +184,7 @@ echo "FIXME: build wheel"
 
 if [ -d testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten ]
 then
-    TARGET=testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/pygame_static.cpython-${TAG}-wasm32-emscripten.so
+    TARGET=$(pwd)/testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/pygame_static.cpython-${TAG}-wasm32-emscripten.so
 
     . ${SDKROOT}/emsdk/emsdk_env.sh
 

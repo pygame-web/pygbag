@@ -294,7 +294,7 @@ Object_await(Object *self) {
   wrapper->asyncio_future_blocking = 0;
 
   wrapper->result = (EM_VAL)EM_ASM_INT({
-    var value = emval_handle_array[$0].value;
+    var value = Emval.toValue($0);
     if (value && typeof value.then === "function") {
       value.then(function (result) {
         __py_notify_done($1, Emval.toHandle(result));
@@ -324,7 +324,7 @@ Object_await(Object *self) {
 static PyObject *
 Object_repr(Object *self) {
   char *str = (char *)EM_ASM_INT({
-    var value = emval_handle_array[$0].value;
+    var value = Emval.toValue($0);
     var str = value.constructor ? value.constructor.name : 'Object';
     var len = lengthBytesUTF8(str) + 1;
     var buffer = _malloc(len);
@@ -351,7 +351,7 @@ Object_hash(Object *self) {
 static PyObject *
 Object_str(Object *self) {
   char *str = (char *)EM_ASM_INT({
-    var str = emval_handle_array[$0].value.toString();
+    var str = Emval.toValue($0).toString();
     var len = lengthBytesUTF8(str) + 1;
     var buffer = _malloc(len);
     stringToUTF8(str, buffer, len);
@@ -369,7 +369,7 @@ Object_str(Object *self) {
 static Py_ssize_t
 Object_length(Object *self) {
   int len = EM_ASM_INT({
-    var val = emval_handle_array[$0].value;
+    var val = Emval.toValue($0);
     if (val[Symbol.iterator] && val.length !== undefined) {
       return val.length;
     }
@@ -399,7 +399,7 @@ Object_getprop(Object *self, PyObject *item) {
 
   EM_VAL result = (EM_VAL)EM_ASM_INT({
     try {
-      return Emval.toHandle(emval_handle_array[$0].value[emval_handle_array[$1].value]);
+      return Emval.toHandle(Emval.toValue($0)[Emval.toValue($1)]);
     }
     catch (ex) {
       return -Emval.toHandle(ex);
@@ -490,7 +490,7 @@ Object_richcompare(Object *self, PyObject *other, int op) {
 static PyObject *
 Object_iter(Object *self) {
   EM_VAL val = (EM_VAL)EM_ASM_INT({
-    var val = emval_handle_array[$0].value;
+    var val = Emval.toValue($0);
     if (val[Symbol.iterator]) {
       return Emval.toHandle(val[Symbol.iterator]());
     } else {
@@ -518,7 +518,7 @@ Object_iter(Object *self) {
 static PyObject *
 Object_next(Object *self) {
   EM_VAL val = (EM_VAL)EM_ASM_INT({
-    var val = emval_handle_array[$0].value;
+    var val = Emval.toValue($0);
     if (!val.next) {
       return 0;
     }
@@ -545,7 +545,7 @@ static PyObject *
 Object_dir(Object *self, PyObject *noarg) {
   return emval_to_py((EM_VAL)EM_ASM_INT({
     var props = [];
-    for (var prop in emval_handle_array[$0].value) {
+    for (var prop in Emval.toValue($0)) {
       props.push(prop);
     }
     return Emval.toHandle(props);
@@ -620,7 +620,7 @@ Function_call(Function *self, PyObject *args, PyObject *kwargs) {
   case 0:
     result = (EM_VAL)EM_ASM_INT({
       try {
-        return Emval.toHandle(emval_handle_array[$0].value.call(emval_handle_array[$1].value));
+        return Emval.toHandle(Emval.toValue($0).call(Emval.toValue($1)));
       }
       catch (ex) {
         return -Emval.toHandle(ex);
@@ -635,7 +635,7 @@ Function_call(Function *self, PyObject *args, PyObject *kwargs) {
       }
       result = (EM_VAL)EM_ASM_INT({
         try {
-          return Emval.toHandle(emval_handle_array[$0].value.call(emval_handle_array[$1].value, emval_handle_array[$2].value));
+          return Emval.toHandle(Emval.toValue($0).call(Emval.toValue($1), Emval.toValue($2)));
         }
         catch (ex) {
           return -Emval.toHandle(ex);
@@ -668,9 +668,9 @@ Function_call(Function *self, PyObject *args, PyObject *kwargs) {
           for (var i = 0; i < $2; ++i) {
             var arg_handle = getValue($3+i*4, 'i32');
             arg_handles.push(arg_handle);
-            arg_values.push(emval_handle_array[arg_handle].value);
+            arg_values.push(Emval.toValue(arg_handle));
           }
-          return Emval.toHandle(emval_handle_array[$0].value.apply(emval_handle_array[$1].value, arg_values));
+          return Emval.toHandle(Emval.toValue($0).apply(Emval.toValue($1), arg_values));
         }
         catch (ex) {
           return -Emval.toHandle(ex);
@@ -709,7 +709,7 @@ static PyTypeObject Function_Type = {
 static PyObject *
 Symbol_description(Symbol *self, void *unused) {
   char *str = (char *)EM_ASM_INT({
-    var str = emval_handle_array[$0].value.description;
+    var str = Emval.toValue($0).description;
     var len = lengthBytesUTF8(str) + 1;
     var buffer = _malloc(len);
     stringToUTF8(str, buffer, len);
@@ -896,7 +896,7 @@ static EM_VAL py_to_emval(PyObject *val) {
             setValue(argv+i*4, Emval.toHandle(arguments[i]), 'i32');
           }
           var result = __py_call($1, $2, Emval.toHandle(this), argc, argv);
-          return emval_handle_array[result].value;
+          return Emval.toValue(result);
         }
       });
     }, callback_id, func, self, max_args);
@@ -933,7 +933,7 @@ static PyObject *emval_to_py(EM_VAL handle) {
 
     // Extract the message and the exception type.
     int type = EM_ASM_INT({
-      var exc = emval_handle_array[$0].value;
+      var exc = Emval.toValue($0);
       try {
         if (exc.message) {
           stringToUTF8(exc.message, $1, 512);
@@ -978,7 +978,7 @@ static PyObject *emval_to_py(EM_VAL handle) {
   } target;
 
   int type = EM_ASM_INT(({
-    var value = emval_handle_array[$0].value;
+    var value = Emval.toValue($0);
     var type = typeof value;
     if (type === "number") {
       // Check whether it fits in an int.
@@ -1061,7 +1061,7 @@ browser_getattr(PyObject *self, PyObject *arg) {
   }
   EM_VAL result = (EM_VAL)EM_ASM_INT({
     try {
-      return Emval.toHandle(window[emval_handle_array[$0].value]);
+      return Emval.toHandle(window[Emval.toValue($0)]);
     }
     catch (ex) {
       return -Emval.toHandle(ex);
