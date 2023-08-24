@@ -588,9 +588,9 @@ function feat_gui(debug_hidden) {
         return new_canvas
     }
 
+
+
     if (!canvas2d) {
-        config.user_canvas = config.user_canvas || 0 //??=
-        config.user_canvas_managed = config.user_canvas_managed || 0 //??=
         canvas2d =  add_canvas("canvas")
         canvas2d.style.position = "absolute"
         canvas2d.style.top = "0px"
@@ -599,10 +599,11 @@ function feat_gui(debug_hidden) {
         //var ctx = canvas.getContext("2d")
     } else {
         // user managed canvas
-        config.user_canvas = 1
-        config.user_canvas_managed = config.user_canvas_managed || 0 //??=
 console.warn("TODO: user defined canvas")
     }
+
+    config.user_canvas = config.user_canvas || 0 //??=
+    config.user_canvas_managed = config.user_canvas_managed || 0 //??=
 
     vm.canvas2d = canvas2d
 
@@ -654,12 +655,14 @@ console.warn("TODO: user defined canvas")
         if (vm.config.debug) {
             max_width = max_width * .80
             max_height = max_height * .80
+        } else {
+            // max_height -= 150
         }
 
         want_w = max_width
         want_h = max_height
 
-        console.log("window_canvas_adjust:", want_w, want_h )
+
         if (window.devicePixelRatio != 1 )
             console.warn("Unsupported device pixel ratio", window.devicePixelRatio)
 
@@ -679,13 +682,17 @@ console.warn("TODO: user defined canvas")
 
         // constraints
         if (want_h > max_height) {
+            if (vm.config.debug)
+                console.warn("too tall : have",max_height,"want",want_h)
             want_h = max_height
             want_w = want_h * ar
         }
 
         if (want_w > max_width) {
-                want_w = max_width
-                want_h = want_h / ar
+            if (vm.config.debug)
+                console.warn("too wide : have",max_width,"want",want_w)
+            want_w = max_width
+            want_h = want_h / ar
         }
 
 

@@ -1068,11 +1068,17 @@ if not aio.cross.simulator:
         # ???
         ignore += ["pillow", "fonttools"]
 
+        # for ursina
+        # ignore +=  ["ursina","gltf","pyperclip","screeninfo"]
+
         manual_deps = {
-            "bokeh": ["jinja2", "markupsafe", "yaml", "typing_extensions", "numpy"],
+            "bokeh": ["numpy", "yaml", "typing_extensions", "jinja2", "markupsafe"],
             "igraph": ["texttable"],
             "pygame_gui": ["i18n"],
+            "ursina": ["numpy", "screeninfo", "gltf", "PIL", "pyperclip", "panda3d"]
         }
+
+        fence_missing = []
 
         from pathlib import Path
 
@@ -1230,8 +1236,12 @@ if not aio.cross.simulator:
             for mod in mods:
                 if mod not in cls.manual_deps:
                     continue
+                deps = list(cls.manual_deps[mod])
+                deps.reverse()
+                for missing in deps:
+                    if missing in cls.fence_missing:
+                        continue
 
-                for missing in cls.manual_deps[mod]:
                     if missing in wants:
                         wants.remove(missing)
                     # no need to request
@@ -1260,11 +1270,19 @@ if not aio.cross.simulator:
         async def async_get_pkg(cls, want, ex, resume):
             pkg_file = ""
 
+            if want in cls.fence_missing:
+                return
+            cls.fence_missing.append(want)
+
             miss_list = cls.imports(want)
             if want in miss_list:
                 miss_list.remove(want)
+            for incoming in cls.fence_missing:
+                if incoming in miss_list:
+                    miss_list.remove(incoming)
+
             if len(miss_list):
-                DBG(f"1267: FIXME dependency table for manually built modules {miss_list=}")
+                DBG(f"1267: FIXME dependency table for manually built module '{want}' {miss_list=}")
                 await cls.async_imports(None, *miss_list)
 
             for repo in PyConfig.pkg_repolist:
