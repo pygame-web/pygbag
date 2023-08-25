@@ -13,6 +13,11 @@ import zipfile
 
 HISTORY = []
 
+try:
+    import embed
+except:
+    embed = False
+
 
 def install(pkg_file, sconf=None):
     global HISTORY
@@ -111,6 +116,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
     # TODO: use PyConfig interactive flag
     muted = True
 
+
     def __init__(self, locals, **kw):
         super().__init__(locals)
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
@@ -164,14 +170,15 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         return False
 
     def runcode(self, code):
-        embed.set_ps1()
+        if embed:embed.set_ps1()
         self.rv = undefined
 
         bc = types.FunctionType(code, self.locals)
         try:
             self.rv = bc()
         except SystemExit:
-            raise
+            #raise
+            aio.exit_now(0)
 
         except KeyboardInterrupt as ex:
             print(ex, file=sys.__stderr__)
@@ -205,7 +212,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
     def prompt(self):
         if not self.__class__.muted and self.shell.is_interactive:
-            embed.prompt()
+            if embed:embed.prompt()
 
     async def interact(self):
         try:
@@ -222,18 +229,23 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
         while not aio.exit:
             await asyncio.sleep(0)
+
+            if aio.exit:
+                return
+
             try:
                 try:
-                    self.line = self.raw_input(prompt)
+                    self.line = await self.raw_input(prompt)
                     if self.line is None:
                         continue
+
                 except EOFError:
                     self.write("\n")
                     break
                 else:
                     if self.push(self.line):
                         prompt = sys.ps2
-                        embed.set_ps2()
+                        if embed:embed.set_ps2()
                         self.one_liner = False
                     else:
                         prompt = sys.ps1
@@ -242,6 +254,10 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 self.write("\nKeyboardInterrupt\n")
                 self.resetbuffer()
                 more = 0
+
+            if aio.exit:
+                return
+
             try:
                 # if async prepare is required
                 while len(self.shell.coro):

@@ -140,6 +140,11 @@ import hmac
 #ursina
 import imghdr
 
+# pep722
+import pyparsing
+import packaging.requirements
+import installer
+
 try:
     import imp
 except:

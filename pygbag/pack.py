@@ -56,7 +56,7 @@ def stream_pack_replay():
             zpath.append(str(asset)[1:].replace("-pygbag.", "."))
 
             if not zip_content.is_file():
-                print("32: ERROR", zip_content)
+                print("59: ERROR", zip_content)
                 break
             zip_name = Path("/".join(zpath))
             zf.write(zip_content, zip_name)

@@ -45,6 +45,7 @@ from .filelike import *
 # usefull https://pymotw.com/3/sys/tracing.html
 if DEBUG:
     import trace
+    print("48:",trace.__file__,sys.path)
 
     _tracer = trace.Trace(count=False, trace=True)
 
@@ -141,6 +142,7 @@ leave = enter + spent
 
 
 from asyncio import *
+__run__ = run
 
 import asyncio.events as events
 
@@ -392,6 +394,9 @@ def run(coro, *, debug=False):
 
 def exit_now(ec):
     global exit, paused
+    if exit:
+        print('already exiting ...')
+        return
     # rescheduling happens only where started is True
     exit = True
     while len(tasks):

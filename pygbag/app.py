@@ -199,6 +199,7 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         default="3.11",
         help="Specify python version [default:%s]" % "3.11",
     )
+
     parser.add_argument(
         "--app_name",
         default=app_folder.name,
