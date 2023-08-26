@@ -188,11 +188,12 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         metavar="ADDRESS",
         help="Specify alternate bind address [default: localhost]",
     )
-    parser.add_argument(
-        "--directory",
-        default=build_dir.as_posix(),
-        help="Specify alternative directory [default:%s]" % build_dir,
-    )
+
+#    parser.add_argument(
+#        "--directory",
+#        default=build_dir.as_posix(),
+#        help="Specify alternative directory [default:%s]" % build_dir,
+#    )
 
     parser.add_argument(
         "--PYBUILD",
@@ -283,6 +284,15 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
 
     args = parser.parse_args()
 
+    # when in browser IDE everything should be done in allowed folder
+
+    # force build directory in sourcefolder
+    args.directory = build_dir.as_posix()
+
+    # force cache directory to be inside build folder
+    args.cache = cache_dir.as_posix()
+
+
     app_name = app_folder.name.lower().replace(" ", ".")
 
     archfile = build_dir.joinpath(f"{app_name}.apk")
@@ -301,6 +311,9 @@ app_folder={app_folder}
 
 # artefacts directory
 build_dir={build_dir}
+
+# cache directory
+cache={cache_dir}
 
 # the window title and icon name
 app_name={app_name}
