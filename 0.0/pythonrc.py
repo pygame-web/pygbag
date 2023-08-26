@@ -222,7 +222,7 @@ class shell:
     runner = None
     is_interactive = None
 
-    if aio.cross.simulator:
+    if aio.cross.simulator or not len(sys.argv):
         ROOT = os.getcwd()
         HOME = os.getcwd()
     else:
@@ -1056,7 +1056,6 @@ if not aio.cross.simulator:
         # be re entrant
         import_lock = []
 
-        HTML_MARK = '""" # BEGIN -->'
 
         repos = []
         mapping = {
@@ -1084,7 +1083,7 @@ if not aio.cross.simulator:
 
         repodata = "repodata.json"
 
-        def raw_input(self, prompt=">>> "):
+        async def raw_input(self, prompt=">>> "):
             if len(self.buffer):
                 return self.buffer.pop(0)
 
@@ -1171,8 +1170,6 @@ if not aio.cross.simulator:
                         code = fcode.read()
                 else:
                     code = ""
-
-            HTML_MARK = '"" # BEGIN -->'
 
             file = file or "<stdin>"
 
