@@ -177,7 +177,6 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         try:
             self.rv = bc()
         except SystemExit:
-            #raise
             aio.exit_now(0)
 
         except KeyboardInterrupt as ex:

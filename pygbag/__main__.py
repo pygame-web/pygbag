@@ -92,7 +92,13 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
     # fake host document.window
     import platform as fakehost
+
+
+
     fakehost.window  = NoOp("platform.window")
+
+    import aio.filelike
+    fakehost.fopen = aio.filelike.fopen
 
     # cannot fake a cpu __WASM__ will be False
 
@@ -219,7 +225,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     ns = vars(__import__(__name__))
 
     ns["TopLevel_async_handler"] = TopLevel_async_handler
-    # FIXME: store it elwhere.
+    # FIXME: store it elsewhere.
     __import__('builtins').TopLevel_async_handler = TopLevel_async_handler
 
     sourcefile = sourcefile or str(sys.argv[-1])

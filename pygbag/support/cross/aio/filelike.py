@@ -6,6 +6,8 @@ socket.setdefaulttimeout(0.0)
 
 import aio
 
+temporary = []
+
 
 async def aio_sock_open(sock, host, port):
     while True:
@@ -23,6 +25,107 @@ async def aio_sock_open(sock, host, port):
             if e.errno in (30, 106):
                 return sock
             sys.print_exception(e)
+
+
+
+
+def fix_url(maybe_url):
+    url = str(maybe_url)
+    if url.startswith("http://"):
+        pass
+    elif url.startswith("https://"):
+        pass
+    elif url.startswith("https:/"):
+        url = "https:/" + url[6:]
+    elif url.startswith("http:/"):
+        url = "http:/" + url[5:]
+    return url
+
+def mktemp(suffix=""):
+    global temporary
+    tmpname = f"/tmp/tmp-{aio.ticks}-{len(temporary)}{suffix}"
+    temporary.append( tmpname )
+    return tmpname
+
+
+class fopen:
+    flags = {
+        "redirect": "follow",
+        "credentials": "omit",
+    }
+
+    def __init__(self, maybe_url, mode="r", flags=None):
+        self.url = fix_url(maybe_url)
+        self.mode = mode
+        flags = flags or self.__class__.flags
+        print(f'849: fopen: fetching "{self.url}" with {flags=}')
+        if __WASM__:
+            self.flags = ffi(flags)
+        else:
+            self.flags = flags
+
+        self.tmpfile = None
+
+    async def __aexit__(self, *exc):
+        if self.tmpfile:
+            self.filelike.close()
+            try:
+                os.unlink(self.tmpfile)
+            except FileNotFoundError as e:
+                print("895: async I/O error", e)
+        del self.filelike, self.url, self.mode, self.tmpfile
+        return False
+
+    if __WASM__:
+        async def __aenter__(self):
+            import platform
+
+            if "b" in self.mode:
+                self.tmpfile = shell.mktemp()
+                cf = platform.window.cross_file(self.url, self.tmpfile, self.flags)
+                content = await platform.jsiter(cf)
+                self.filelike = open(content, "rb")
+                self.filelike.path = content
+
+                def rename_to(target):
+                    print("rename_to", content, target)
+                    # will be closed
+                    self.filelike.close()
+                    os.rename(self.tmpfile, target)
+                    self.tmpfile = None
+                    del self.filelike.rename_to
+                    return target
+
+            else:
+                import io
+
+                jsp = platform.window.fetch(self.url, self.flags)
+                response = await platform.jsprom(jsp)
+                content = await platform.jsprom(response.text())
+                if len(content) == 4:
+                    print("585 fopen", f"Binary {self.url=} ?")
+                self.filelike = io.StringIO(content)
+
+                def rename_to(target):
+                    with open(target, "wb") as data:
+                        date.write(self.filelike.read())
+                    del self.filelike.rename_to
+                    return target
+
+            self.filelike.rename_to = rename_to
+            return self.filelike
+
+    else:
+
+        async def __aenter__(self):
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self.url) as response:
+                    assert response.status == 200
+                    # For large files use response.content.read(chunk_size) instead.
+                    self.filelike = io.StringIO( (await response.read()).decode())
+
+            return self.filelike
 
 
 class open:

@@ -229,13 +229,11 @@ class shell:
         ROOT = f"/data/data/{sys.argv[0]}"
         HOME = f"/data/data/{sys.argv[0]}/assets"
 
-    ticks = 0
     pgzrunning = None
 
     @classmethod
     def mktemp(cls, suffix=""):
-        cls.ticks += 1
-        return f"/tmp/tmp-{cls.ticks}{suffix}"
+        return aio.filelike.mktemp(suffix)
 
     @classmethod
     def cat(cls, *argv):
@@ -969,7 +967,7 @@ if not aio.cross.simulator:
                 import platform
 
                 if "b" in self.mode:
-                    self.tmpfile = shell.mktemp()
+                    self.tmpfile = aio.filelike.mktemp()
                     cf = platform.window.cross_file(self.url, self.tmpfile, self.flags)
                     content = await platform.jsiter(cf)
                     self.filelike = open(content, "rb")
@@ -1056,6 +1054,7 @@ if not aio.cross.simulator:
         # be re entrant
         import_lock = []
 
+        HTML_MARK = '"'*3 + ' # BEGIN -->'
 
         repos = []
         mapping = {
@@ -1672,7 +1671,7 @@ del patch
 # emulate pyodide display() cmd
 # TODO: fixme target
 async def display(obj, target=None, **kw):
-    filename = shell.mktemp(".png")
+    filename = aio.filelike.mktemp(".png")
     target = kw.pop("target", None)
     x = kw.pop("x", 0)
     y = kw.pop("y", 0)
@@ -1749,6 +1748,10 @@ async def import_site(__file__, run=True):
 
     embed = False
     hint = "main.py"
+
+    # if not imported by simulator then aio is handled externally
+    if 'pygbag.aio' not in sys.modules:
+        sys.modules['pygbag.aio'] = aio
 
     try:
         # always start async handler or we could not do imports.

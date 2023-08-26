@@ -14,6 +14,11 @@ if not __import__("os").uname().machine.startswith("wasm"):
 
     import aio.pep0722
 
+    if '.-X.dev.' in '.'.join(sys.orig_argv):
+        aio.pep0722.Config.PKG_INDEXES.extend( ["http://localhost:8000/archives/repo/"] )
+    else:
+        aio.pep0722.Config.PKG_INDEXES.extend( ["https://pygame-web.github.io/archives/repo/"] )
+
     import pygbag.__main__
 
     async def custom_async_input():
@@ -34,7 +39,10 @@ if not __import__("os").uname().machine.startswith("wasm"):
 
     while not aio.exit:
         next = time.time() + 0.016
-        aio.loop._run_once()
+        try:
+            aio.loop._run_once()
+        except KeyboardInterrupt:
+            print("45: KeyboardInterrupt")
 
         dt = next - time.time()
         if dt < 0:

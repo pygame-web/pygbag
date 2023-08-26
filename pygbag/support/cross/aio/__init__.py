@@ -45,7 +45,6 @@ from .filelike import *
 # usefull https://pymotw.com/3/sys/tracing.html
 if DEBUG:
     import trace
-    print("48:",trace.__file__,sys.path)
 
     _tracer = trace.Trace(count=False, trace=True)
 
@@ -379,6 +378,7 @@ def run(coro, *, debug=False):
             try:
                 loop.run_forever()
             except KeyboardInterrupt:
+                print("301: closing loop")
                 loop.close()
 
         print(f"378: asyncio.run({coro=})")
