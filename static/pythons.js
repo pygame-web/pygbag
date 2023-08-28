@@ -1025,8 +1025,19 @@ function feat_lifecycle() {
 function feat_snd() {
     // to set user media engagement status and possibly make it blocking
     MM.UME = !vm.config.ume_block
-    if (!MM.UME)
+    MM.is_safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (!MM.UME && !MM.is_safari)
         MM_play( {auto:1, test:1, media: new Audio(config.cdn+"empty.ogg")} , 1)
+
+    if (MM.is_safari) {
+        MM.is_safari = function unlock_ume() {
+                console.warn("safari ume unlocking")
+                MM.UME = 1
+                window.removeEventListener("click", MM.is_safari)
+                MM.is_safari = 1
+            }
+        window.addEventListener("click", MM.is_safari)
+    }
 }
 
 // ============================== event queue =============================
@@ -2130,8 +2141,9 @@ config.interactive = config.interactive || (location.search.search("-i")>=0) //?
 
     config._sdl2    = config._sdl2 || "canvas" //??=
 
-    if (config.ume_block === undefined)
-        config.ume_block || true //??=
+    if (config.ume_block === undefined) {
+        config.ume_block = 1 //??=
+    }
 
     console.log(JSON.stringify(config))
 

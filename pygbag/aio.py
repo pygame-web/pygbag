@@ -47,8 +47,27 @@ if not __import__("os").uname().machine.startswith("wasm"):
         dt = next - time.time()
         if dt < 0:
             past = int(-dt * 1000)
-            if past > 0:
+            # do not spam for 2 ms late
+            if past > 2:
                 print(f"aio: violation frame is {past} ms late")
         else:
             time.sleep(dt)
     print("sim loop exited")
+
+
+"""
+
+typing-extensions
+
+    route = PathRoute(root=tmp_path, to="{project}")
+    resp = await route.get_page({"project": "my-package"})
+    assert resp.status_code == 200
+
+    links = mousebender.simple.parse_archive_links(resp.text)
+    assert [link.filename for link in links] == project_files
+    assert [link.url for link in links] == [f"./{n}" for n in project_files]
+
+
+
+"""
+

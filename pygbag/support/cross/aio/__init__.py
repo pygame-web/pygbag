@@ -351,12 +351,21 @@ def run(coro, *, debug=False):
         exit = False
         run_called = True
         started = True
-        # the stepper fonction when in simulator
-        if cross.scheduler:
-            if debug:
-                pdb("261: asyncio handler is", cross.scheduler)
-            paused = False
-            cross.scheduler(step, 1)
+
+        # the stepper fonction when in simulator is called from pygbag.aio
+        # and is blocking script
+        if aio.cross.simulator:
+            # cannot be sure asyncio.run() will be used
+            # so don't handle loop here
+            return
+
+
+#        if cross.scheduler:
+#            if debug:
+#                pdb("261: asyncio handler is", cross.scheduler)
+#            paused = False
+#            cross.scheduler(step, 1)
+
 
         # the stepper when called from  window.requestAnimationFrame()
         # https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame

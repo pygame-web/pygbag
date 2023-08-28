@@ -65,19 +65,18 @@ Example :
 
 ```
 user@pp /data/git/pygbag $ python3 -m pygbag --help your.app.folder
- *pygbag 0.7.2*
+ *pygbag 0.7.3*
 
 Serving python files from [/data/git/pygbag/your.app.folder/build/web]
 
 with no security/performance in mind, i'm just a test tool : don't rely on me
-usage: __main__.py [-h] [--bind ADDRESS] [--directory DIRECTORY] [--PYBUILD PYBUILD] [--app_name APP_NAME] [--ume_block UME_BLOCK] [--can_close CAN_CLOSE] [--cache CACHE] [--package PACKAGE] [--title TITLE] [--version VERSION] [--build] [--html] [--no_opt] [--archive] [--icon ICON] [--cdn CDN]
-                   [--template TEMPLATE] [--ssl SSL] [--port [PORT]]
+usage: __main__.py [-h] [--bind ADDRESS] [--PYBUILD PYBUILD] [--app_name APP_NAME] [--ume_block UME_BLOCK] [--can_close CAN_CLOSE]
+                   [--cache CACHE] [--package PACKAGE] [--title TITLE] [--version VERSION] [--build] [--html] [--no_opt]
+                   [--archive] [--icon ICON] [--cdn CDN] [--template TEMPLATE] [--ssl SSL] [--port [PORT]]
 
 options:
   -h, --help            show this help message and exit
   --bind ADDRESS        Specify alternate bind address [default: localhost]
-  --directory DIRECTORY
-                        Specify alternative directory [default:/data/git/pygbag/your.app.folder/build/web]
   --PYBUILD PYBUILD     Specify python version [default:3.11]
   --app_name APP_NAME   Specify user facing name of application [default:your.app.folder]
   --ume_block UME_BLOCK
@@ -87,16 +86,16 @@ options:
   --cache CACHE         md5 based url cache directory
   --package PACKAGE     package name, better make it unique
   --title TITLE         App nice looking name
-  --version VERSION     override prebuilt version path [default:0.7.2]
+  --version VERSION     override prebuilt version path [default:0.7.3]
   --build               build only, do not run test server
   --html                build as html with embedded assets (pygame-script)
   --no_opt              turn off assets optimizer
   --archive             make build/web.zip archive for itch.io
   --icon ICON           icon png file 32x32 min should be favicon.png
-  --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/archives/0.7/]
+  --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/pygbag/0.0/]
   --template TEMPLATE   index.html template [default:default.tmpl]
   --ssl SSL             enable ssl with server.pem and key.pem
-  --port [PORT]         Specify alternate port [default: 8000]```
+  --port [PORT]         Specify alternate port [default: 8000]
 
 ```
 
@@ -128,8 +127,7 @@ ____
 NOTES:
  - pygbag only provides support for pygame-ce ( pygame community edition )
 
- - safari mobile audio auto-start handling is broken
-so do not play ANY sound at game start and use option : --ume_block 0
+ - safari/chrome mobile will not run until version ios 15.x
 
  - first load will be slower, because setting up local cache from cdn to avoid
 useless network transfer for getting pygame and cpython prebuilts.
@@ -169,7 +167,10 @@ Default prebuilts CPython + pygame-ce used by pygbag are stored via github pages
 from the repo https://github.com/pygame-web/archives under versioned folders.
 
 
-[TEST INTERACTIVE REPL](http://pygame-web.github.io/showroom/pygbag.html?cpython311&-i&noapp#src/hello.py%20arg1%20arg2)
+[TEST INTERACTIVE REPL 3.11 (default)](http://pygame-web.github.io/showroom/pygbag.html?cpython311&-i&noapp#src/hello.py%20arg1%20arg2)
+
+
+[TEST INTERACTIVE REPL 3.12 (next)](http://pygame-web.github.io/showroom/pygbag.html?cpython312&-i&noapp#src/hello.py%20arg1%20arg2)
 
 
 ADDING STATIC/DYNAMIC MODULES:

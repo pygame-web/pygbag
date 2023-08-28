@@ -75,8 +75,23 @@ then
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
 
 
-    # cython3
-    wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2395.diff | patch -p1
+    # cython3 / merged
+    # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2395.diff | patch -p1
+
+    patch -p1 <<END
+diff --git a/src_c/pixelcopy.c b/src_c/pixelcopy.c
+index e33eae33..f5f6697e 100644
+--- a/src_c/pixelcopy.c
++++ b/src_c/pixelcopy.c
+@@ -485,6 +485,7 @@ array_to_surface(PyObject *self, PyObject *arg)
+     }
+
+     if (_validate_view_format(view_p->format)) {
++PyErr_SetString(PyExc_ValueError, "Unsupported array item type");
+         return 0;
+     }
+
+END
 
 
 else
@@ -121,14 +136,15 @@ then
     SDL_IMAGE="-lSDL2 -lfreetype -lwebp"
 
     export CFLAGS="-DSDL_NO_COMPAT $SDL_IMAGE"
-
     EMCC_CFLAGS="-I${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/include/freetype2"
+    EMCC_CFLAGS="$EMCC_CFLAGS -mnontrapping-fptoint -mno-reference-types -sWASM_BIGINT=0 -sMIN_SAFARI_VERSION=120000"
     EMCC_CFLAGS="$EMCC_CFLAGS -I$PREFIX/include/SDL2"
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unused-command-line-argument"
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unreachable-code-fallthrough"
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unreachable-code"
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-parentheses-equality"
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unknown-pragmas"
+
     export EMCC_CFLAGS="$EMCC_CFLAGS -DHAVE_STDARG_PROTOTYPES -DBUILD_STATIC -ferror-limit=1 -fpic"
 
     export CC=emcc
@@ -159,9 +175,9 @@ then
         # prepare testsuite
         [ -d ${ROOT}/build/pygame-test ] && rm -fr ${ROOT}/build/pygame-test
         mkdir ${ROOT}/build/pygame-test
-        cp -r test ${ROOT}/build/pygame-test/tests
-        cp -r examples ${ROOT}/build/pygame-test/tests
-        cp ${ROOT}/packages.d/pygame/tests/main.py ${ROOT}/build/pygame-test/tests/
+        cp -r test ${ROOT}/build/pygame-test/test
+        cp -r examples ${ROOT}/build/pygame-test/test/
+        cp ${ROOT}/packages.d/pygame/tests/main.py ${ROOT}/build/pygame-test/
 
     else
         echo "ERROR: pygame configuration failed" 1>&2
