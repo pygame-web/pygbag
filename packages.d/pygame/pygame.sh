@@ -78,6 +78,11 @@ then
     # cython3 / merged
     # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2395.diff | patch -p1
 
+
+    # zerodiv mixer.music
+    wget -O - https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2426.diff | patch -p1
+
+    # weird exception not raised correctly in test/pixelcopy_test
     patch -p1 <<END
 diff --git a/src_c/pixelcopy.c b/src_c/pixelcopy.c
 index e33eae33..f5f6697e 100644

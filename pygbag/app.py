@@ -41,7 +41,7 @@ AUTO_REBUILD = True
 if devmode:
     sys.argv.remove("--dev")
     DEFAULT_PORT = 8666
-    DEFAULT_CDN = f"http://localhost:8000/archives/{cdn_version}/"
+    DEFAULT_CDN = f"http://localhost:8000/pygbag/0.0/"
     DEFAULT_TMPL = "static/wip.tmpl"
     print(
         f"""

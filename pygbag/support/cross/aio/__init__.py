@@ -326,6 +326,12 @@ def create_task(coro, *, name=None, context=None):
 #
 run_called = False
 
+def is_running():
+    global started
+    return started
+
+# prevent warnings in aiohttp
+loop.is_running = is_running
 
 def run(coro, *, debug=False):
     global paused, loop, started, step, DEBUG, run_called, exit

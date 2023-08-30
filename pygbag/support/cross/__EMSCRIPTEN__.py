@@ -47,8 +47,8 @@ if hasattr(sys, "_emscripten_info"):
         from embed_browser import Audio, File, Object
         from embed_browser import fetch, console, prompt, alert, confirm
 
-        # pyodide compat
-        sys.modules["js"] = sys.modules["embed_browser"]
+        # broad pyodide compat
+        sys.modules["js"] = this # instead of just sys.modules["embed_browser"]
 
         Object_type = type(Object())
     except Exception as e:

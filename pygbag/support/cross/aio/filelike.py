@@ -123,7 +123,10 @@ class fopen:
                 async with session.get(self.url) as response:
                     assert response.status == 200
                     # For large files use response.content.read(chunk_size) instead.
-                    self.filelike = io.StringIO( (await response.read()).decode())
+                    if "b" in self.mode:
+                        self.filelike = io.BytesIO( await response.read())
+                    else:
+                        self.filelike = io.StringIO( (await response.read()).decode())
 
             return self.filelike
 

@@ -37,6 +37,9 @@ if not __import__("os").uname().machine.startswith("wasm"):
 
     # simulate .requestAnimationFrame() infinite loop
 
+    # make aiohttp happy
+    aio.started = True
+
     while not aio.exit:
         next = time.time() + 0.016
         try:
