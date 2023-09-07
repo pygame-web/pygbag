@@ -1790,7 +1790,7 @@ async def import_site(__file__, run=True):
     """
                             )
                         else:
-                            async with platfom.fopen(handler) as handle:
+                            async with platform.fopen(handler) as handle:
                                 file.write("\n")
                                 file.write(handle.read())
                 embed = True
