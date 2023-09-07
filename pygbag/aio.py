@@ -12,12 +12,13 @@ if not __import__("os").uname().machine.startswith("wasm"):
 
     import aioconsole
 
-    import aio.pep0722
+    import aio.pep0723
 
-    if '.-X.dev.' in '.'.join(sys.orig_argv):
-        aio.pep0722.Config.PKG_INDEXES.extend( ["http://localhost:8000/archives/repo/"] )
+    aio.pep0723.Config.dev_mode = ".-X.dev." in ".".join(sys.orig_argv)
+    if aio.pep0723.Config.dev_mode:
+        aio.pep0723.Config.PKG_INDEXES.extend(["http://localhost:8000/archives/repo/"])
     else:
-        aio.pep0722.Config.PKG_INDEXES.extend( ["https://pygame-web.github.io/archives/repo/"] )
+        aio.pep0723.Config.PKG_INDEXES.extend(["https://pygame-web.github.io/archives/repo/"])
 
     import pygbag.__main__
 
@@ -29,7 +30,7 @@ if not __import__("os").uname().machine.startswith("wasm"):
             sourcefile=sys.argv[-1],
             simulator=True,
             async_input=custom_async_input,
-            async_pkg=aio.pep0722.check_list(sys.argv[-1]),
+            async_pkg=aio.pep0723.check_list(filename=sys.argv[-1]),
         )
     )
 
@@ -56,21 +57,3 @@ if not __import__("os").uname().machine.startswith("wasm"):
         else:
             time.sleep(dt)
     print("sim loop exited")
-
-
-"""
-
-typing-extensions
-
-    route = PathRoute(root=tmp_path, to="{project}")
-    resp = await route.get_page({"project": "my-package"})
-    assert resp.status_code == 200
-
-    links = mousebender.simple.parse_archive_links(resp.text)
-    assert [link.filename for link in links] == project_files
-    assert [link.url for link in links] == [f"./{n}" for n in project_files]
-
-
-
-"""
-

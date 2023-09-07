@@ -182,33 +182,37 @@ window.cross_file = function * cross_file(url, store, flags) {
     cross_file.dlcomplete = 1
     var content = 0
     var response = null
-    console.log("cross_file.fetch", url, flags || FETCH_FLAGS )
+    console.log("Begin.cross_file.fetch", url, flags || FETCH_FLAGS )
+
     fetch(url, flags || FETCH_FLAGS)
         .then( resp => {
                 response = resp
+                console.log("cross_file.fetch", response.status)
                 if (checkStatus(resp))
                     return response.arrayBuffer()
+                else {
+                    console.warn("got wrong status", response)
+                }
             })
         .then( buffer => content = new Uint8Array(buffer) )
-        .catch(x => response.error = new Error(x) )
+        .catch(x => {
+                response = { "error" : new Error(x) }
+            })
 
     while (!response)
         yield content
 
-    console.warn("got response", response, "len", response.headers.get("Content-Length"))
-
     while (!content && !response.error )
         yield content
 
-    //console.warn("got content or error", content || response.error)
-
     if (response.error) {
-        console.error("cross_file:", response.error)
+        console.warn("cross_file.error :", response.error)
         return response.error
-    }
+    } else
+        console.warn("got response", response, "len", response.headers.get("Content-Length"))
 
     FS.writeFile(store, content )
-    console.log("cross_file.fetch", store, "r/w=", content.byteLength )
+    console.log("End.cross_file.fetch", store, "r/w=", content.byteLength)
     cross_file.dlcomplete = content.byteLength
     yield store
 }
@@ -554,19 +558,12 @@ async function custom_postrun() {
     console.warn("VM.postrun Begin")
     const pyrc_url = vm.config.cdn + "pythonrc.py"
     var content = 0
-    console.log("cross_file.fetch", pyrc_url )
-
 
     fetch(pyrc_url, {})
         .then( response => checkStatus(response) && response.arrayBuffer() )
         .then( buffer => run_pyrc(new Uint8Array(buffer)) )
         .catch(x => console.error(x))
-/*
-    store_file(
-        "https://pygame-web.github.io/archives/repo/repodata.json",
-        "/data/data/org.python/repodata.json"
-    )
-*/
+
     console.warn("VM.postrun End")
 }
 
@@ -817,7 +814,7 @@ console.log(" @@@@@@@@@@@@@@@@@@@@@@ 3D CANVAS @@@@@@@@@@@@@@@@@@@@@@")
             return vm.config.user_canvas_managed
 
         if (!window.canvas) {
-            console.warning("777: No canvas defined")
+            console.warn("777: No canvas defined")
             return
         }
 

@@ -189,11 +189,11 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         help="Specify alternate bind address [default: localhost]",
     )
 
-#    parser.add_argument(
-#        "--directory",
-#        default=build_dir.as_posix(),
-#        help="Specify alternative directory [default:%s]" % build_dir,
-#    )
+    #    parser.add_argument(
+    #        "--directory",
+    #        default=build_dir.as_posix(),
+    #        help="Specify alternative directory [default:%s]" % build_dir,
+    #    )
 
     parser.add_argument(
         "--PYBUILD",
@@ -291,7 +291,6 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
 
     # force cache directory to be inside build folder
     args.cache = cache_dir.as_posix()
-
 
     app_name = app_folder.name.lower().replace(" ", ".")
 

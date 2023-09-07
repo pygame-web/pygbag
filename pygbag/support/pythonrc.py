@@ -19,8 +19,6 @@ import json
 PYCONFIG_PKG_INDEXES_DEV = ["http://localhost:<port>/archives/repo/"]
 PYCONFIG_PKG_INDEXES = ["https://pygame-web.github.io/archives/repo/"]
 
-ENABLE_USER_SITE = False
-
 # the sim does not preload assets and cannot access currentline
 # unless using https://github.com/pmp-p/aioprompt/blob/master/aioprompt/__init__.py
 
@@ -63,9 +61,8 @@ builtins.overloaded = overloaded
 
 
 def DBG(*argv):
-    if PyConfig.dev_mode:
+    if PyConfig.dev_mode>0:
         print(*argv)
-
 
 try:
     # mpy already has execfile
@@ -212,6 +209,8 @@ except Exception as e:
 
 PyConfig["imports_ready"] = False
 PyConfig["pygbag"] = 0
+
+PyConfig.setdefault("user_site_directory", 0)
 
 
 class shell:
@@ -494,10 +493,10 @@ class shell:
 
     @classmethod
     def strace(cls, *argv, **env):
-        import aio.trace
-
-        sys.settrace(aio.trace.calls)
-        return cls.parse_sync(argv, env)
+        import aio.tracer
+        print("497: trace on")
+        sys.settrace(aio.tracer.calls)
+        return True
 
     @classmethod
     def mute(cls, *argv, **env):
@@ -626,13 +625,31 @@ ________________________
     @classmethod
     async def preload_code(cls, code, callback=None):
         # get a relevant list of modules likely to be imported
-        # and prefetch them if found in repo trees
-        #
-        #            for want in TopLevel_async_handler.list_imports(code, file=None):
-        #                DBG(f"605: preloading import {want=} {callback=}")
-        #                await TopLevel_async_handler.async_imports(callback, want)
 
-        await TopLevel_async_handler.async_imports(callback, *TopLevel_async_handler.list_imports(code, file=None))
+        maybe_wanted = list(TopLevel_async_handler.list_imports(code, file=None))
+        if 'numpy' in maybe_wanted:
+            print(f"""
+
+630 : ================== NUMPY ======================
+
+{maybe_wanted}
+
+
+
+""")
+
+        if 0:
+            import aio
+
+            if not aio.cross.simulator:
+                print("636:","@" * 40)
+                import aio.pep0723
+
+                await aio.pep0723.check_list(code=code, filename=None)
+                print("@" * 40)
+
+        await TopLevel_async_handler.async_imports(callback, *maybe_wanted)
+#        await TopLevel_async_handler.async_imports(callback, *TopLevel_async_handler.list_imports(code, file=None))
         PyConfig.imports_ready = True
         return True
 
@@ -743,7 +760,7 @@ ________________________
         try:
             return await cls.runpy(main, *args, **kw)
         finally:
-            TopLevel_async_handler.muted = False
+            TopLevel_async_handler.muted = TopLevel_async_handler.mute_state
 
     @classmethod
     def parse_sync(shell, line, **env):
@@ -833,6 +850,9 @@ random.seed(1)
 import __EMSCRIPTEN__ as platform
 
 platform.shell = shell
+import aio.filelike
+platform.fopen = aio.filelike.fopen
+platform.sopen = aio.filelike.sopen
 
 
 if not aio.cross.simulator:
@@ -947,87 +967,6 @@ if not aio.cross.simulator:
 
         from platform import window, document, ffi
 
-        class fopen:
-            flags = {
-                #                'mode': "no-cors",
-                "redirect": "follow",
-                #                'referrerPolicy': 'no-referrer',
-                "credentials": "omit",
-            }
-
-            def __init__(self, maybe_url, mode="r", flags=None):
-                self.url = __EMSCRIPTEN__.fix_url(maybe_url)
-                self.mode = mode
-                flags = flags or self.__class__.flags
-                print(f'849: fopen: fetching "{self.url}" with {flags=}')
-                self.flags = ffi(flags)
-                self.tmpfile = None
-
-            async def __aenter__(self):
-                import platform
-
-                if "b" in self.mode:
-                    self.tmpfile = aio.filelike.mktemp()
-                    cf = platform.window.cross_file(self.url, self.tmpfile, self.flags)
-                    content = await platform.jsiter(cf)
-                    self.filelike = open(content, "rb")
-                    self.filelike.path = content
-
-                    def rename_to(target):
-                        print("rename_to", content, target)
-                        # will be closed
-                        self.filelike.close()
-                        os.rename(self.tmpfile, target)
-                        self.tmpfile = None
-                        del self.filelike.rename_to
-                        return target
-
-                else:
-                    import io
-
-                    jsp = platform.window.fetch(self.url, self.flags)
-                    response = await platform.jsprom(jsp)
-                    content = await platform.jsprom(response.text())
-                    if len(content) == 4:
-                        print("585 fopen", f"Binary {self.url=} ?")
-                    self.filelike = io.StringIO(content)
-
-                    def rename_to(target):
-                        with open(target, "wb") as data:
-                            date.write(self.filelike.read())
-                        del self.filelike.rename_to
-                        return target
-
-                self.filelike.rename_to = rename_to
-                return self.filelike
-
-            async def __aexit__(self, *exc):
-                if self.tmpfile:
-                    self.filelike.close()
-                    try:
-                        os.unlink(self.tmpfile)
-                    except FileNotFoundError as e:
-                        print("895: async I/O error", e)
-                del self.filelike, self.url, self.mode, self.tmpfile
-                return False
-
-        platform.fopen = fopen
-
-        async def jsiter(iterator):
-            mark = None
-            value = undefined
-            while mark != undefined:
-                value = mark
-                await asyncio.sleep(0)
-                mark = next(iterator, undefined)
-            return value
-
-        platform.jsiter = jsiter
-
-        async def jsprom(prom):
-            return await jsiter(platform.window.iterator(prom))
-
-        platform.jsprom = jsprom
 
         apply_patches()
 
@@ -1054,7 +993,9 @@ if not aio.cross.simulator:
         # be re entrant
         import_lock = []
 
-        HTML_MARK = '"'*3 + ' # BEGIN -->'
+        mute_state = False
+
+        HTML_MARK = '"' * 3 + " # BEGIN -->"
 
         repos = []
         mapping = {
@@ -1070,13 +1011,14 @@ if not aio.cross.simulator:
         # ignore +=  ["ursina","gltf","pyperclip","screeninfo"]
 
         manual_deps = {
+            "matplotlib" : ["numpy", "six", "cycler", "PIL", "pygame-ce"],
             "bokeh": ["numpy", "yaml", "typing_extensions", "jinja2", "markupsafe"],
             "igraph": ["texttable"],
             "pygame_gui": ["i18n"],
-            "ursina": ["numpy", "screeninfo", "gltf", "PIL", "pyperclip", "panda3d"]
+            "ursina": ["numpy", "screeninfo", "gltf", "PIL", "pyperclip", "panda3d"],
         }
 
-        fence_missing = []
+        missing_fence = []
 
         from pathlib import Path
 
@@ -1107,7 +1049,7 @@ if not aio.cross.simulator:
                 self.line = None
                 self.buffer.insert(0, "#")
             # self.buffer.append("")
-            print(f"996: {count} lines queued for async eval")
+            DBG(f"1039: {count} lines queued for async eval")
 
         @classmethod
         def scan_imports(cls, code, filename, load_try=False):
@@ -1158,7 +1100,7 @@ if not aio.cross.simulator:
                     if not mod in required:
                         required.append(mod)
 
-            DBG(f"1020: import scan {filename=} {len(code)=} {required}")
+            DBG(f"1095: import scan {filename=} {len(code)=} {required}")
             return required
 
         @classmethod
@@ -1177,11 +1119,11 @@ if not aio.cross.simulator:
                 repo = None
                 for repo in PyConfig.pkg_repolist:
                     if want in cls.may_need:
-                        DBG(f"1046: skip module {want=} reason: already requested")
+                        DBG(f"1113: skip module {want=} reason: already requested")
                         break
 
                     if want in sys.modules:
-                        DBG(f"1179: skip module {want=} reason: sys.modules")
+                        DBG(f"1117: skip module {want=} reason: sys.modules")
                         break
 
                     if want in repo:
@@ -1195,63 +1137,7 @@ if not aio.cross.simulator:
                     else:
                         pdb(f"1081: no pkg repository available")
 
-        @classmethod
-        def imports(cls, *mods, lvl=0, wants=[]):
-            unseen = False
-            for mod in mods:
-                # better safe than sorry
-                if mod in wants:
-                    wants.remove(mod)
 
-                for dep in cls.repos[0]["packages"].get(mod, {}).get("depends", []):
-                    if mod in sys.modules:
-                        continue
-
-                    if (not dep in wants) and (not dep in cls.ignore):
-                        unseen = True
-                        wants.insert(0, dep)
-
-            if lvl < 3 and unseen:
-                cls.imports(*wants, lvl=lvl + 1, wants=wants)
-
-            if not lvl:
-                for dep in mods:
-                    if mod in sys.modules:
-                        continue
-
-                    if (not dep in wants) and (not dep in cls.ignore):
-                        wants.append(dep)
-            # always get numpy first
-            if "numpy" in wants:
-                wants.remove("numpy")
-                wants.insert(0, "numpy")
-
-            # FIXME !
-            # FIXME !
-            # FIXME !
-            for mod in mods:
-                if mod not in cls.manual_deps:
-                    continue
-                deps = list(cls.manual_deps[mod])
-                deps.reverse()
-                for missing in deps:
-                    if missing in cls.fence_missing:
-                        continue
-
-                    if missing in wants:
-                        wants.remove(missing)
-                    # no need to request
-                    if missing in sys.modules:
-                        continue
-                    # prio missing
-                    wants.insert(0, missing)
-                    DBG(f"1244: added {missing=} for {mod=}")
-
-            # FIXME !
-            # FIXME !
-            # FIXME !
-
-            return wants
 
         # TODO: re order repo on failures
         # TODO: try to download from pypi with
@@ -1263,27 +1149,98 @@ if not aio.cross.simulator:
         # https://github.com/thebjorn/pydeps
 
         @classmethod
+        def import_one(cls, mod, lvl=0):
+            wants = []
+
+            if mod in sys.modules:
+                return []
+
+            if mod in cls.missing_fence:
+                return []
+
+            for dep in cls.repos[0]["packages"].get(mod, {}).get("depends", []):
+                if dep in cls.ignore:
+                    continue
+
+                if dep in cls.missing_fence:
+                    continue
+
+                cls.missing_fence.append(dep)
+
+                if lvl < 3:
+                    for subdep in cls.imports(mod, lvl=lvl + 1):
+                        if not subdep in cls.missing_fence:
+                            cls.missing_fence.append(subdep)
+
+            if mod in cls.manual_deps:
+                deps = list(cls.manual_deps[mod])
+                deps.reverse()
+                DBG(f"""
+1176: added {deps=} for {mod=}
+{cls.missing_fence=}
+
+
+""")
+                for missing in deps:
+                    if missing in cls.missing_fence:
+                        continue
+
+                    if missing in wants:
+                        continue
+
+                    # no need to request
+                    if missing in sys.modules:
+                        continue
+
+                    # prio missing
+                    wants.insert(0, missing)
+                    DBG(f"1108: added {missing=} for {mod=}")
+
+            wants.append( mod )
+            return wants
+
+        @classmethod
+        def imports(cls, *mods, lvl=0):
+            wants = []
+            unseen = False
+            for mod in mods:
+                # get potential sub deps
+                for dep in cls.import_one(mod, lvl=lvl):
+                    if dep in wants:
+                        continue
+
+                    if dep in sys.modules:
+                        continue
+
+                    if dep in cls.missing_fence:
+                        continue
+
+                    if dep in cls.ignore:
+                        continue
+
+                    wants.append(dep)
+
+                if not mod in wants:
+                    wants.append(mod)
+
+            return wants
+
+
+        @classmethod
         async def async_get_pkg(cls, want, ex, resume):
             pkg_file = ""
 
-            if want in cls.fence_missing:
-                return
-            cls.fence_missing.append(want)
-
             miss_list = cls.imports(want)
+
             if want in miss_list:
                 miss_list.remove(want)
-            for incoming in cls.fence_missing:
-                if incoming in miss_list:
-                    miss_list.remove(incoming)
 
             if len(miss_list):
-                DBG(f"1267: FIXME dependency table for manually built module '{want}' {miss_list=}")
+                DBG(f"1230: FIXME dependency table for manually built module '{want}' {miss_list=}")
                 await cls.async_imports(None, *miss_list)
 
             for repo in PyConfig.pkg_repolist:
-                DBG(f"1202: {want=} found : {want in repo}")
-                # await add_missing(want)
+                DBG(f"1234: {want=} found : {want in repo}")
 
                 if want in repo:
                     pkg_url = f"{repo['-CDN-']}{repo[want]}"
@@ -1309,6 +1266,7 @@ if not aio.cross.simulator:
                 return None
             return await aio.toplevel.get_repo_pkg(pkg_file, want, resume, ex)
 
+        # returns an awaitable as shell does not await directly
         @classmethod
         def get_pkg(cls, want, ex=None, resume=None):
             return cls.async_get_pkg(want, ex, resume)
@@ -1346,12 +1304,32 @@ if not aio.cross.simulator:
                 await cls.async_imports_init()
                 del cls.async_imports_init
 
-            all = cls.imports(*wanted)
+            print("1302: ============= ", wanted)
+
+
+            wants = cls.imports(*wanted)
+            all = list(cls.missing_fence)
+            print("1305: PRE REQ ", cls.missing_fence)
+            all.extend(wants)
+            print("1308: IMPORT FINAL ", all)
+
+            async def import_now(mod):
+                nonlocal all
+                if not mod in all:
+                    return
+                all.remove(mod)
+                await cls.async_get_pkg(mod, None, None)
+                all.remove(mod)
+                __import__(mod)
+
+
+
+            # always put numpy first
+            await import_now('numpy')
 
             # pygame must be early for plotting
             if ("matplotlib" in all) and ("pygame" not in sys.modules):
-                await cls.async_get_pkg("pygame.base", None, None)
-                __import__("pygame")
+                await import_now("pygame")
 
             for req in all:
                 if req == "pyyaml":
@@ -1403,7 +1381,7 @@ if not aio.cross.simulator:
         async def async_repos(cls):
             abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
             for repo in PyConfig.pkg_indexes:
-                async with fopen(f"{repo}index.json", "r") as index:
+                async with platform.fopen(f"{repo}index.json", "r") as index:
                     try:
                         data = index.read()
                         if isinstance(data, bytes):
@@ -1738,9 +1716,9 @@ LOCK = False
 
 
 async def import_site(__file__, run=True):
-    global ENABLE_USER_SITE, LOCK
+    global LOCK
     if LOCK:
-        print("1665: import_site IS NOT RE ENTRANT")
+        print("1742: import_site IS NOT RE ENTRANT")
         return
 
     LOCK = True
@@ -1748,28 +1726,34 @@ async def import_site(__file__, run=True):
 
     embed = False
     hint = "main.py"
+    is_py = sys.argv[0].endswith(".py")
 
     # if not imported by simulator then aio is handled externally
-    if 'pygbag.aio' not in sys.modules:
-        sys.modules['pygbag.aio'] = aio
+    if "pygbag.aio" not in sys.modules:
+        import aio
+        sys.modules["pygbag.aio"] = aio
+
+
+    TopLevel_async_handler.mute_state = '.py' in ''.join(sys.argv)
 
     try:
         # always start async handler or we could not do imports.
         await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
 
         if Path(__file__).is_file():
-            DBG(f"1601: running {__file__=}")
+            DBG(f"1762: running {__file__=}")
             TopLevel_async_handler.muted = True
             await shell.source(__file__)
-            # allow to set ENABLE_USER_SITE
+
+            # allow to set user site customization
             await asyncio.sleep(0)
-            if ENABLE_USER_SITE:
-                DBG(f"1607: {__file__=} done, giving hand to user_site")
+            if PyConfig.user_site_directory:
+                DBG(f"1768: {__file__=} done, giving hand to user_site")
                 return __file__
             else:
-                DBG(f"1690: {__file__=} done : now trying remote sources")
+                DBG(f"1772: {__file__=} done : now trying remote sources")
         else:
-            DBG(f"1692: {__file__=} NOT FOUND : now trying remote sources")
+            DBG(f"1774: {__file__=} NOT FOUND : now trying remote sources")
 
         # where to retrieve
         import tempfile
@@ -1781,7 +1765,7 @@ async def import_site(__file__, run=True):
             if Path(source).is_file():
                 source_path = getattr(PyConfig, "frozen_path", "")
                 handler = getattr(PyConfig, "frozen_handler", "")
-                DBG("1514: embed path", source_path, "will embed", source, "handled by", handler)
+                DBG("1786: embed path", source_path, "will embed", source, "handled by", handler)
                 local = tmpdir / "embed.py"
                 with open(source, "r") as src:
                     with open(local, "w") as file:
@@ -1805,7 +1789,7 @@ async def import_site(__file__, run=True):
     """
                             )
                         else:
-                            async with fopen(handler) as handle:
+                            async with platfom.fopen(handler) as handle:
                                 file.write("\n")
                                 file.write(handle.read())
                 embed = True
@@ -1818,14 +1802,15 @@ async def import_site(__file__, run=True):
             # no embed, try sys.argv[0] first, but main.py can only be a hint.
             # of what to run in an archive
 
-            is_py = sys.argv[0].endswith(".py")
             if sys.argv[0] == "main.py" or not is_py:
                 source = PyConfig.orig_argv[-1]
                 if is_py:
                     hint = sys.argv[0]
             else:
                 source = sys.argv[0]
-        DBG(f"1745 {local=} {source=} {is_py=} {hint=}")
+
+        DBG(f"1830: {local=} {source=} {is_py=} {hint=}")
+
         if local is None:
             ext = str(source).rsplit(".")[-1].lower()
 
@@ -1842,7 +1827,7 @@ async def import_site(__file__, run=True):
                 if ext in ("apk", "jar"):
                     fname = fname + ".zip"
 
-                async with fopen(source, "rb") as zipdata:
+                async with platfom.fopen(source, "rb") as zipdata:
                     with open(fname, "wb") as file:
                         file.write(zipdata.read())
                 import shutil
@@ -1861,6 +1846,8 @@ async def import_site(__file__, run=True):
                 # maybe base64 or frozen code in html.
                 ...
 
+        DBG(f"1867: {local=} {source=} {is_py=} {hint=}")
+
         if local and local.is_file():
             pdir = str(local.parent)
             os.chdir(pdir)
@@ -1877,6 +1864,7 @@ async def import_site(__file__, run=True):
             # TODO: check orig_argv for isolation parameters
             if not pdir in sys.path:
                 sys.path.insert(0, pdir)
+
             if run:
                 await shell.runpy(local)
             return str(local)

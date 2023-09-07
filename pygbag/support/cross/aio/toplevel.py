@@ -116,7 +116,6 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
     # TODO: use PyConfig interactive flag
     muted = True
 
-
     def __init__(self, locals, **kw):
         super().__init__(locals)
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
@@ -170,7 +169,8 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
         return False
 
     def runcode(self, code):
-        if embed:embed.set_ps1()
+        if embed:
+            embed.set_ps1()
         self.rv = undefined
 
         bc = types.FunctionType(code, self.locals)
@@ -211,7 +211,8 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
 
     def prompt(self):
         if not self.__class__.muted and self.shell.is_interactive:
-            if embed:embed.prompt()
+            if embed:
+                embed.prompt()
 
     async def interact(self):
         try:
@@ -244,7 +245,8 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 else:
                     if self.push(self.line):
                         prompt = sys.ps2
-                        if embed:embed.set_ps2()
+                        if embed:
+                            embed.set_ps2()
                         self.one_liner = False
                     else:
                         prompt = sys.ps1

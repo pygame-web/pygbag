@@ -79,8 +79,8 @@ then
     # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2395.diff | patch -p1
 
 
-    # zerodiv mixer.music
-    wget -O - https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2426.diff | patch -p1
+    # zerodiv mixer.music / merged
+    # wget -O - https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2426.diff | patch -p1
 
     # weird exception not raised correctly in test/pixelcopy_test
     patch -p1 <<END

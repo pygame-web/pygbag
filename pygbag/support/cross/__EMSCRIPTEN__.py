@@ -36,31 +36,6 @@ except:
     else:
         builtins.__UPY__ = None
 
-if hasattr(sys, "_emscripten_info"):
-    is_browser = not sys._emscripten_info.runtime.startswith("Node.js")
-    builtins.__EMSCRIPTEN__ = this
-    try:
-        from embed import *
-        from platform import *
-        from embed_emscripten import *
-        from embed_browser import window, document, navigator
-        from embed_browser import Audio, File, Object
-        from embed_browser import fetch, console, prompt, alert, confirm
-
-        # broad pyodide compat
-        sys.modules["js"] = this # instead of just sys.modules["embed_browser"]
-
-        Object_type = type(Object())
-    except Exception as e:
-        sys.print_exception(e)
-        pdb(__file__, ":47 no browser/emscripten modules yet", e)
-
-    def ffi(arg):
-        return window.JSON.parse(json.dumps(arg))
-
-else:
-    is_browser = False
-    builtins.__EMSCRIPTEN__ = None
 
 
 # force use a fixed, tested version of uasyncio to avoid non-determinism
@@ -75,6 +50,7 @@ if __UPY__:
         sys.print_exception(e)
 
 else:
+    # fallback to asyncio based implementation
     try:
         from . import uasyncio_cpy as uasyncio
     except:
@@ -82,6 +58,48 @@ else:
         uasyncio = aio
 
 sys.modules["uasyncio"] = uasyncio
+
+
+# detect if cpython is really running on a emscripten browser
+
+if hasattr(sys, "_emscripten_info"):
+    is_browser = not sys._emscripten_info.runtime.startswith("Node.js")
+    builtins.__EMSCRIPTEN__ = this
+    try:
+        from embed import *
+        from platform import *
+        from embed_emscripten import *
+        from embed_browser import window, document, navigator
+        from embed_browser import Audio, File, Object
+        from embed_browser import fetch, console, prompt, alert, confirm
+
+        # broad pyodide compat
+        sys.modules["js"] = this  # instead of just sys.modules["embed_browser"]
+
+        Object_type = type(Object())
+    except Exception as e:
+        sys.print_exception(e)
+        pdb(__file__, ":47 no browser/emscripten modules yet", e)
+
+    def ffi(arg):
+        return window.JSON.parse(json.dumps(arg))
+
+    async def jsiter(iterator):
+        mark = None
+        value = undefined
+        while mark != undefined:
+            value = mark
+            await aio.sleep(0)
+            mark = next(iterator, undefined)
+        return value
+
+    async def jsprom(prom):
+        return await jsiter(platform.window.iterator(prom))
+
+else:
+    is_browser = False
+    builtins.__EMSCRIPTEN__ = None
+
 
 
 def init_platform(embed):
