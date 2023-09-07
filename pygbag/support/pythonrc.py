@@ -1726,6 +1726,7 @@ async def import_site(__file__, run=True):
 
     embed = False
     hint = "main.py"
+
     is_py = sys.argv[0].endswith(".py")
 
     # if not imported by simulator then aio is handled externally
