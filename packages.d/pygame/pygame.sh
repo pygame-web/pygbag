@@ -32,20 +32,19 @@ else
 
     # update cython
     TEST_CYTHON=$($HPY -m cython -V 2>&1)
-    if echo $TEST_CYTHON| grep -q 3.0.0$
+    if echo $TEST_CYTHON| grep -q 3.0.1$
     then
         echo "  * not upgrading cython $TEST_CYTHON
 " 1>&2
     else
-        echo "  * upgrading cython $TEST_CYTHON to 3.0.0
+        echo "  * upgrading cython $TEST_CYTHON to 3.0.1
 "  1>&2
         #$SYS_PYTHON -m pip install --user --upgrade git+https://github.com/cython/cython.git
-        CYTHON=${CYTHON:-Cython-3.0.0-py2.py3-none-any.whl}
+        CYTHON=${CYTHON:-Cython-3.0.1-py2.py3-none-any.whl}
         pushd build
-        wget -q -c https://github.com/cython/cython/releases/download/3.0.0/${CYTHON}
+        wget -q -c https://github.com/cython/cython/releases/download/3.0.1/${CYTHON}
         $HPY -m pip install $CYTHON
         popd
-
     fi
 fi
 
@@ -142,7 +141,6 @@ then
 
     export CFLAGS="-DSDL_NO_COMPAT $SDL_IMAGE"
     EMCC_CFLAGS="-I${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/include/freetype2"
-    EMCC_CFLAGS="$EMCC_CFLAGS -mnontrapping-fptoint -mno-reference-types -sWASM_BIGINT=0 -sMIN_SAFARI_VERSION=120000"
     EMCC_CFLAGS="$EMCC_CFLAGS -I$PREFIX/include/SDL2"
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unused-command-line-argument"
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unreachable-code-fallthrough"
@@ -205,20 +203,35 @@ echo "FIXME: build wheel"
 
 if [ -d testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten ]
 then
-    TARGET=$(pwd)/testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/pygame_static.cpython-${TAG}-wasm32-emscripten.so
+    TARGET_FOLDER=$(pwd)/testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_${WASM_FLAVOUR}_emscripten
+    TARGET_FILE=${TARGET_FOLDER}/pygame_static.cpython-${TAG}-wasm32-emscripten.so
 
     . ${SDKROOT}/emsdk/emsdk_env.sh
 
-    [ -f $TARGET ] && rm $TARGET
+    [ -f ${TARGET_FILE} ] && rm ${TARGET_FILE} ${TARGET_FILE}.map
 
-    emcc -shared -Os -g0 -fpic -o $TARGET $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a
+    emcc -shared -Os -g0 -fpic -o ${TARGET_FILE} $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a
 
-    if [ -f /data/git/archives/repo/norm.sh ]
+    # github CI does not build wheel for now.
+    if [ -d /data/git/archives/repo/pkg ]
     then
-        pushd testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten
-        /data/git/archives/repo/norm.sh
-        rm $TARGET
-        popd
+        mkdir -p $TARGET_FOLDER
+        /bin/cp -rf testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/. ${TARGET_FOLDER}/
+
+        if pushd testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_${WASM_FLAVOUR}_emscripten
+        then
+            rm ${TARGET_FILE}.map
+            if $WASM_PURE
+            then
+                /data/git/archives/repo/norm.sh
+            else
+                whl=/data/git/archives/repo/pkg/$(basename $(pwd)).whl
+                [ -f $whl ] && rm $whl
+                zip $whl -r .
+            fi
+            rm ${TARGET_FILE}
+            popd
+        fi
     fi
 fi
 

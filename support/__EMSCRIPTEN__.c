@@ -49,6 +49,8 @@ debug:
 #include <unistd.h>
 
 
+#include "../build/gen_static.h"
+
 #if PYDK_emsdk
     #include <emscripten/html5.h>
     #include <emscripten/key_codes.h>
@@ -68,6 +70,7 @@ debug:
 #else
     #error "wasi unsupported yet"
 #endif
+
 
 #include "../build/gen_inittab.h"
 
@@ -547,6 +550,23 @@ main_iteration(void) {
     HOST_RETURN(0);
 }
 
+
+static void reprint(const char *fmt, PyObject *obj) {
+    PyObject* repr = PyObject_Repr(obj);
+    PyObject* str = PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
+    const char *bytes = PyBytes_AS_STRING(str);
+    printf("REPR(%s): %s\n", fmt, bytes);
+    Py_XDECREF(repr);
+    Py_XDECREF(str);
+}
+
+
+
+
+
+
+
+
 #define EGLTEST
 
 
@@ -691,6 +711,7 @@ embed_webgl(PyObject *self, PyObject *args, PyObject *kwds)
 
 PyStatus status;
 
+
 int
 main(int argc, char **argv)
 {
@@ -702,7 +723,6 @@ main(int argc, char **argv)
         .bytes_argv = argv,
         .wchar_argv = NULL
     };
-
 
     PyImport_AppendInittab("embed", init_embed);
 
@@ -840,14 +860,14 @@ EM_ASM({
     if (1) {
         SYSCALLS.getStreamFromFD(0).tty = true;
         SYSCALLS.getStreamFromFD(1).tty = true;
-        SYSCALLS.getStreamFromFD(2).tty = true;
+        SYSCALLS.getStreamFromFD(2).tty = false;
     }
 
 }, FD_BUFFER_MAX, io_shm[0], io_shm[IO_RAW], io_shm[IO_RCON]);
 
 
-    PyRun_SimpleString("import sys, os, json, builtins, shutil, time;");
-
+    PyRun_SimpleString("import sys, os, json, builtins, shutil, time");
+    //PyRun_SimpleString("import universal;print('HPy init done')");
 
     // SDL2 basic init
     {

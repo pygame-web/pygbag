@@ -1380,13 +1380,17 @@ if not aio.cross.simulator:
         @classmethod
         async def async_repos(cls):
             abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+            apitag = __import__('sysconfig').get_config_var('HOST_GNU_TYPE')
+            apitag = apitag.replace('-','_')
+
             for repo in PyConfig.pkg_indexes:
-                async with platform.fopen(f"{repo}index.json", "r") as index:
+                async with platform.fopen(f"{repo}index-bi.json", "r") as index:
                     try:
                         data = index.read()
                         if isinstance(data, bytes):
                             data = data.decode()
                         data = data.replace("<abi>", abitag)
+                        data = data.replace("<api>", apitag)
                         repo = json.loads(data)
                     except:
                         pdb(f"1394: {repo=}: malformed json index {data}")

@@ -2,7 +2,7 @@
 
 # default is to build pygame only
 export VENDOR=${VENDOR:-pygbag}
-export PACKAGES=${PACKAGES:-emsdk pygame}
+export PACKAGES=${PACKAGES:-emsdk hpy pygame}
 
 export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
 export SDK_VERSION=${SDK_VERSION:-3.1.22.0}

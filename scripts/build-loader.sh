@@ -197,8 +197,14 @@ if $STATIC
 then
     echo "building static loader"
 else
-    echo "building dynamic loader"
-    export PACKAGES="emsdk"
+    echo "building dynamic loader
+
+
+    TODO: get the only static ones here
+
+
+"
+    export PACKAGES="emsdk hpy"
 fi
 
 
@@ -243,7 +249,6 @@ then
 
     LINKPYTHON="python mpdec expat"
 
-
     if  echo $PYBUILD|grep -q 3.12
     then
         LINKPYTHON="Hacl_Hash_SHA2 $LINKPYTHON"
@@ -274,7 +279,7 @@ then
 
     cat > final_link.sh <<END
 #!/bin/bash
-emcc -m32 $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG \\
+emcc $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=4MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
      $CF_SDL \\
      --use-preload-plugins \\

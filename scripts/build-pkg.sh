@@ -90,6 +90,7 @@ fi
 
 mkdir -p build
 
+> build/gen_static.h
 > build/gen_inittab.h
 > build/gen_inittab.c
 
@@ -130,7 +131,13 @@ do
     mkdir -p $DYNLOAD $REQUIREMENTS $PKGDIR
 
 
-
+    if [ -f packages.d/${pkg}/$pkg.static.h ]
+    then
+        cat >> build/gen_static.h <<END
+// auto generated from build-pkg.sh
+#   include "../${PKG_PATH}.static.h"
+END
+    fi
 
 # always do it so we get a warning if lib is not linked
     if [ -f packages.d/${pkg}/$pkg.h ]
@@ -148,7 +155,7 @@ END
     then
         cat >> build/gen_inittab.c <<END
 // auto generated from build-pkg.sh
-#if defined(PYDK_$pkg)
+#if defined(PYDK_$pkg) || defined(PYDK_static_$pkg)
 #   include "../${PKG_PATH}.c"
 #else
     #pragma message "$pkg is not statically linked"

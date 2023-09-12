@@ -117,6 +117,13 @@ import tty
 # cffi
 import copy
 
+# numpy
+import secrets
+
+# HPy
+import plistlib
+from pkg_resources import resource_filename
+
 # pgex
 import typing
 try:
