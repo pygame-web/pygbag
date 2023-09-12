@@ -12,8 +12,15 @@ from urllib.parse import urlencode
 preload_list = []
 preloaded = []
 
+if 0:
+    FS_SILENT = True
+    FS_DEBUG = False
+else:
+    FS_SILENT = False
+    FS_DEBUG = True
 
-def FS(tree, silent=False, debug=False):
+
+def FS(tree, silent=FS_SILENT, debug=FS_DEBUG):
     global preload_list
 
     target = [""]
@@ -25,17 +32,21 @@ def FS(tree, silent=False, debug=False):
     last = 0
     trail = False
 
-    def make_src_dst(base_url, path, target):
+    def make_src_dst(base_url, base_path, path, target):
         global preload_list
         nonlocal debug
         dst = target.copy()
         dst.extend(path[1:])
 
-        preload_list.append([base_url + "/".join(path), "/".join(dst)])
+        preload_list.append([ base_path + "/".join(path), "/".join(dst)])
         if debug:
             print(preload_list[-1], "write", current, last)
 
     for l in map(str.rstrip, tree.split("\n")):
+
+        if not silent:
+            print("HTMLFS:", base_url, base_path, "=>", target)
+
         # skip blanks
         if not l:
             continue
@@ -49,12 +60,16 @@ def FS(tree, silent=False, debug=False):
             # reset source
             path = [""]
 
-            base_path, trail = map(str.strip, l.split("~", 1))
+            base_path, trail = map(str.strip, l.split(" ~", 1))
+
+            base_path = base_path.strip('/')
+
+            trail = trail.strip('/')
 
             # set destination
             target = [trail]
             if debug:
-                print(base_path, target)
+                print(f"{base_path=}, {target=}")
             continue
 
         if l.startswith("http"):
@@ -63,15 +78,16 @@ def FS(tree, silent=False, debug=False):
             if base_url.find("/github.com/") > 0:
                 base_url = base_url.replace("/github.com/", "/raw.githubusercontent.com/", 1)
 
-            if base_url.find("/tree/") > 0:
-                base_url = base_url.replace("/tree/", "/", 1)
+                if base_url.find("/tree/") > 0:
+                    base_url = base_url.replace("/tree/", "/", 1)
 
             base_url = base_url.rstrip("/") + "/"
 
-            if not silent:
-                print("HTMLFS:", base_url, base_path, "=>", target)
-
             preload_list.append([base_url, "."])
+            continue
+
+
+        if l.find(' ')<0:
             continue
 
         pos, elem = l.rsplit(" ", 1)
@@ -81,7 +97,7 @@ def FS(tree, silent=False, debug=False):
             print(l[4:])
 
         if current <= last:
-            make_src_dst(base_path, path, target)
+            make_src_dst(base_url, base_path, path, target)
             while len(path) > current:
                 path.pop()
         else:
@@ -96,7 +112,7 @@ def FS(tree, silent=False, debug=False):
         last = current
 
     if trail:
-        make_src_dst(base_path, path, target)
+        make_src_dst(base_url, base_path, path, target)
     print("-" * 80)
     for x in preload_list:
         print(x)
@@ -104,41 +120,46 @@ def FS(tree, silent=False, debug=False):
     return preload_list
 
 
-async def preload(chroot=None, chdir=True, silent=True, debug=False, standalone=False):
+async def preload(chroot=None, chdir=True, silent=FS_SILENT, debug=FS_DEBUG, standalone=False):
     global preload_list, preloaded
 
     # if not using FS, do not change directory
     if not len(preload_list):
-        return
+        if standalone:
+            return []
+        # return all previous filesets
+        return preloaded.copy()
 
     cwd = Path.cwd()
 
     # if using FS, always go to tempdir
     if chroot is None:
-        chroot = __import__("tempfile").gettempdir()
-
-    target = Path(chroot)
+        chroot = Path(__import__("tempfile").gettempdir())
 
     base_url = ""
     fileset = []
 
     while len(preload_list):
         url, strfilename = preload_list.pop(0)
-        filename = target / strfilename
 
         if strfilename == ".":
             base_url = url
             if debug:
-                print("{base_url=} set")
+                print(f"{base_url=} set")
             continue
 
+        filename = chroot / strfilename
+
+        full_url = base_url + url
+
         if debug:
-            print(f"{base_url=}{url=} => {filename=}")
+            print(f"153: REMOTE {full_url} LOCAL: {filename}")
 
         if not filename.is_file():
+
             filename.parent.mkdir(parents=True, exist_ok=True)
             if sys.platform in ("emscripten", "wasi"):
-                async with platform.fopen(url, "rb") as source:
+                async with platform.fopen(full_url, "rb") as source:
                     with open(filename, "wb") as destination:
                         destination.write(source.read())
             else:
@@ -153,7 +174,7 @@ async def preload(chroot=None, chdir=True, silent=True, debug=False, standalone=
         fileset.append(filename)
 
         if not silent:
-            print("FS:", filename)
+            print("FS:174:", filename)
 
     preloaded.extend(fileset)
 
@@ -164,6 +185,9 @@ async def preload(chroot=None, chdir=True, silent=True, debug=False, standalone=
         return fileset
 
     await asyncio.sleep(0)
+
+    if debug:
+        print("184: preloaded count=", len(preloaded))
     return preloaded.copy()
 
 

@@ -1786,7 +1786,7 @@ async def import_site(__file__, run=True):
         global __main__
         if 'aio.fetch' in sys.modules:
             import aio.fetch
-            await aio.fetch.preload_fetch()
+            await aio.fetch.preload()
             await asyncio.sleep(0)
         if __main__:
             await __main__()
