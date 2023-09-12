@@ -2034,7 +2034,6 @@ function auto_conf(cfg) {
         }
     }
 
-console.log("pythons found at", url )
 
     const old_url = url
 
@@ -2056,7 +2055,6 @@ console.warn("TODO: merge/replace location options over script options")
     }
 
     elems = url.rsplit('#',1)
-console.log("pythons found at", url , elems)
     url = elems.shift()
 
     if (elems.length)
@@ -2065,9 +2063,7 @@ console.log("pythons found at", url , elems)
         }
 
     elems = url.rsplit('?',1)
-console.log("pythons found at", url , elems)
     url = elems.shift()
-console.log("pythons found at", url , elems)
 
     if (elems.length)
         for (const arg of elems.pop().split("&")) {
@@ -2097,7 +2093,6 @@ console.log("pythons found at", url , elems)
             } else {
                 vm.script.interpreter = config.python || "cpython"
                 config.PYBUILD = vm.cpy_argv[0].substr(7) || "3.11"
-                console.log("no python implementation specified in ",vm.cpy_argv,", using default :",vm.script.interpreter)
             }
         }
     }
@@ -2261,23 +2256,12 @@ function auto_start(cfg) {
 
     }
 
-    console.error("auto_start done")
-
 }
-
 
 
 window.set_raw_mode = function (param) {
     window.RAW_MODE = param || 0
 }
-
-
-
-
-
-
-
-
 
 
 
