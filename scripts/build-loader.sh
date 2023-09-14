@@ -197,14 +197,16 @@ if $STATIC
 then
     echo "building static loader"
 else
+    export PACKAGES=${BUILD_STATIC:-emsdk hpy}
+
     echo "building dynamic loader
 
 
-    TODO: get the only static ones here
+    with static parts : ${BUILD_STATIC}
 
 
 "
-    export PACKAGES="emsdk hpy"
+
 fi
 
 

@@ -3,12 +3,7 @@
 import sys
 from pathlib import Path
 
-
-__version__ = "0.7.3"
-
-# make aio available
-
-sys.path.append(str(Path(__file__).parent / "support/cross"))
+__version__ = "0.8.0"
 
 # hack to test git cdn build without upgrading pygbag
 # beware can have side effects when file packager behaviour must change !
@@ -21,7 +16,11 @@ if "--git" in sys.argv:
 """
     )
     __version__ = "0.0.0"
-    sys.argv.remove("--git")
+
+
+# make aio available
+
+sys.path.append(str(Path(__file__).parent / "support/cross"))
 
 
 # WaPy=>CPython compat

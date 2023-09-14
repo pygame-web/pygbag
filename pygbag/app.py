@@ -175,6 +175,9 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
 
     sys.argv.pop()
 
+    if "--git" in sys.argv:
+        sys.argv.remove("--git")
+
     parser = argparse.ArgumentParser()
 
     print(

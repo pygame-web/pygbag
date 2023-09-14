@@ -194,13 +194,14 @@ if is_browser:
                             await client(sns)
                         else:
                             client(sns)
+
                     if discarded:
-                        console.log(f"221 DISCARD : {evtype} {evdata}")
+                        console.log(f"221: DISCARD : {evtype} {evdata}")
 
                 await aio.sleep(0)
 
     EventTarget = EventTarget()
-
+    add_event_listener = EventTarget.addEventListener
 
 # =============================  PRELOADING      ==============================
 
