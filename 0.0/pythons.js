@@ -270,7 +270,7 @@ function prerun(VM) {
 
 
     if (window.BrowserFS) {
-        vm.BFS = new BrowserFS.EmscriptenFS()
+        VM.BFS = new BrowserFS.EmscriptenFS()
         VM.BFS.Buffer = BrowserFS.BFSRequire('buffer').Buffer
     } else {
         console.error("VM.prefun","BrowserFS not found")
@@ -1085,49 +1085,123 @@ window.MM = { tracks : 0, UME : true, download : download, camera : {} }
 async function media_prepare(trackid) {
     const track = MM[trackid]
 
+
     await _until(defined)("avail", track)
 
     if (track.type === "audio") {
         //console.log(`audio ${trackid}:${track.url} ready`)
+        return
     }
 
     if (track.type === "fs") {
         console.log(`fs ${trackid}:${track.url} => ${track.path} ready`)
+        return
     }
 
+
     if (track.type === "mount") {
+
+        if (!vm.BFS) {
+            // how is passed the FS object ???
+            vm.BFS = new BrowserFS.EmscriptenFS()  // {FS:vm.FS}
+
+            vm.BFS.Buffer = BrowserFS.BFSRequire('buffer').Buffer
+        }
+
         // async
-        MM[trackid].media = vm.BFS.Buffer.from( MM[trackid].data )
+        MM[trackid].media = await vm.BFS.Buffer.from( MM[trackid].data )
 
         track.mount.path = track.mount.path || '/' //??=
 
         const hint = `${track.mount.path}@${track.mount.point}:${trackid}`
 
-        function apk_cb(e, apkfs){
-            console.log(__FILE__, "930 mounting", hint, "onto", track.mount.point)
+        var track_media
 
-            BrowserFS.FileSystem.InMemory.Create(
-                function(e, memfs) {
-                    BrowserFS.FileSystem.OverlayFS.Create({"writable" :  memfs, "readable" : apkfs },
-                        function(e, ovfs) {
-                            BrowserFS.FileSystem.MountableFileSystem.Create({
-                                '/' : ovfs
-                                }, async function(e, mfs) {
-                                    await BrowserFS.initialize(mfs);
-                                    await vm.FS.mount(vm.BFS, {root: track.mount.path}, track.mount.point );
-                                    setTimeout(()=>{track.ready=true}, 0)
-                                })
-                        }
-                    );
-                }
-            );
+        if (!vm) {
+            vm={}
+
+            // how is passed the FS object ???
+            vm.BFS = new BrowserFS.EmscriptenFS()  // {FS:vm.FS}
+
+            vm.BFS.Buffer = BrowserFS.BFSRequire('buffer').Buffer
+            const data = await (await fetch('test.apk')).arrayBuffer()
+            track_media = await vm.BFS.Buffer.from(data)
+        } else {
+            track_media = MM[trackid].media
         }
 
-        await BrowserFS.FileSystem.ZipFS.Create(
-            {"zipData" : track.media, "name": hint},
-            apk_cb
-        )
-    }
+        var bfs2 = false
+        if (!BrowserFS.InMemory) {
+            console.warn(" ==================== BFS1 ===============")
+            BrowserFS.InMemory = BrowserFS.FileSystem.InMemory
+            BrowserFS.OverlayFS = BrowserFS.FileSystem.OverlayFS
+            BrowserFS.MountableFileSystem = BrowserFS.FileSystem.MountableFileSystem
+            BrowserFS.ZipFS = BrowserFS.FileSystem.ZipFS
+        } else {
+            console.warn(" ==================== BFS2 ===============")
+            bfs2 = true
+        }
+
+        if (bfs2) {
+            const zipfs = await BrowserFS.ZipFS.Create({
+                zipData: track_media,
+                "name": hint
+            })
+            await BrowserFS.initialize( zipfs )
+
+
+            const memfs = await BrowserFS.InMemory.Create();
+            await BrowserFS.initialize( memfs)
+
+
+            const ovfs = await BrowserFS.OverlayFS.Create({
+                writable : memfs,
+                readable: zipfs
+            })
+
+            await BrowserFS.initialize( ovfs)
+
+            // this alone does not work ? why ??
+            // const mfs = await BrowserFS.MountableFileSystem.Create({"/" : ovfs})
+            // console.log( mfs )
+
+            const mfs = await BrowserFS.initialize( await BrowserFS.MountableFileSystem.Create({"/" : ovfs}) )
+
+            // where is the link beetween (BFSEmscriptenFS)vm.BFS and MountableFileSystem(mfs) ?
+            // vm.BFS.mount( ???????? )
+
+            const emfs = await vm.FS.mount(vm.BFS, {root: "/"}, "/data/data/test" );
+
+            setTimeout(()=>{track.ready=true}, 0)
+
+        } else {
+            function apk_cb(e, apkfs){
+                console.log(__FILE__, "930 mounting", hint, "onto", track.mount.point)
+
+                BrowserFS.InMemory.Create(
+                    function(e, memfs) {
+                        BrowserFS.OverlayFS.Create({"writable" :  memfs, "readable" : apkfs },
+                            function(e, ovfs) {
+                                BrowserFS.MountableFileSystem.Create({
+                                    '/' : ovfs
+                                    }, async function(e, mfs) {
+                                        await BrowserFS.initialize(mfs);
+                                        await vm.FS.mount(vm.BFS, {root: track.mount.path}, track.mount.point);
+                                        setTimeout(()=>{track.ready=true}, 0)
+                                    })
+                            }
+                        );
+                    }
+                );
+            }
+
+            //await BrowserFS.FileSystem.ZipFS.Create(
+            await BrowserFS.ZipFS.Create(
+                {"zipData" : track_media, "name": hint},
+                apk_cb
+            )
+        } // bfs2
+    } // track type mount
 }
 
 
