@@ -1,6 +1,8 @@
 # https://peps.python.org/pep-0722/ – Dependency specification for single-file scripts
 # https://peps.python.org/pep-0508/ – Dependency specification for Python Software Packages
 
+# https://setuptools.pypa.io/en/latest/userguide/ext_modules.html
+
 import sys
 import os
 from pathlib import Path
@@ -172,6 +174,37 @@ async def install_pkg(sysconf, wheel_url, wheel_pkg):
     install(target_filename, sysconf)
 
 
+async def pip_install(pkg, sconf={}):
+    print("searching", pkg)
+    if not sconf:
+        sconf = __import__("sysconfig").get_paths()
+
+    wheel_url = ""
+    try:
+        async with fopen(f"https://pypi.org/simple/{pkg}/") as html:
+            if html:
+                for line in html.readlines():
+                    if line.find("href=") > 0:
+                        if line.find("-py3-none-any.whl") > 0:
+                            wheel_url = line.split('"', 2)[1]
+            else:
+                print("270: ERROR: cannot find package :", pkg)
+    except FileNotFoundError:
+        print("190: ERROR: cannot find package :", pkg)
+        continue
+
+    except:
+        print("194: ERROR: cannot find package :", pkg)
+        return
+
+    try:
+        wheel_pkg, wheel_hash = wheel_url.rsplit("/", 1)[-1].split("#", 1)
+        await install_pkg(sconf, wheel_url, wheel_pkg)
+    except:
+        print("ERROR", wheel_url)
+
+
+
 async def check_list(code=None, filename=None):
     print()
     print("-" * 11, "computing required packages", "-" * 10)
@@ -258,31 +291,7 @@ async def check_list(code=None, filename=None):
         if (env / pkg).is_dir():
             print("found in env :", pkg)
             continue
-        print("searching", pkg)
-        wheel_url = ""
-        try:
-            async with fopen(f"https://pypi.org/simple/{pkg}/") as html:
-                if html:
-                    for line in html.readlines():
-                        if line.find("href=") > 0:
-                            if line.find("-py3-none-any.whl") > 0:
-                                wheel_url = line.split('"', 2)[1]
-                else:
-                    print("270: ERROR: cannot find package :", pkg)
-        except FileNotFoundError:
-            print("272: ERROR: cannot find package :", pkg)
-            continue
-
-        except:
-            print("277: ERROR: cannot find package :", pkg)
-            continue
-
-        try:
-            wheel_pkg, wheel_hash = wheel_url.rsplit("/", 1)[-1].split("#", 1)
-            await install_pkg(sconf, wheel_url, wheel_pkg)
-        except:
-            print("ERROR", wheel_url)
-            continue
+        await pip_install(pkg)
 
     print("-" * 40)
     print()

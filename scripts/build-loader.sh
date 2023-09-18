@@ -54,14 +54,6 @@ echo "
 
 EMPIC=/opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic
 
-CF_SDL="-I${SDKROOT}/devices/emsdk/usr/include/SDL2"
-#LD_SDL2="-lSDL2_gfx -lSDL2_mixer -lSDL2_ttf"
-
-LD_SDL2="$EMPIC/libSDL2.a"
-LD_SDL2="$LD_SDL2 $EMPIC/libSDL2_gfx.a $EMPIC/libogg.a $EMPIC/libvorbis.a"
-LD_SDL2="$LD_SDL2 $EMPIC/libSDL2_mixer_ogg.a $EMPIC/libSDL2_ttf.a"
-LD_SDL2="-L${SDKROOT}/devices/emsdk/usr/lib $LD_SDL2 -lSDL2_image -lwebp -ljpeg -lpng -lharfbuzz -lfreetype"
-
 
 SUPPORT_FS=""
 
@@ -233,11 +225,24 @@ then
 
 # TODO: test -sWEBGL2_BACKWARDS_COMPATIBILITY_EMULATION
 
-#
-#  -sWEBGL2_BACKWARDS_COMPATIBILITY_EMULATION
-    LDFLAGS="$LD_VENDOR -sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
 
-#    LDFLAGS="$LD_VENDOR -sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES2"
+
+
+# /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic/libSDL2.a
+
+    CF_SDL="-I${SDKROOT}/devices/emsdk/usr/include/SDL2"
+    #LD_SDL2="-lSDL2_gfx -lSDL2_mixer -lSDL2_ttf"
+
+    LD_SDL2="$EMPIC/libSDL2.a"
+    LD_SDL2="$LD_SDL2 $EMPIC/libSDL2_gfx.a $EMPIC/libogg.a $EMPIC/libvorbis.a"
+    LD_SDL2="$LD_SDL2 $EMPIC/libSDL2_mixer_ogg.a $EMPIC/libSDL2_ttf.a"
+    LD_SDL2="$LD_SDL2 -lSDL2_image -lwebp -ljpeg -lpng -lharfbuzz -lfreetype"
+
+
+    #LDFLAGS="$LD_VENDOR -sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
+    LDFLAGS="$LD_SDL2"
+LDFLAGS=""
+
 
     if echo ${PYBUILD}|grep -q 10$
     then
@@ -246,8 +251,9 @@ then
         LDFLAGS="$LDFLAGS -lsqlite3"
     fi
 
-#    LDFLAGS="$LDFLAGS $LD_SDL2 -lffi -lbz2 -lz -ldl -lm"
-    LDFLAGS="$LDFLAGS $LD_SDL2 -lssl -lcrypto -lffi -lbz2 -lz -ldl -lm"
+
+
+    LDFLAGS="-L${SDKROOT}/devices/emsdk/usr/lib $LDFLAGS -lssl -lcrypto -lffi -lbz2 -lz -ldl -lm"
 
     LINKPYTHON="python mpdec expat"
 

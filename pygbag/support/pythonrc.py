@@ -1384,7 +1384,12 @@ if not aio.cross.simulator:
             apitag = apitag.replace('-','_')
 
             for repo in PyConfig.pkg_indexes:
-                async with platform.fopen(f"{repo}index-bi.json", "r") as index:
+                if apitag.find('mvp')>0:
+                    idx = f"{repo}index.json"
+                else:
+                    idx = f"{repo}index-bi.json"
+
+                async with platform.fopen(idx, "r") as index:
                     try:
                         data = index.read()
                         if isinstance(data, bytes):

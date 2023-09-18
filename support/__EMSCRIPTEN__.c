@@ -55,8 +55,11 @@ debug:
     #include <emscripten/html5.h>
     #include <emscripten/key_codes.h>
     #include "emscripten.h"
+    /*
+    #define SDL2
     #include <SDL2/SDL.h>
     #include <SDL2/SDL_ttf.h>
+    */
 //    #include <SDL_hints.h> // SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT
     #define SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT   "SDL_EMSCRIPTEN_KEYBOARD_ELEMENT"
 
@@ -295,7 +298,7 @@ embed_isatty(PyObject *self, PyObject *argv) {
     return Py_BuildValue("i", isatty(fd) );
 }
 
-
+#if SDL2
 static PyObject *
 embed_get_sdl_version(PyObject *self, PyObject *_null)
 {
@@ -304,7 +307,7 @@ embed_get_sdl_version(PyObject *self, PyObject *_null)
     SDL_GetVersion(&v);
     return Py_BuildValue("iii", v.major, v.minor, v.patch);
 }
-
+#endif
 
 static PyMethodDef mod_embed_methods[] = {
     {"run", (PyCFunction)embed_run, METH_VARARGS | METH_KEYWORDS, "start aio stepping"},
@@ -333,9 +336,9 @@ static PyMethodDef mod_embed_methods[] = {
     {"prompt", (PyCFunction)embed_prompt,  METH_NOARGS, "output the prompt"},
 
     {"isatty", (PyCFunction)embed_isatty,  METH_VARARGS, "isatty(int fd)"},
-
+#if SDL2
     {"get_sdl_version", embed_get_sdl_version, METH_NOARGS, "get_sdl_version"},
-
+#endif
     {"test", (PyCFunction)embed_test, METH_VARARGS | METH_KEYWORDS, "test"},
 
     {"webgl", (PyCFunction)embed_webgl, METH_VARARGS | METH_KEYWORDS, "test"},
@@ -868,7 +871,7 @@ EM_ASM({
 
     PyRun_SimpleString("import sys, os, json, builtins, shutil, time");
     //PyRun_SimpleString("import universal;print('HPy init done')");
-
+#if SDL2
     // SDL2 basic init
     {
         if (TTF_Init())
@@ -877,7 +880,7 @@ EM_ASM({
         const char *target = "1";
         SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, target);
     }
-
+#endif
     emscripten_set_main_loop( (em_callback_func)main_iteration, 0, 1);
 
     return 0;

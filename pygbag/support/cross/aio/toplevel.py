@@ -65,7 +65,6 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
         # sconf["platlib"] = os.environ.get("HOME","/tmp")
         platlib = sconf["platlib"]
         Path(platlib).mkdir(exist_ok=True)
-        # print(f"{platlib=}")
 
         if platlib not in sys.path:
             sys.path.append(platlib)
@@ -91,7 +90,7 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
         print(f"84: {pkg_file} already installed")
 
     if pkg in platform.patches:
-        print("88:", pkg, "requires patch")
+        print("88:", pkg, "requires patching")
         platform.patches.pop(pkg)()
 
     if resume and ex:
@@ -105,8 +104,6 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
                 return asyncio.sleep(0)
         except Exception as resume_ex:
             sys.print_exception(ex, limit=-1)
-    #        finally:
-    #            print("-"*40)
     return None
 
 
