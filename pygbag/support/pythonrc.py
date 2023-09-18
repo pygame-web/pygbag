@@ -1319,7 +1319,6 @@ if not aio.cross.simulator:
                     return
                 all.remove(mod)
                 await cls.async_get_pkg(mod, None, None)
-                all.remove(mod)
                 __import__(mod)
 
 

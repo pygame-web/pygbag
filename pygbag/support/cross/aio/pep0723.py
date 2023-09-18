@@ -191,7 +191,7 @@ async def pip_install(pkg, sconf={}):
                 print("270: ERROR: cannot find package :", pkg)
     except FileNotFoundError:
         print("190: ERROR: cannot find package :", pkg)
-        continue
+        return
 
     except:
         print("194: ERROR: cannot find package :", pkg)

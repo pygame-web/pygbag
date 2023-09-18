@@ -1,6 +1,8 @@
 """ packager+server for pygbag wasm loader """
 
 import sys
+sys.stdout.reconfigure(encoding='utf-8')
+
 from pathlib import Path
 
 __version__ = "0.8.0"
