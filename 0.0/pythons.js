@@ -1,5 +1,26 @@
 "use strict";
 
+/*  BF2 is still broken see  https://github.com/jvilk/BrowserFS/issues/325
+import { configure, BFSRequire, EmscriptenFS } from './browserfs.mjs';
+//import { Buffer } from 'buffer';
+
+window.BrowserFS = {}
+window.BrowserFS.configure = configure
+window.BrowserFS.BFSRequire = BFSRequire
+window.BrowserFS.EmscriptenFS = EmscriptenFS
+window.BrowserFS.Buffer = BFSRequire('buffer')
+*/
+var bfs2 = false
+
+async function import_browserfs() {
+    console.warn("late import", config.cdn+"browserfs.min.js" )
+    var script = document.createElement("script")
+    script.src = vm.config.cdn + "browserfs.min.js"
+    document.head.appendChild(script)
+    await _until(defined)("BrowserFS")
+}
+
+
 /*  Facilities implemented in js
 
     js.SVG     : convert svg to png
@@ -268,14 +289,14 @@ function prerun(VM) {
 
     VM.FS = FS
 
-
+/*
     if (window.BrowserFS) {
         VM.BFS = new BrowserFS.EmscriptenFS()
         VM.BFS.Buffer = BrowserFS.BFSRequire('buffer').Buffer
     } else {
-        console.error("VM.prefun","BrowserFS not found")
+        console.error("VM.prerun","BrowserFS not found")
     }
-
+*/
     const sixel_prefix = String.fromCharCode(27)+"Pq"
 
 
@@ -845,21 +866,14 @@ console.log(" @@@@@@@@@@@@@@@@@@@@@@ 3D CANVAS @@@@@@@@@@@@@@@@@@@@@@")
 
 
 
-
-
 // file transfer (upload)
 
 async function feat_fs(debug_hidden) {
     var uploaded_file_count = 0
 
     if (!window.BrowserFS) {
-        console.warn("late import", config.cdn+"browserfs.min.js" )
-        var script = document.createElement("script")
-        script.src = vm.config.cdn + "browserfs.min.js"
-        document.head.appendChild(script)
-        await _until(defined)("BrowserFS")
+        await import_browserfs()
     }
-
 
     function readFileAsArrayBuffer(file, success, error) {
         var fr = new FileReader();
@@ -1102,6 +1116,8 @@ async function media_prepare(trackid) {
     if (track.type === "mount") {
 
         if (!vm.BFS) {
+            await import_browserfs()
+
             // how is passed the FS object ???
             vm.BFS = new BrowserFS.EmscriptenFS()  // {FS:vm.FS}
 
@@ -1115,66 +1131,21 @@ async function media_prepare(trackid) {
 
         const hint = `${track.mount.path}@${track.mount.point}:${trackid}`
 
-        var track_media
-
-        if (!vm) {
-            vm={}
-
+        if (!vm.BFS) {
             // how is passed the FS object ???
             vm.BFS = new BrowserFS.EmscriptenFS()  // {FS:vm.FS}
-
             vm.BFS.Buffer = BrowserFS.BFSRequire('buffer').Buffer
-            const data = await (await fetch('test.apk')).arrayBuffer()
-            track_media = await vm.BFS.Buffer.from(data)
-        } else {
-            track_media = MM[trackid].media
         }
 
-        var bfs2 = false
-        if (!BrowserFS.InMemory) {
+        const track_media = MM[trackid].media
+
+        if (!bfs2) {
             console.warn(" ==================== BFS1 ===============")
             BrowserFS.InMemory = BrowserFS.FileSystem.InMemory
             BrowserFS.OverlayFS = BrowserFS.FileSystem.OverlayFS
             BrowserFS.MountableFileSystem = BrowserFS.FileSystem.MountableFileSystem
             BrowserFS.ZipFS = BrowserFS.FileSystem.ZipFS
-        } else {
-            console.warn(" ==================== BFS2 ===============")
-            bfs2 = true
-        }
 
-        if (bfs2) {
-            const zipfs = await BrowserFS.ZipFS.Create({
-                zipData: track_media,
-                "name": hint
-            })
-            await BrowserFS.initialize( zipfs )
-
-
-            const memfs = await BrowserFS.InMemory.Create();
-            await BrowserFS.initialize( memfs)
-
-
-            const ovfs = await BrowserFS.OverlayFS.Create({
-                writable : memfs,
-                readable: zipfs
-            })
-
-            await BrowserFS.initialize( ovfs)
-
-            // this alone does not work ? why ??
-            // const mfs = await BrowserFS.MountableFileSystem.Create({"/" : ovfs})
-            // console.log( mfs )
-
-            const mfs = await BrowserFS.initialize( await BrowserFS.MountableFileSystem.Create({"/" : ovfs}) )
-
-            // where is the link beetween (BFSEmscriptenFS)vm.BFS and MountableFileSystem(mfs) ?
-            // vm.BFS.mount( ???????? )
-
-            const emfs = await vm.FS.mount(vm.BFS, {root: "/"}, "/data/data/test" );
-
-            setTimeout(()=>{track.ready=true}, 0)
-
-        } else {
             function apk_cb(e, apkfs){
                 console.log(__FILE__, "930 mounting", hint, "onto", track.mount.point)
 
@@ -1195,12 +1166,34 @@ async function media_prepare(trackid) {
                 );
             }
 
-            //await BrowserFS.FileSystem.ZipFS.Create(
             await BrowserFS.ZipFS.Create(
                 {"zipData" : track_media, "name": hint},
                 apk_cb
             )
+
+        } else {
+            console.warn(" ==================== BFS2 ===============")
+
+            // assuming FS is from Emscripten
+            await BrowserFS.configure({
+                fs: 'MountableFileSystem',
+                options: {
+                    '/': {
+                        fs: 'OverlayFS',
+                        options: {
+                            readable: { fs: 'ZipFS', options: { zipData: track_media, name: 'hint'  } },
+                            writable: { fs: 'InMemory' }
+                        }
+                    }
+                }
+            });
+
+            vm.FS.mount(vm.BFS, { root: track.mount.path, }, track.mount.point);
+
         } // bfs2
+
+        setTimeout(()=>{track.ready=true}, 0)
+
     } // track type mount
 }
 
