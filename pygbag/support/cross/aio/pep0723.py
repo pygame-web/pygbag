@@ -204,29 +204,8 @@ async def pip_install(pkg, sconf={}):
         print("ERROR", wheel_url)
 
 
-
-async def check_list(code=None, filename=None):
-    print()
-    print("-" * 11, "computing required packages", "-" * 10)
-
-    # store installed wheel somewhere
-    env = Path(os.getcwd()) / "build" / "env"
-    env.mkdir(parents=True, exist_ok=True)
-
-    # we want host to load wasm packages too
-    # so make pure/bin folder first for imports
-    sys.path.insert(0, env.as_posix())
-
-    sconf = __import__("sysconfig").get_paths()
-    sconf["purelib"] = sconf["platlib"] = env.as_posix()
-
-    # mandatory
-    importlib.invalidate_caches()
-
+async def parse_code(code, env):
     maybe_missing = []
-
-    if code is None:
-        code = open(filename, "r").read()
 
     if Config.READ_722:
         for req in read_dependency_block_722(code):
@@ -255,6 +234,33 @@ async def check_list(code=None, filename=None):
             still_missing.append(dep.lower())
         else:
             print("found in path :", dep)
+
+    return still_missing
+
+
+async def check_list(code=None, filename=None):
+    print()
+    print("-" * 11, "computing required packages", "-" * 10)
+
+    # store installed wheel somewhere
+    env = Path(os.getcwd()) / "build" / "env"
+    env.mkdir(parents=True, exist_ok=True)
+
+    # we want host to load wasm packages too
+    # so make pure/bin folder first for imports
+    sys.path.insert(0, env.as_posix())
+
+    sconf = __import__("sysconfig").get_paths()
+    sconf["purelib"] = sconf["platlib"] = env.as_posix()
+
+    # mandatory
+    importlib.invalidate_caches()
+
+
+    if code is None:
+        code = open(filename, "r").read()
+
+    still_missing = await parse_code(code, env)
 
     # nothing to do
     if not len(still_missing):

@@ -73,6 +73,30 @@ then
     #unsure
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
 
+    patch -p1 << END
+diff --git a/src_c/static.c b/src_c/static.c
+index 03cc7c61..a00a51a7 100644
+--- a/src_c/static.c
++++ b/src_c/static.c
+@@ -255,9 +255,17 @@ static struct PyModuleDef mod_pygame_static = {PyModuleDef_HEAD_INIT,
+                                                "pygame_static", NULL, -1,
+                                                mod_pygame_static_methods};
+
++#include <SDL2/SDL_ttf.h>
++
+ PyMODINIT_FUNC
+ PyInit_pygame_static()
+ {
++    {
++        if (TTF_Init())
++            fprintf(stderr, "ERROR: TTF_Init error");
++        SDL_SetHint("SDL_EMSCRIPTEN_KEYBOARD_ELEMENT", "1");
++    }
++
+     load_submodule("pygame", PyInit_base(), "base");
+     load_submodule("pygame", PyInit_constants(), "constants");
+     load_submodule("pygame", PyInit_surflock(), "surflock");
+END
 
     # cython3 / merged
     # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2395.diff | patch -p1

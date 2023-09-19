@@ -611,42 +611,31 @@ ________________________
         else:
             print(f"last frame : {aio.spent / 0.016666666666666666:.4f}")
 
-    # cannot deal with HTML trail properly
-    #        @classmethod
-    #        async def preload_file(cls, main, callback=None):
-    #            # get a relevant list of modules likely to be imported
-    #            # and prefetch them if found in repo trees
-    #            imports = TopLevel_async_handler.list_imports(code=None, file=main)
-    #            print(f"579: missing imports: {list(imports)}")
-    #            await TopLevel_async_handler.async_imports(callback, *imports)
-    #            PyConfig.imports_ready = True
-    #            return True
-
     @classmethod
-    async def preload_code(cls, code, callback=None):
+    async def preload_code(cls, code, callback=None, hint=""):
         # get a relevant list of modules likely to be imported
+        DBG(f"617: preload_code({len(code)=} {hint=}")
+        maybe_wanted = list(TopLevel_async_handler.list_imports(code, file=None, hint=hint))
 
-        maybe_wanted = list(TopLevel_async_handler.list_imports(code, file=None))
-        if 'numpy' in maybe_wanted:
-            print(f"""
+        import aio
+        import aio.pep0723
 
-630 : ================== NUMPY ======================
+        if not aio.cross.simulator:
+            # don't use an env path, but site-packages instead
+            # we can only do purelib for now until pypi host wasm wheels
+            sconf = __import__("sysconfig").get_paths()
+            env = Path( sconf["purelib"] )
 
-{maybe_wanted}
+            DBG(f"628: aio.pep0723.check_list {env=}")
+            deps = await aio.pep0723.parse_code(code, env)
+            DBG(f"629: aio.pep0723.pip_install {deps=}")
 
 
+        else: # sim use a local folder venv model
 
-""")
 
-        if 0:
-            import aio
+            await aio.pep0723.check_list(code=code, filename=None)
 
-            if not aio.cross.simulator:
-                print("636:","@" * 40)
-                import aio.pep0723
-
-                await aio.pep0723.check_list(code=code, filename=None)
-                print("@" * 40)
 
         await TopLevel_async_handler.async_imports(callback, *maybe_wanted)
 #        await TopLevel_async_handler.async_imports(callback, *TopLevel_async_handler.list_imports(code, file=None))
@@ -659,7 +648,7 @@ ________________________
             return
         # if you don't reach that step
         # your main.py has an infinite sync loop somewhere !
-        DBG("642: starting EventTarget in a few seconds")
+        DBG("651: starting EventTarget in a few seconds")
 
         print()
         TopLevel_async_handler.instance.banner()
@@ -676,8 +665,6 @@ ________________________
 
     @classmethod
     async def runpy(cls, main, *args, **kw):
-        code = ""
-        shell.pgzrunning = None
 
         def check_code(file_name):
             nonlocal code
@@ -696,16 +683,20 @@ ________________________
                     shell.pgzrunning = True
 
                 if code.find("asyncio.run") < 0:
-                    DBG("622: possibly synchronous code found")
+                    DBG("606: possibly synchronous code found")
                     maybe_sync = True
 
                 has_pygame = code.find("display.flip(") > 0 or code.find("display.update(") > 0
 
                 if maybe_sync and has_pygame:
-                    DBG("628: possibly synchronous+pygame code found")
+                    DBG("694: possibly synchronous+pygame code found")
                     return False
             return True
 
+        code = ""
+        shell.pgzrunning = None
+        DBG(f"690: : runpy({main=})")
+# REMOVE THAT IT SHOULD BE DONE IN SIM ANALYSER AND HANDLED PROPERLY
         if not check_code(main):
             for base in ("pygame", "pg"):
                 for func in ("flip", "update"):
@@ -720,18 +711,23 @@ ________________________
         cls.HOME = Path(realpath).parent
         os.chdir(cls.HOME)
 
+# TODO: should be $0 / sys.argv[0] from there and while running
+        kw.setdefault('hint', main)
+        # get requirements
         await cls.preload_code(code, **kw)
 
+        # get an async executor to catch import errors
         if TopLevel_async_handler.instance:
-            DBG("646: starting shell")
+            DBG("715: starting shell")
             TopLevel_async_handler.instance.start_console(shell)
         else:
-            pdb("651: no async handler loader, starting a default async console")
+            pdb("718: no async handler loader, starting a default async console")
             shell.debug()
             await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
 
+# TODO: check if that thing really works
         if shell.pgzrunning:
-            print("600 : pygame zero detected")
+            DBG("728 : pygame zero detected")
             __main__ = __import__("__main__")
             sys._pgzrun = True
             sys.modules["pgzrun"] = type(__main__)("pgzrun")
@@ -744,18 +740,19 @@ ________________________
             import pgzero.runner
 
             pgzero.runner.prepare_mod(__main__)
-
+        # finally eval async
         TopLevel_async_handler.instance.eval(code)
-
+        # go back to prompt
         if not TopLevel_async_handler.muted:
             print("going interactive")
-            DBG("643: TODO detect input/print to select repl debug")
+            DBG("746: TODO detect input/print to select repl debug")
             cls.interactive()
 
         return code
 
     @classmethod
     async def source(cls, main, *args, **kw):
+        # this is not interactive turn off prompting
         TopLevel_async_handler.muted = True
         try:
             return await cls.runpy(main, *args, **kw)
@@ -1052,7 +1049,7 @@ if not aio.cross.simulator:
             DBG(f"1039: {count} lines queued for async eval")
 
         @classmethod
-        def scan_imports(cls, code, filename, load_try=False):
+        def scan_imports(cls, code, filename, load_try=False, hint=""):
             required = []
             try:
                 root = ast.parse(code, filename)
@@ -1100,11 +1097,12 @@ if not aio.cross.simulator:
                     if not mod in required:
                         required.append(mod)
 
-            DBG(f"1095: import scan {filename=} {len(code)=} {required}")
+            DBG(f"1095: scan_imports {hint=} {filename=} {len(code)=} {required}")
             return required
 
         @classmethod
-        def list_imports(cls, code=None, file=None):
+        def list_imports(cls, code=None, file=None, hint=""):
+            DBG(f"1103: list_imports {len(code)=} {file=} {hint=}")
             if code is None:
                 if file:
                     with open(file) as fcode:
@@ -1114,29 +1112,28 @@ if not aio.cross.simulator:
 
             file = file or "<stdin>"
 
-            for want in cls.scan_imports(code, file):
-                # DBG(f"1171: requesting module {want=} for {file=} ")
+            for want in cls.scan_imports(code, file, hint=hint):
+                # DBG(f"1114: requesting module {want=} for {file=} ")
                 repo = None
                 for repo in PyConfig.pkg_repolist:
                     if want in cls.may_need:
-                        DBG(f"1113: skip module {want=} reason: already requested")
+                        DBG(f"1118: skip module {want=} reason: already requested")
                         break
 
                     if want in sys.modules:
-                        DBG(f"1117: skip module {want=} reason: sys.modules")
+                        DBG(f"1122: skip module {want=} reason: sys.modules")
                         break
 
                     if want in repo:
                         cls.may_need.append(want)
-                        # DBG(f"1184: module {want=} requested")
+                        # DBG(f"1127: module {want=} requested")
                         yield want
                         break
                 else:
                     if repo:
-                        DBG(f"1063: {repo['-CDN-']=} does not provide {want=}")
+                        DBG(f"1132: {repo['-CDN-']=} does not provide {want=}")
                     else:
-                        pdb(f"1081: no pkg repository available")
-
+                        pdb("1134: no pkg repository available")
 
 
         # TODO: re order repo on failures
@@ -1320,7 +1317,6 @@ if not aio.cross.simulator:
                 all.remove(mod)
                 await cls.async_get_pkg(mod, None, None)
                 __import__(mod)
-
 
 
             # always put numpy first
@@ -1726,48 +1722,59 @@ LOCK = False
 async def import_site(__file__, run=True):
     global LOCK
     if LOCK:
-        print("1742: import_site IS NOT RE ENTRANT")
+        print("1728: import_site IS NOT RE ENTRANT")
         return
 
-    LOCK = True
-    from pathlib import Path
-
-    embed = False
-    hint = "main.py"
-
-    is_py = sys.argv[0].endswith(".py")
-
-    # if not imported by simulator then aio is handled externally
-    if "pygbag.aio" not in sys.modules:
-        import aio
-        sys.modules["pygbag.aio"] = aio
-
-
-    TopLevel_async_handler.mute_state = '.py' in ''.join(sys.argv)
-
     try:
-        # always start async handler or we could not do imports.
+        LOCK = True
+        from pathlib import Path
+
+        embed = False
+        hint = "main.py"
+
+        is_py = sys.argv[0].endswith(".py")
+
+        # if not imported by simulator then aio is handled externally
+        if "pygbag.aio" not in sys.modules:
+            import aio
+            sys.modules["pygbag.aio"] = aio
+
+        # if running a script be silent for prompt
+        TopLevel_async_handler.mute_state = '.py' in ''.join(sys.argv)
+
+        # always start async handler or we could not do imports on import errors.
         await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
 
+
+        # RUNNING GIVEN DISK FILE with no prompt
+        # this is usually the import site given by javascript loader or a template loader (pygbag apk mode)
+        # or the user script (script mode).
+
         if Path(__file__).is_file():
-            DBG(f"1762: running {__file__=}")
-            TopLevel_async_handler.muted = True
+            DBG(f"1755: shell.source({__file__=})")
             await shell.source(__file__)
 
-            # allow to set user site customization
+            # allow to set user site customization network, or embedded js to be processed
             await asyncio.sleep(0)
+
             if PyConfig.user_site_directory:
                 DBG(f"1768: {__file__=} done, giving hand to user_site")
                 return __file__
             else:
-                DBG(f"1772: {__file__=} done : now trying remote sources")
+                DBG(f"1764: {__file__=} done : now trying user sources")
         else:
-            DBG(f"1774: {__file__=} NOT FOUND : now trying remote sources")
+            DBG(f"1767: {__file__=} NOT FOUND : now trying user sources")
+
+
+        # NOW CHECK OTHER SOURCES
 
         # where to retrieve
         import tempfile
 
         tmpdir = Path(tempfile.gettempdir())
+
+
+        # maybe a script filename or content passed as frozen config.
 
         source = getattr(PyConfig, "frozen", "")
         if source:
@@ -1803,8 +1810,9 @@ async def import_site(__file__, run=True):
                                 file.write(handle.read())
                 embed = True
             else:
-                print(f"1639: invalid embed {source=}")
+                print(f"1814: invalid embed {source=}")
                 return None
+
             # file has been retrieved stored in local
         else:
             local = None
@@ -1829,7 +1837,7 @@ async def import_site(__file__, run=True):
 
             # TODO: test tar.bz2 lzma tar.xz
             elif ext in ("zip", "gz", "tar", "apk", "jar"):
-                DBG(f"1664: found archive source {source=}")
+                DBG(f"1841: found archive source {source=}")
                 # download and unpack into tmpdir
                 fname = tmpdir / source.rsplit("/")[-1]
 
@@ -1850,7 +1858,7 @@ async def import_site(__file__, run=True):
                     if file.find(hint) > 0:
                         local = tmpdir / file
                         break
-                DBG("1725: import_site: found ", local)
+                DBG("1862: import_site: found ", local)
             else:
                 # maybe base64 or frozen code in html.
                 ...

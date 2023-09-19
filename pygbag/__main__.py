@@ -186,7 +186,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
             ...
 
         @classmethod
-        def list_imports(cls, code=None, file=None):
+        def list_imports(cls, code=None, file=None, hint=""):
             return []
 
         def eval(self, source):
