@@ -189,7 +189,7 @@ if $STATIC
 then
     echo "building static loader"
 else
-    export PACKAGES=${BUILD_STATIC:-emsdk hpy}
+    export PACKAGES=${BUILD_STATIC:-emsdk hpy _ctypes}
 
     echo "building dynamic loader
 
