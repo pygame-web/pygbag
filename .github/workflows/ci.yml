@@ -11,7 +11,7 @@ jobs:
         PACKAGES: emsdk hpy _ctypes pygame
         BUILD_STATIC: emsdk _ctypes hpy
         STATIC: false
-        BUILDS: 3.11
+        BUILDS: 3.11 3.12
         CYTHON: Cython-3.0.1-py2.py3-none-any.whl
         LD_VENDOR: -sUSE_GLFW=3
 
@@ -47,16 +47,16 @@ jobs:
             cd $GITHUB_WORKSPACE
             PYBUILD=3.11 bash ./scripts/build-loader.sh
 
-    - name: build 3.12 packages
-      run: |
-            cd $GITHUB_WORKSPACE
-            PYBUILD=3.12 bash ./scripts/build-pkg.sh
-
-    - name: build 3.12 loader
-      run: |
-            cd $GITHUB_WORKSPACE
-            PYBUILD=3.12 bash ./scripts/build-loader.sh
-
+#    - name: build 3.12 packages
+#      run: |
+#            cd $GITHUB_WORKSPACE
+#            PYBUILD=3.12 bash ./scripts/build-pkg.sh
+#
+#    - name: build 3.12 loader
+#      run: |
+#            cd $GITHUB_WORKSPACE
+#            PYBUILD=3.12 bash ./scripts/build-loader.sh
+#
 
     - name: publishing
       run: |
