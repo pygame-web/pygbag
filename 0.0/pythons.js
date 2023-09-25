@@ -635,15 +635,11 @@ console.warn("TODO: user defined canvas")
     }
     vm.canvas3d = canvas3d
 
+
+    canvas.addEventListener("click", MM.focus_handler)
 /*
 
 
-    function event_canvas_regain(event) {
-        console.log("entering canvas")
-        canvas.focus();
-    }
-
-    canvas.addEventListener('mouseenter', event_canvas_regain, false);
 
     function event_fullscreen(event){
         if (!event.target.hasAttribute('fullscreen')) return;
@@ -1015,14 +1011,46 @@ function feat_stdout() {
 // TODO make a queue, python is not always ready to receive those events
 // right after page load
 
-function feat_lifecycle() {
-        window.addEventListener("focus", function(e){
-            queue_event("focus", e )
-        })
 
-        window.addEventListener("blur", function(e){
-            queue_event("blur", e )
-        })
+function focus_handler(ev) {
+    if (ev.type == "click") {
+        canvas.removeEventListener("click", MM.focus_handler)
+        canvas.focus()
+        return
+    }
+
+    if (ev.type == "mouseenter") {
+        canvas.focus()
+        console.log("canvas focus set")
+        canvas.removeEventListener("mouseenter", MM.focus_handler)
+        return
+    }
+
+    if (ev.type == "focus") {
+        queue_event("focus", ev )
+        console.log("focus set")
+        canvas.focus()
+        return
+    }
+
+    // for autofocus
+    if (ev.type == "blur") {
+        // remove initial focuser that may still be there
+        try {
+            canvas.removeEventListener("click", MM.focus_handler)
+        } catch (x ) {}
+
+        canvas.addEventListener("click", MM.focus_handler)
+        canvas.addEventListener("mouseenter", MM.focus_handler)
+        queue_event("blur", ev )
+        return
+    }
+}
+
+
+function feat_lifecycle() {
+        window.addEventListener("focus", MM.focus_handler)
+        window.addEventListener("blur", MM.focus_handler)
 
         if (!vm.config.can_close) {
             window.onbeforeunload = function() {
@@ -1032,6 +1060,7 @@ function feat_lifecycle() {
             }
         }
 }
+
 
 function feat_snd() {
     // to set user media engagement status and possibly make it blocking
@@ -1092,9 +1121,13 @@ function download(diskfile, filename) {
 
 
 
-
-
-window.MM = { tracks : 0, UME : true, download : download, camera : {} }
+window.MM = {
+    tracks : 0,
+    UME : true,
+    download : download,
+    focus_handler : focus_handler,
+    camera : {}
+}
 
 async function media_prepare(trackid) {
     const track = MM[trackid]
