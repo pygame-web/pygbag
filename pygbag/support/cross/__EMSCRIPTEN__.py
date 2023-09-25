@@ -37,7 +37,6 @@ except:
         builtins.__UPY__ = None
 
 
-
 # force use a fixed, tested version of uasyncio to avoid non-determinism
 if __UPY__:
     sys.modules["sys"] = sys
@@ -101,7 +100,6 @@ else:
     builtins.__EMSCRIPTEN__ = None
 
 
-
 def init_platform(embed):
     # simulator won't run javascript for now
     if not hasattr(embed, "run_script"):
@@ -158,7 +156,6 @@ if is_browser:
             except Exception as e:
                 sys.print_exception(e)
                 print(jsondata)
-
 
         # def dispatchEvent
         async def rpc(self, method, *argv):

@@ -44,9 +44,9 @@ def install(pkg_file, sconf=None):
             )
             HISTORY.append(pkg_file)
     except FileExistsError:
-        print(f"38: {pkg_file} already installed")
+        print(f"47: {pkg_file} already installed")
     except Exception as ex:
-        pdb(f"82: cannot install {pkg_file}")
+        pdb(f"49: cannot install {pkg_file}")
         sys.print_exception(ex)
 
 
@@ -72,7 +72,7 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
         try:
             aio.toplevel.install(pkg_file, sconf)
         except Exception as rx:
-            pdb(f"failed to install {pkg_file}")
+            pdb(f"75: failed to install {pkg_file}")
             sys.print_exception(rx)
 
         # let wasm compilation happen
@@ -87,10 +87,10 @@ async def get_repo_pkg(pkg_file, pkg, resume, ex):
             pdb(f"failed to preload {pkg_file}")
             sys.print_exception(rx)
     else:
-        print(f"84: {pkg_file} already installed")
+        print(f"90: {pkg_file} already installed")
 
     if pkg in platform.patches:
-        print("88:", pkg, "requires patching")
+        print("93:", pkg, "requires patching")
         platform.patches.pop(pkg)()
 
     if resume and ex:
@@ -212,6 +212,10 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 embed.prompt()
 
     async def interact(self):
+
+        # multiline input clumsy sentinel
+        last_line = ""
+
         try:
             sys.ps1
         except AttributeError:
@@ -241,17 +245,22 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                     break
                 else:
                     if self.push(self.line):
-                        prompt = sys.ps2
-                        if embed:
-                            embed.set_ps2()
-                        self.one_liner = False
+                        if self.one_liner:
+                            prompt = sys.ps2
+                            if embed:
+                                embed.set_ps2()
+                            print("Sorry, multi line input editing is not supported", file=sys.stderr)
+                            self.one_liner = False
+                            self.resetbuffer()
+                        else:
+                            continue
                     else:
                         prompt = sys.ps1
 
             except KeyboardInterrupt:
                 self.write("\nKeyboardInterrupt\n")
                 self.resetbuffer()
-                more = 0
+                self.one_liner = True
 
             if aio.exit:
                 return
@@ -275,6 +284,7 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 sys.print_exception(ex)
 
             self.prompt()
+
         aio.exit_now(0)
 
     @classmethod

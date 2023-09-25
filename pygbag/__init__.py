@@ -3,7 +3,7 @@
 import sys
 
 # some Linux distro are stuck in the past. Better safe than sorry
-sys.stdout.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding="utf-8")
 
 from pathlib import Path
 
@@ -32,10 +32,12 @@ sys.path.append(str(Path(__file__).parent / "support/cross"))
 try:
     # embed builtin module handles I/O on wasm
     import embed
+
     # aio function implemented only on stackless WaPy
     sched_yield
 except:
     import builtins
+
     builtins.sched_yield = lambda: None
 
 import sys, traceback
@@ -59,5 +61,3 @@ def ESC(*argv):
 def CSI(*argv):
     for arg in argv:
         ESC(f"[{arg}")
-
-

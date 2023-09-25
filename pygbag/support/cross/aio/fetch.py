@@ -38,12 +38,11 @@ def FS(tree, silent=FS_SILENT, debug=FS_DEBUG):
         dst = target.copy()
         dst.extend(path[1:])
 
-        preload_list.append([ base_path + "/".join(path), "/".join(dst)])
+        preload_list.append([base_path + "/".join(path), "/".join(dst)])
         if debug:
             print(preload_list[-1], "write", current, last)
 
     for l in map(str.rstrip, tree.split("\n")):
-
         if not silent:
             print("HTMLFS:", base_url, base_path, "=>", target)
 
@@ -62,9 +61,9 @@ def FS(tree, silent=FS_SILENT, debug=FS_DEBUG):
 
             base_path, trail = map(str.strip, l.split(" ~", 1))
 
-            base_path = base_path.strip('/')
+            base_path = base_path.strip("/")
 
-            trail = trail.strip('/')
+            trail = trail.strip("/")
 
             # set destination
             target = [trail]
@@ -86,8 +85,7 @@ def FS(tree, silent=FS_SILENT, debug=FS_DEBUG):
             preload_list.append([base_url, "."])
             continue
 
-
-        if l.find(' ')<0:
+        if l.find(" ") < 0:
             continue
 
         pos, elem = l.rsplit(" ", 1)
@@ -156,7 +154,6 @@ async def preload(chroot=None, chdir=True, silent=FS_SILENT, debug=FS_DEBUG, sta
             print(f"153: REMOTE {full_url} LOCAL: {filename}")
 
         if not filename.is_file():
-
             filename.parent.mkdir(parents=True, exist_ok=True)
             if sys.platform in ("emscripten", "wasi"):
                 async with platform.fopen(full_url, "rb") as source:

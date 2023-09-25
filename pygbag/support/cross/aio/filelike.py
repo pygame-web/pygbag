@@ -2,7 +2,7 @@ import sys
 import io
 import socket
 
-import os #unlink
+import os  # unlink
 
 socket.setdefaulttimeout(0.0)
 
@@ -75,7 +75,7 @@ class fopen:
             try:
                 os.unlink(self.tmpfile)
             except FileNotFoundError as e:
-                print("78: Async I/O error : file not found",  self.url)
+                print("78: Async I/O error : file not found", self.url)
         del self.filelike, self.url, self.mode, self.tmpfile
 
     if __WASM__:
@@ -88,7 +88,7 @@ class fopen:
             try:
                 content = await platform.jsiter(cf)
             except Exception as e:
-                print("91:",e)
+                print("91:", e)
 
             if "b" in self.mode:
                 self.filelike = open(content, "rb")
@@ -128,7 +128,7 @@ class fopen:
 
 
 class sopen:
-    def __init__(self, url, mode, tmout): #=6):
+    def __init__(self, url, mode, tmout):  # =6):
         self.host, port = url.rsplit(":", 1)
         self.port = int(port)
         if __WASM__ and __import__("platform").is_browser:

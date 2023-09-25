@@ -29,7 +29,7 @@ def calls(frame, event, arg):
 
     co = frame.f_code
     func_name = co.co_name
-    if func_name in ("write","raw_input","process"):
+    if func_name in ("write", "raw_input", "process"):
         return
     func_line_no = frame.f_lineno
     func_filename = co.co_filename
@@ -39,7 +39,6 @@ def calls(frame, event, arg):
 
     if func_filename.find("/aio/") > 0:
         return
-
 
     caller = frame.f_back
     if caller:
