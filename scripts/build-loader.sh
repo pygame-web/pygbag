@@ -209,6 +209,14 @@ done
 
 echo CPY_CFLAGS=$CPY_CFLAGS
 
+#\
+#    -I/opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/include/freetype2 -lfreetype\
+#    -lopenal \
+#\
+
+
+
+
 if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $CPY_CFLAGS $CF_SDL $CPOPTS \
  -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden\
  -I${PYDIR}/internal -I${PYDIR} -I./support -DPy_BUILD_CORE\
@@ -241,7 +249,10 @@ then
 
     #LDFLAGS="$LD_VENDOR -sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
     LDFLAGS="$LD_SDL2"
+
 LDFLAGS="-sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
+
+# -sUSE_FREETYPE -sUSE_HARFBUZZ"
 
 
     if echo ${PYBUILD}|grep -q 10$

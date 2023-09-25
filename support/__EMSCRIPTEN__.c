@@ -714,6 +714,11 @@ embed_webgl(PyObject *self, PyObject *args, PyObject *kwds)
 
 PyStatus status;
 
+#if defined(FT)
+#include <freetype2/ft2build.h>
+#include FT_FREETYPE_H
+#endif
+
 
 int
 main(int argc, char **argv)
@@ -870,7 +875,19 @@ EM_ASM({
 
 
     PyRun_SimpleString("import sys, os, json, builtins, shutil, time");
-    //PyRun_SimpleString("import universal;print('HPy init done')");
+    //PyRun_SimpleString("import hpy;import hpy.universal;print('HPy init done')");
+#if defined(FT)
+    int error;
+
+    FT_Library library;
+    error = FT_Init_FreeType(&library);
+    if (error) {
+        printf("FT error %d\n", error);
+    } else {
+        puts(" @@@@@@@@@@@@@@@@@@@@@ FT OK @@@@@@@@@@@@@@@@@@@@");
+    }
+#endif
+
 #if SDL2
     // SDL2 basic init
     {

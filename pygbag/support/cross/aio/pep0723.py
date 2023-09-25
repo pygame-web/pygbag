@@ -157,6 +157,12 @@ async def async_repos():
             if repo not in Config.pkg_repolist:
                 Config.pkg_repolist.append(repo)
 
+    if not aio.cross.simulator:
+        if window.location.href.startswith('https://pmp-p.ddns.net/pygbag'):
+            print(" ===============  REDIRECTION TO DEV HOST  ================ ")
+            for idx, repo in enumerate(PyConfig.pkg_repolist):
+                repo["-CDN-"] = "https://pmp-p.ddns.net/archives/repo/"
+
     if Config.dev_mode > 0:
         for idx, repo in enumerate(Config.pkg_repolist):
             try:
@@ -201,7 +207,7 @@ async def pip_install(pkg, sconf={}):
         wheel_pkg, wheel_hash = wheel_url.rsplit("/", 1)[-1].split("#", 1)
         await install_pkg(sconf, wheel_url, wheel_pkg)
     except:
-        print("ERROR", wheel_url)
+        print("INVALID", pkg, 'from',wheel_url)
 
 
 async def parse_code(code, env):

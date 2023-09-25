@@ -629,10 +629,10 @@ ________________________
             DBG(f"628: aio.pep0723.check_list {env=}")
             deps = await aio.pep0723.parse_code(code, env)
             DBG(f"629: aio.pep0723.pip_install {deps=}")
-
+            for dep in deps:
+                await aio.pep0723.pip_install(dep)
 
         else: # sim use a local folder venv model
-
 
             await aio.pep0723.check_list(code=code, filename=None)
 
@@ -909,7 +909,7 @@ if not aio.cross.simulator:
 
         def browser_open_file(target=None, accept="*"):
             if target:
-                platform.EventTarget.addEventListener("upload", target)
+                platform.EventTarget.addEventListener(window, "upload", target)
             platform.window.dlg_multifile.click()
 
         webbrowser.open_file = browser_open_file
@@ -1274,15 +1274,17 @@ if not aio.cross.simulator:
                 async with platform.fopen(Path(cdn) / cls.repodata) as source:
                     cls.repos.append(json.loads(source.read()))
 
-            # print(json.dumps(cls.repos[0]["packages"], sort_keys=True, indent=4))
-
             DBG("referenced packages :", len(cls.repos[0]["packages"]))
 
             if not len(PyConfig.pkg_repolist):
                 await cls.async_repos()
 
-            # print("1117: remapping ?", PyConfig.dev_mode)
-            if PyConfig.pygbag > 0:
+            if window.location.href.startswith('https://pmp-p.ddns.net/pygbag/'):
+                print(" ===============  REDIRECTION TO DEV HOST  ================ ")
+                for idx, repo in enumerate(PyConfig.pkg_repolist):
+                    repo["-CDN-"] = "https://pmp-p.ddns.net/archives/repo/"
+            elif PyConfig.pygbag > 0:
+#            if PyConfig.pygbag > 0:
                 for idx, repo in enumerate(PyConfig.pkg_repolist):
                     DBG("1264:", repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[-1])
                     repo["-CDN-"] = PyConfig.pkg_indexes[-1]
@@ -1616,11 +1618,31 @@ def patch():
         import panda3d.core
         from direct.showbase.ShowBase import ShowBase
 
-        print("panda3d: apply model path patch")
+        print(f"panda3d: apply model path {os.getcwd()} patch")
         panda3d.core.get_model_path().append_directory(os.getcwd())
+        panda3d.core.loadPrcFileData("", "win-size 1024 600")
+        panda3d.core.loadPrcFileData("", "support-threads #f")
+        panda3d.core.loadPrcFileData("", "textures-power-2 down")
+        panda3d.core.loadPrcFileData("", "textures-square down")
 
         def run(*argv, **env):
-            print("ShowBase.run patched")
+            print("ShowBase.run patched to launch asyncio.run(main())")
+            import direct.task.TaskManagerGlobal
+            async def main():
+                try:
+                    print('1633: auto resizing')
+                    platform.window.window_resize()
+                except:
+                    ...
+                while not asyncio.get_running_loop().is_closed():
+                    try:
+                        direct.task.TaskManagerGlobal.taskMgr.step()
+                    except SystemExit:
+                        print('87: Panda3D stopped',file= sys.stderr)
+                        break
+                    # go to host
+                    await asyncio.sleep(0)
+            asyncio.run(main())
 
         print("panda3d: apply ShowBase.run patch")
         ShowBase.run = run

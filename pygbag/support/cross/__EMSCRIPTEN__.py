@@ -149,11 +149,16 @@ if is_browser:
         events = []
 
         def addEventListener(self, host, type, listener, options=None, useCapture=None):
-            cli = self.clients.setdefault(type, [])
+            cli = self.__class__.clients.setdefault(type, [])
             cli.append(listener)
 
         def build(self, evt_name, jsondata):
-            self.events.append([evt_name, json.loads(jsondata)])
+            try:
+                self.__class__.events.append([evt_name, json.loads(jsondata.strip('"'))])
+            except Exception as e:
+                sys.print_exception(e)
+                print(jsondata)
+
 
         # def dispatchEvent
         async def rpc(self, method, *argv):
@@ -169,6 +174,8 @@ if is_browser:
                     client(*argv)
             else:
                 print(f"RPC not found: {method}{argv}")
+
+        # This is a green thread handling events from js -> python
 
         async def process(self):
             import inspect
