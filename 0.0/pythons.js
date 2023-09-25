@@ -1022,6 +1022,11 @@ function focus_handler(ev) {
     if (ev.type == "mouseenter") {
         canvas.focus()
         console.log("canvas focus set")
+        if (MM.focus_lost && MM.current_trackid) {
+            console.warn("resuming music queue")
+            MM[MM.current_trackid].media.play()
+        }
+
         canvas.removeEventListener("mouseenter", MM.focus_handler)
         return
     }
@@ -1054,9 +1059,20 @@ function feat_lifecycle() {
 
         if (!vm.config.can_close) {
             window.onbeforeunload = function() {
-                var message = "Are you sure you want to navigate away from this page ?";
-                    if (confirm(message)) return message;
-                    else return false;
+                console.warn("window.onbeforeunload")
+                if (MM.current_trackid) {
+                    console.warn("pausing music queue")
+                    MM.focus_lost = 1
+                    MM[MM.current_trackid].media.pause()
+                } else {
+                    console.warn("not track playing")
+                }
+                const message = "Are you sure you want to navigate away from this page ?"
+                if (confirm(message)) {
+                    return message
+                } else {
+                    return false
+                }
             }
         }
 }
@@ -1123,8 +1139,10 @@ function download(diskfile, filename) {
 
 window.MM = {
     tracks : 0,
+    trackid_current : 0,
     UME : true,
     download : download,
+    focus_lost : 0,
     focus_handler : focus_handler,
     camera : {}
 }
@@ -1409,6 +1427,7 @@ MM.load = function load(trackid, loops) {
 
 
     if (track.type === "audio") {
+        MM.current_trackid = trackid
         MM_autoevents( track )
         return trackid
     }
@@ -1427,6 +1446,7 @@ MM.load = function load(trackid, loops) {
 MM.play = function play(trackid, loops, start, fade_ms) {
     console.log("MM.play",trackid, loops, MM[trackid] )
     const track = MM[trackid]
+    MM.current_trackid = trackid
     track.loops = loops
     if (track.ready)
         track.media.play()
@@ -1447,16 +1467,19 @@ MM.stop = function stop(trackid) {
     console.log("MM.stop", trackid, MM[trackid] )
     MM[trackid].media.currentTime = 0
     MM[trackid].media.pause()
+    MM.current_trackid = 0
 }
 
 
 MM.pause = function pause(trackid) {
     console.log("MM.pause", trackid, MM[trackid] )
     MM[trackid].media.pause()
+    MM.current_trackid = 0
 }
 
 MM.unpause = function unpause(trackid) {
     console.log("MM.unpause", trackid, MM[trackid] )
+    MM.current_trackid = trackid
     MM[trackid].media.play()
 }
 
