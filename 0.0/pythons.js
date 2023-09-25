@@ -229,9 +229,9 @@ window.cross_file = function * cross_file(url, store, flags) {
     if (response.error) {
         console.warn("cross_file.error :", response.error)
         return response.error
-    } else
-        console.warn("got response", response, "len", response.headers.get("Content-Length"))
-
+    } else {
+        // console.warn("got response", response, "len", response.headers.get("Content-Length"))
+    }
     FS.writeFile(store, content )
     console.log("End.cross_file.fetch", store, "r/w=", content.byteLength)
     cross_file.dlcomplete = content.byteLength
@@ -1136,10 +1136,14 @@ function download(diskfile, filename) {
 
 
 
-
 window.MM = {
     tracks : 0,
     trackid_current : 0,
+    next : "",
+    next_hint : "",
+    next_loops : 0,
+    next_tid : 0,
+    transition : 0,
     UME : true,
     download : download,
     focus_lost : 0,
@@ -1222,7 +1226,7 @@ async function media_prepare(trackid) {
                 apk_cb
             )
 
-        } else {
+        } else { // bfs1
             console.warn(" ==================== BFS2 ===============")
 
             // assuming FS is from Emscripten
@@ -1271,30 +1275,6 @@ function MM_play(track, loops) {
 }
 
 
-
-function MM_autoevents(track) {
-    const media = track.media
-
-    if (media.MM_autoevents) {
-        return
-    }
-
-    media.addEventListener("canplaythrough", (event) => {
-        track.ready = true
-        if (track.auto)
-            media.play()
-    })
-
-    media.addEventListener('ended', (event) => {
-        if (track.loops<0)
-            media.play()
-
-        if (track.loops>0) {
-            track.loops--;
-            media.play()
-        }
-    })
-}
 
 
 window.cross_track = async function cross_track(trackid, url, flags) {
@@ -1401,7 +1381,7 @@ console.log("MM.cross_track", trackid, transport, type, url )
 
         track.play = (loops) => { MM_play( track, loops) }
 
-        MM_autoevents(track)
+        MM_autoevents(track, trackid)
 
     }
 
@@ -1427,8 +1407,7 @@ MM.load = function load(trackid, loops) {
 
 
     if (track.type === "audio") {
-        MM.current_trackid = trackid
-        MM_autoevents( track )
+        MM_autoevents( track , trackid )
         return trackid
     }
 
@@ -1446,11 +1425,12 @@ MM.load = function load(trackid, loops) {
 MM.play = function play(trackid, loops, start, fade_ms) {
     console.log("MM.play",trackid, loops, MM[trackid] )
     const track = MM[trackid]
-    MM.current_trackid = trackid
+
     track.loops = loops
-    if (track.ready)
+
+    if (track.ready) {
         track.media.play()
-    else {
+    } else {
         console.warn("Cannot play before user interaction, will retry", track )
         function play_asap() {
             if (track.ready) {
@@ -1470,11 +1450,22 @@ MM.stop = function stop(trackid) {
     MM.current_trackid = 0
 }
 
+MM.get_pos = function get_pos(trackid) {
+    if (MM.transition)
+        return 0
+
+    const track = MM[trackid]
+
+    if (track && track.media)
+        return MM[trackid].media.currentTime
+    return -1
+}
+
+
 
 MM.pause = function pause(trackid) {
     console.log("MM.pause", trackid, MM[trackid] )
     MM[trackid].media.pause()
-    MM.current_trackid = 0
 }
 
 MM.unpause = function unpause(trackid) {
@@ -1495,6 +1486,56 @@ MM.set_socket = function set_socket(mode) {
     vm["websocket"]["url"] = mode
     console.log("WebSocket default mode is now :", mode)
 }
+
+
+function MM_autoevents(track, trackid) {
+    const media = track.media
+
+    if (media.MM_autoevents) {
+        return
+    }
+
+    media.MM_autoevents = 1
+
+    track.media.onplaying = (event) => {
+        MM.transition = 0
+        MM.current_trackid = trackid
+    }
+
+    media.addEventListener("canplaythrough", (event) => {
+        track.ready = true
+        if (track.auto) {
+            media.play()
+        }
+    })
+
+    media.addEventListener('ended', (event) => {
+
+        if (track.loops<0) {
+            console.log("track ended - looping forever")
+            media.play()
+            return
+        }
+        if (track.loops>0) {
+            track.loops--;
+            console.log("track ended - pass", track.loops)
+            media.play()
+            return
+        }
+
+        console.log("track ended - q?", MM.next_tid)
+
+        // check a track is queued
+        if (MM.next_tid) {
+            MM.transition = 1
+            console.log("queued", MM.next_hint, "from", MM.next, "loops", MM.next_loops)
+            track.auto = true
+            MM.play(MM.next_tid, MM.next_loops)
+            MM.next_tid = 0
+        }
+    })
+}
+
 
 // js.MM.CAMERA
 
