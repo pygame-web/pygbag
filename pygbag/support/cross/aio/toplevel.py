@@ -212,7 +212,6 @@ class AsyncInteractiveConsole(code.InteractiveConsole):
                 embed.prompt()
 
     async def interact(self):
-
         # multiline input clumsy sentinel
         last_line = ""
 
