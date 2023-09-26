@@ -227,7 +227,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
                     print(self.path)
                     print()
 
-            elif path.endswith(".html"):
+            elif self.path.endswith(".html"):
                 if VERB:
                     print("REPLACING", path, CDN, PROXY)
                 content = f.read()
