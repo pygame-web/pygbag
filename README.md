@@ -64,21 +64,21 @@ Command help:
 Example :
 
 ```
-user@pp /data/git/pygbag $ python3 -m pygbag --help your.app.folder
- *pygbag 0.7.3*
+user@pp /data/git/pygbag $ py -m pygbag --help test/main.py
+ *pygbag 0.8.2*
+115: cache 0.7.2 mismatch, want 0.8.2, cleaning ...
 
-Serving python files from [/data/git/pygbag/your.app.folder/build/web]
+Serving python files from [/data/git/pygbag/test/build/web]
 
 with no security/performance in mind, i'm just a test tool : don't rely on me
-usage: __main__.py [-h] [--bind ADDRESS] [--PYBUILD PYBUILD] [--app_name APP_NAME] [--ume_block UME_BLOCK] [--can_close CAN_CLOSE]
-                   [--cache CACHE] [--package PACKAGE] [--title TITLE] [--version VERSION] [--build] [--html] [--no_opt]
-                   [--archive] [--icon ICON] [--cdn CDN] [--template TEMPLATE] [--ssl SSL] [--port [PORT]]
+usage: __main__.py [-h] [--bind ADDRESS] [--PYBUILD PYBUILD] [--app_name APP_NAME] [--ume_block UME_BLOCK] [--can_close CAN_CLOSE] [--cache CACHE] [--package PACKAGE] [--title TITLE] [--version VERSION] [--build] [--html] [--no_opt] [--archive] [--icon ICON] [--cdn CDN] [--template TEMPLATE] [--ssl SSL]
+                   [--port [PORT]]
 
 options:
   -h, --help            show this help message and exit
   --bind ADDRESS        Specify alternate bind address [default: localhost]
   --PYBUILD PYBUILD     Specify python version [default:3.11]
-  --app_name APP_NAME   Specify user facing name of application [default:your.app.folder]
+  --app_name APP_NAME   Specify user facing name of application [default:test]
   --ume_block UME_BLOCK
                         Specify wait for user media engagement before running [default:1]
   --can_close CAN_CLOSE
@@ -86,17 +86,16 @@ options:
   --cache CACHE         md5 based url cache directory
   --package PACKAGE     package name, better make it unique
   --title TITLE         App nice looking name
-  --version VERSION     override prebuilt version path [default:0.7.3]
+  --version VERSION     override prebuilt version path [default:0.8.2]
   --build               build only, do not run test server
   --html                build as html with embedded assets (pygame-script)
   --no_opt              turn off assets optimizer
   --archive             make build/web.zip archive for itch.io
   --icon ICON           icon png file 32x32 min should be favicon.png
-  --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/pygbag/0.0/]
+  --cdn CDN             web site to cache locally [default:https://pygame-web.github.io/archives/0.8/]
   --template TEMPLATE   index.html template [default:default.tmpl]
   --ssl SSL             enable ssl with server.pem and key.pem
   --port [PORT]         Specify alternate port [default: 8000]
-
 ```
 
 unlisted developper options:

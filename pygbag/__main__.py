@@ -153,6 +153,8 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
         set_ps1 = no_op
 
+        set_ps2 = no_op
+
         prompt = no_op
 
         is_browser = False
