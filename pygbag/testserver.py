@@ -59,7 +59,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
         self.send_header("cross-origin-opener-policy", "cross-origin")
 
         # buggy for https://pygame-web.github.io/archives/repo/index.json
-        # self.send_header("cross-origin-embedder-policy", "unsafe-none")
+        self.send_header("cross-origin-embedder-policy", "unsafe-none")
 
         # at least raise
         # net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep 200
@@ -209,7 +209,7 @@ class CodeHandler(SimpleHTTPRequestHandler):
 
             file_size = fs[6]
 
-            if path.endswith(".py"):
+            if self.path.endswith(".py"):
                 if VERB:
                     print(" --> do_GET(%s)" % path)
                 if fstring_decode:
@@ -221,13 +221,13 @@ class CodeHandler(SimpleHTTPRequestHandler):
                 file_size = len(content)
                 f = io.BytesIO(content)
 
-            elif path.endswith(".json"):
+            elif self.path.endswith(".json"):
                 if VERB:
                     print()
                     print(self.path)
                     print()
 
-            elif path.endswith(".html"):
+            elif self.path.endswith(".html"):
                 if VERB:
                     print("REPLACING", path, CDN, PROXY)
                 content = f.read()
@@ -238,8 +238,14 @@ class CodeHandler(SimpleHTTPRequestHandler):
                 #                    b"https://pygame-web.github.io", b"http://localhost:8000"
                 #                )
 
-                # redirect user CDN to localhost
-                content = content.replace(BCDN, BPROXY)
+                if MYPROXY is not None: 
+                    # redirect user CDN to proper host (GitHub codespace, Docker container IP)
+                    print("REPLACING", path, CDN, BMYPROXY)
+                    content = content.replace(BCDN, BMYPROXY)
+                else:
+                    # redirect user CDN to localhost
+                    print("REPLACING", path, CDN, PROXY)
+                    content = content.replace(BCDN, BPROXY)
 
                 file_size = len(content)
                 f = io.BytesIO(content)
