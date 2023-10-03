@@ -1,10 +1,16 @@
 import sys
 import io
-import socket
+
+if not __UPY__:
+    import socket
+    socket.setdefaulttimeout(0.0)
+else:
+    print("7: usocket implementation required")
+
 
 import os  # unlink
 
-socket.setdefaulttimeout(0.0)
+
 
 import aio
 import platform
@@ -51,7 +57,8 @@ def mktemp(suffix=""):
 
 
 class fopen:
-    if __WASM__:
+    if __WASM__ and hasattr(platform, "ffi"):
+
         flags = platform.ffi(
             {
                 "redirect": "follow",
@@ -59,13 +66,14 @@ class fopen:
             }
         )
     else:
+        print("69: platform has no object serializer")
         flags = {}
 
     def __init__(self, maybe_url, mode="r", flags=None):
         self.url = fix_url(maybe_url)
         self.mode = mode
         flags = flags or self.__class__.flags
-        print(f'68: fopen: fetching "{self.url}"')
+        print(f'76: fopen: fetching "{self.url}"')
 
         self.tmpfile = None
 

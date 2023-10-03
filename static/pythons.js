@@ -513,15 +513,14 @@ const vm = {
             }
         },
 
-
+        websocket : { "url" : "wss://" },
         preRun : [ prerun ],
         postRun : [ function (VM) {
-            VM["websocket"]["url"] = "wss://"
+            window.VM = VM
             window.python = VM
             window.py = new bridge(VM)
             setTimeout(custom_postrun, 10)
-
-        } ]
+        }]
 }
 
 
@@ -549,22 +548,43 @@ async function run_pyrc(content) {
     }
 
     python.PyRun_SimpleString(`#!site
-PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
-verbose = PyConfig.get('quiet', False)
 import os, sys, json
+PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
 pfx=PyConfig['prefix']
-if os.path.isdir(pfx):
+def os_path_is_dir(path):
+    try:
+        os.listdir(str(path))
+        return True
+    except:
+        return False
+def os_path_is_file(path):
+    parent, file = str(path).rsplit('/',1)
+    try:
+        return file in os.listdir(parent)
+    except:
+        return False
+
+if os_path_is_dir(pfx):
     sys.path.append(pfx)
     os.chdir(pfx)
+
+print("581: Current Dir :", pfx)
+del pfx
 __pythonrc__ = "${pyrc_file}"
-if os.path.isfile(__pythonrc__):
-    exec(open(__pythonrc__).read(), globals(), globals())
+try:
+    if os_path_is_file(__pythonrc__):
+        exec(open(__pythonrc__).read(), globals(), globals())
+    else:
+        raise Error("File not found")
+except Exception as e:
+    print(f"579: invalid {__pythonrc__=}")
+    sys.print_exception(e)
+
+try:
     import asyncio
     asyncio.run(import_site("${main_file}"))
-else:
-    print(f"510: invalid {__pythonrc__=}")
-del pfx, verbose
-#
+except ImportError:
+    pass
 `)
 }
 
@@ -2215,7 +2235,7 @@ console.warn("TODO: merge/replace location options over script options")
 
     if (url.endsWith(module_name)) {
         url = url + (window.location.search || "?") + ( window.location.hash || "#" )
-        console.log("Location taking precedence over script", old_url ,'=>', url )
+        console.log("Location of",module_name,"overrides script", old_url ,'=>', url )
     }
 
     elems = url.rsplit('#',1)
@@ -2243,23 +2263,31 @@ console.warn("TODO: merge/replace location options over script options")
         console.warn("1601: no inlined code found")
     }
 
-    // resolve python executable
+    // resolve python executable, cmdline first then script
+    var pystr = "cpython"
 
-    if (vm.cpy_argv.length) {
-        var orig_argv_py
-        if (vm.cpy_argv[0].search('cpython3')>=0) {
-            vm.script.interpreter = "cpython"
-            config.PYBUILD = vm.cpy_argv[0].substr(7) || "3.11"
+    if (vm.cpy_argv.length && vm.cpy_argv[0].search('py')>=0) {
+        pystr = vm.cpy_argv[0]
+    } else {
+        if (cfg.python.search('py')>=0) {
+            pystr = cfg.python
+        }
+        // fallback to cpython
+    }
+
+    if (pystr.search('cpython3')>=0) {
+        vm.script.interpreter = "cpython"
+        config.PYBUILD = pystr.substr(7) || "3.11"
+    } else {
+        if (pystr.search('wapy')>=0) {
+            vm.script.interpreter = "wapy"
+            config.PYBUILD = pystr.substr(4) || "3.4"
         } else {
-            if (vm.cpy_argv[0].search('wapy')>=0) {
-// TODO wapy is not versionned
-                vm.script.interpreter = "wapy"
-            } else {
-                vm.script.interpreter = config.python || "cpython"
-                config.PYBUILD = vm.cpy_argv[0].substr(7) || "3.11"
-            }
+            vm.script.interpreter = config.python || "cpython"
+            config.PYBUILD = pystr.substr(7) || "3.11"
         }
     }
+
 
     // running pygbag proxy, lan testing or a module url ?
     if ( (location.hostname === "localhost") || cfg.module) {
@@ -2389,7 +2417,7 @@ function auto_start(cfg) {
                     cols : script.dataset.cols,
                     lines : script.dataset.lines,
                     url : script.src,
-                    os : script.dataset.os,
+                    os : script.dataset.os || "gui",
                     text : code,
                     id : script.id,
                     autorun : ""

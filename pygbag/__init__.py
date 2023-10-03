@@ -7,7 +7,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 from pathlib import Path
 
-__version__ = "0.8.2"
+__version__ = "0.8.3"
 
 # hack to test git cdn build without upgrading pygbag
 # beware can have side effects when file packager behaviour must change !

@@ -1,7 +1,7 @@
 import sys
 import builtins
 import inspect
-from time import time as time_time
+
 
 
 DEBUG = True
@@ -33,17 +33,25 @@ except:
 # cascade debug by default
 from . import cross
 
+if not __UPY__:
+    from time import time as time_time
+
+    # file+socket support  fopen/sopen
+    from .filelike import *
+else:
+    import utime
+    time_time = utime.ticks_ms
+
+
 cross.DEBUG = DEBUG
 
-
-# file+socket support  fopen/sopen
-from .filelike import *
 
 # =========================================================================
 
 # TODO: dbg stuff should be in the platform module in aio.cross
 # usefull https://pymotw.com/3/sys/tracing.html
-if DEBUG:
+# upy has no trace module
+if DEBUG and not __UPY__:
     import trace
 
     _tracer = trace.Trace(count=False, trace=True)
@@ -139,12 +147,17 @@ enter = time_time()
 spent = 0.00001
 leave = enter + spent
 
-
 from asyncio import *
 
 __run__ = run
 
-import asyncio.events as events
+if __UPY__:
+    def _set_running_loop(l):pass
+    sys.modules['asyncio.events'] = aio
+    aio.get_running_loop = aio.get_event_loop
+    events = aio
+else:
+    from asyncio.events import _set_running_loop
 
 
 # Within a coroutine, simply use `asyncio.get_running_loop()`,
@@ -157,9 +170,9 @@ except RuntimeError:
     loop = get_event_loop()
 
 
-import asyncio.events
-
-asyncio.events._set_running_loop(loop)
+#import asyncio.events
+#asyncio.events._set_running_loop(loop)
+_set_running_loop(loop)
 
 
 sys.modules["asyncio"] = __import__(__name__)
@@ -390,7 +403,7 @@ def run(coro, *, debug=False):
 
         # fallback to blocking asyncio
         else:
-            asyncio.events._set_running_loop(None)
+            _set_running_loop(None)
             # TODO: implement RaF from here
             try:
                 loop.run_forever()
@@ -461,7 +474,9 @@ def aio_exit(maybecoro=0):
         exit_now(maybecoro)
 
 
-sys.exit = aio_exit
+if not __UPY__:
+    sys.exit = aio_exit
+
 
 # check if we have a Time handler.
 try:

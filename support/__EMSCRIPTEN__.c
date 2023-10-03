@@ -4,7 +4,6 @@ static PyStatus pymain_init(const _PyArgv *args);
 static void pymain_free(void);
 
 
-
     http://troubles.md/why-do-we-need-the-relooper-algorithm-again/
 
     https://medium.com/leaningtech/solving-the-structured-control-flow-problem-once-and-for-all-5123117b1ee2
@@ -48,37 +47,84 @@ debug:
 
 #include <unistd.h>
 
+#if defined(WAPY)
+//#   include "mpconfigport.h"
+#   include "Python.h"
+
+#endif
 
 #include "../build/gen_static.h"
 
 #if PYDK_emsdk
-    #include <emscripten/html5.h>
-    #include <emscripten/key_codes.h>
-    #include "emscripten.h"
-    /*
-    #define SDL2
-    #include <SDL2/SDL.h>
-    #include <SDL2/SDL_ttf.h>
-    */
-//    #include <SDL_hints.h> // SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT
-    #define SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT   "SDL_EMSCRIPTEN_KEYBOARD_ELEMENT"
-
+#   include <emscripten/html5.h>
+#   include <emscripten/key_codes.h>
+#   include "emscripten.h"
     #define HOST_RETURN(value)  return value
 
     PyObject *sysmod;
     PyObject *sysdict;
-#   include "__EMSCRIPTEN__.embed/sysmodule.c"
 
+#   include "sys/time.h"  // gettimeofday
+#   include <sys/stat.h>  // umask
 
+#   if !defined(WAPY)
+#       include "__EMSCRIPTEN__.embed/sysmodule.c"
+#   endif
 #else
-    #error "wasi unsupported yet"
+#   error "wasi unsupported yet"
 #endif
 
+#if !defined(WAPY)
+#   include "../build/gen_inittab.h"
+#else
+#   pragma message  "  @@@@@@@@@@@ NOT YET ../build/gen_inittab.h @@@@@@@@@@@@"
+#endif
 
-#include "../build/gen_inittab.h"
+// ==============================================================================================
 
 static int preloads = 0;
 static long long loops = 0;
+
+// ==============================================================================================
+
+
+#define HPY_ABI_UNIVERSAL
+#include "hpy.h"
+
+HPyDef_METH(platform_run, "run", HPyFunc_VARARGS)
+
+static HPy
+platform_run_impl(HPyContext *ctx, HPy self, const HPy *argv, size_t argc) {
+    puts("hpy runs");
+    return HPyLong_FromLongLong(ctx, loops);
+}
+
+static HPyDef *hpy_platform_Methods[] = {
+    &platform_run,
+    NULL,
+};
+
+static HPyModuleDef hpy_platform_def = {
+    .doc = "HPy _platform",
+    .defines = hpy_platform_Methods,
+};
+
+// The Python interpreter will create the module for us from the
+// HPyModuleDef specification. Additional initialization can be
+// done in the HPy_mod_exec slot
+HPy_MODINIT(_platform, hpy_platform_def)
+
+extern PyModuleDef* _HPyModuleDef_AsPyInit(HPyModuleDef *hpydef);
+
+PyMODINIT_FUNC
+PyInit__platform(void)
+{
+    return (PyObject *)_HPyModuleDef_AsPyInit(&hpy_platform_def);
+}
+
+
+// ==============================================================================================
+
 
 static PyObject *
 embed_run(PyObject *self, PyObject *argv,  PyObject *kwds)
@@ -150,7 +196,6 @@ embed_test(PyObject *self, PyObject *args, PyObject *kwds)
 
 #include <emscripten/html5.h>
 #include <GLES2/gl2.h>
-
 
 static PyObject *embed_webgl(PyObject *self, PyObject *args, PyObject *kwds);
 
@@ -360,10 +405,12 @@ static struct PyModuleDef mod_embed = {
 
 static PyObject *embed_dict;
 
-PyMODINIT_FUNC init_embed(void) {
+PyMODINIT_FUNC
+PyInit_embed(void) {
 
 // activate javascript bindings that were moved from libpython to pymain.
-#if defined(PYDK_emsdk)
+// but not for wapy
+#if defined(PYDK_emsdk) && !defined(WAPY)
     int res;
     sysmod = PyImport_ImportModule("sys"); // must call Py_DECREF when finished
     sysdict = PyModule_GetDict(sysmod); // borrowed ref, no need to delete
@@ -378,13 +425,19 @@ PyMODINIT_FUNC init_embed(void) {
     Py_DECREF(sysmod); // release ref to sysMod
 err_occurred:;
 type_init_failed:;
+#else
+
+        puts("PyInit_embed");
 #endif
 
 // helper module for pygbag api not well defined and need clean up.
 // callable as "platform" module.
     PyObject *embed_mod = PyModule_Create(&mod_embed);
-    embed_dict = PyModule_GetDict(embed_mod);
-    PyDict_SetItemString(embed_dict, "js2py", PyUnicode_FromString("{}"));
+
+// from old aiolink poc
+    //embed_dict = PyModule_GetDict(embed_mod);
+    //PyDict_SetItemString(embed_dict, "js2py", PyUnicode_FromString("{}"));
+
     return embed_mod;
 
 }
@@ -518,8 +571,6 @@ main_iteration(void) {
                 fprintf( stderr, "%d: %s", lines, buf );
         }
 
-
-
         rewind(file);
 
         if (lines>1)  {
@@ -534,11 +585,12 @@ main_iteration(void) {
 #       undef file
     }
 
-    if ( (datalen =  io_file_select(IO_RAW)) )
+    if ( (datalen = io_file_select(IO_RAW)) ) {
         embed_os_read_bufsize += datalen;
         //printf("raw data %i\n", datalen);
+    }
 
-    if ( (datalen =  io_file_select(0)) ) {
+    if ( (datalen = io_file_select(0)) ) {
         embed_readline_bufsize += datalen;
         //printf("stdin data q+%i / q=%i dq=%i\n", datalen, embed_readline_bufsize, embed_readline_cursor);
     }
@@ -562,10 +614,6 @@ static void reprint(const char *fmt, PyObject *obj) {
     Py_XDECREF(repr);
     Py_XDECREF(str);
 }
-
-
-
-
 
 
 
@@ -693,14 +741,14 @@ fail:
     puts("EGL test failed");
 }
 
-#endif
+#endif // EGLTEST
 
 static PyObject *
 embed_webgl(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // setting up EmscriptenWebGLContextAttributes
     #if defined(EGLTEST)
-    egl_test();
+        egl_test();
     #endif
 
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_get_current_context();
@@ -714,14 +762,16 @@ embed_webgl(PyObject *self, PyObject *args, PyObject *kwds)
 
 PyStatus status;
 
-#if defined(FT)
-#include <freetype2/ft2build.h>
-#include FT_FREETYPE_H
-#endif
+#if defined(WAPY)
+#define CPY 0
 
-
+MP_NOINLINE int
+main_(int argc, char **argv)
+#else
+#define CPY 1
 int
 main(int argc, char **argv)
+#endif
 {
     gettimeofday(&time_last, NULL);
 
@@ -732,7 +782,9 @@ main(int argc, char **argv)
         .wchar_argv = NULL
     };
 
-    PyImport_AppendInittab("embed", init_embed);
+    PyImport_AppendInittab("embed", PyInit_embed);
+
+    PyImport_AppendInittab("_platform", PyInit__platform);
 
 #   include "../build/gen_inittab.c"
 
@@ -758,7 +810,6 @@ main(int argc, char **argv)
     setenv("APPDATA", "/home/web_user", 1);
 
     setenv("PYGLET_HEADLESS", "1", 1);
-
 
     status = pymain_init(&args);
 
@@ -790,6 +841,7 @@ main(int argc, char **argv)
        LOG_V("no 'tmp' directory, creating one ...");
     }
 
+
     for (int i=0;i<FD_MAX;i++)
         io_shm[i]= NULL;
 
@@ -806,6 +858,9 @@ main(int argc, char **argv)
     io_shm[IO_RAW] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
     io_shm[IO_RCON] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
 
+
+
+
 EM_ASM({
     const FD_BUFFER_MAX = $0;
     const shm_stdin = $1;
@@ -820,7 +875,7 @@ EM_ASM({
         const jswasmloader=document.createElement("script");
         jswasmloader.setAttribute("type","text/javascript");
         jswasmloader.setAttribute("src", script);
-        jswasmloader.setAttribute('async', aio);
+        jswasmloader.setAttribute("async", aio);
         document.getElementsByTagName("head")[0].appendChild(jswasmloader);
     };
 
@@ -856,25 +911,33 @@ EM_ASM({
 
     }
 
-    if (!is_worker && window.BrowserFS) {
-        console.log("PyMain: found BrowserFS");
-        //if (is_worker)
-        //    jswasm_load("fshandler.js");
-
-    } else {
-        console.error("PyMain: BrowserFS not found");
+    if (!is_worker) {
+        if (typeof window === 'undefined') {
+            if (FS)
+                console.warn("PyMain: Running in Node ?");
+            else
+                console.error("PyMain: not Node");
+        } else {
+            if (window.BrowserFS) {
+                console.log("PyMain: found BrowserFS");
+                //if (is_worker)
+                //    jswasm_load("fshandler.js");
+            } else {
+                console.error("PyMain: BrowserFS not found");
+            }
+            if ($4) {
+                SYSCALLS.getStreamFromFD(0).tty = true;
+                SYSCALLS.getStreamFromFD(1).tty = true;
+                SYSCALLS.getStreamFromFD(2).tty = false;
+            }
+        }
     }
 
-    if (1) {
-        SYSCALLS.getStreamFromFD(0).tty = true;
-        SYSCALLS.getStreamFromFD(1).tty = true;
-        SYSCALLS.getStreamFromFD(2).tty = false;
-    }
 
-}, FD_BUFFER_MAX, io_shm[0], io_shm[IO_RAW], io_shm[IO_RCON]);
+}, FD_BUFFER_MAX, io_shm[0], io_shm[IO_RAW], io_shm[IO_RCON], CPY);
 
 
-    PyRun_SimpleString("import sys, os, json, builtins, shutil, time");
+    PyRun_SimpleString("import sys, os, json, builtins, time");
     //PyRun_SimpleString("import hpy;import hpy.universal;print('HPy init done')");
 #if defined(FT)
     int error;
@@ -898,7 +961,24 @@ EM_ASM({
         SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, target);
     }
 #endif
-    emscripten_set_main_loop( (em_callback_func)main_iteration, 0, 1);
 
+    emscripten_set_main_loop( (em_callback_func)main_iteration, 0, 1);
+    puts("\nEnd");
     return 0;
 }
+
+#if defined(WAPY)
+int main(int argc, char **argv) {
+     #if MICROPY_PY_THREAD
+    mp_thread_init();
+    #endif
+    // We should capture stack top ASAP after start, and it should be
+    // captured guaranteedly before any other stack variables are allocated.
+    // For this, actual main (renamed main_) should not be inlined into
+    // this function. main_() itself may have other functions inlined (with
+    // their own stack variables), that's why we need this main/main_ split.
+    mp_stack_ctrl_init();
+    return main_(argc, argv);
+}
+#endif // WAPY
+

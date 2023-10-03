@@ -58,11 +58,12 @@ class CodeHandler(SimpleHTTPRequestHandler):
         self.send_header("cross-origin-resource-policy:", "cross-origin")
         self.send_header("cross-origin-opener-policy", "cross-origin")
 
-        # buggy for https://pygame-web.github.io/archives/repo/index.json
+        # not valid for Atomics
         # self.send_header("cross-origin-embedder-policy", "unsafe-none")
 
-        # at least raise
-        # net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep 200
+        # not -always- valid for Atomics (firefox)
+        # self.send_header("cross-origin-embedder-policy", "credentialless")
+
         self.send_header("cross-origin-embedder-policy", "require-corp")
 
         super().end_headers()
@@ -83,6 +84,10 @@ class CodeHandler(SimpleHTTPRequestHandler):
     def send_head(self):
         global VERB, CDN, PROXY, BCDN, BPROXY, AUTO_REBUILD
         path = self.translate_path(self.path)
+        print(f"""
+
+{self.path=} {path=}""")
+
         f = None
         if os.path.isdir(path):
             parts = urllib.parse.urlsplit(self.path)
@@ -155,14 +160,13 @@ class CodeHandler(SimpleHTTPRequestHandler):
         else:
             cached = False
 
-        if self.path.endswith(".apk"):
+        if path.endswith(".apk"):
             if AUTO_REBUILD:
                 print()
-                print(self.path)
                 AUTO_REBUILD()
                 print()
             else:
-                print(f"{AUTO_REBUILD=} {self.path}")
+                print(f"{AUTO_REBUILD=} {path}")
 
         if f is None:
             try:
@@ -245,8 +249,6 @@ class CodeHandler(SimpleHTTPRequestHandler):
                 f = io.BytesIO(content)
 
             self.send_header("content-length", str(file_size))
-            # self.send_header("Access-Control-Allow-Origin", "*")
-            # self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
 
             if not cached:
                 self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))

@@ -22,8 +22,6 @@ def shed_yield():
     return True
 
 
-sys.breakpointhook = breakpointhook
-
 this = __import__(__name__)
 
 # those  __dunder__ are usually the same used in C conventions.
@@ -31,7 +29,7 @@ this = __import__(__name__)
 try:
     __UPY__
 except:
-    if hasattr(sys.implementation, "mpy"):
+    if hasattr(sys.implementation, "_mpy"):
         builtins.__UPY__ = this
     else:
         builtins.__UPY__ = None
@@ -41,14 +39,17 @@ except:
 if __UPY__:
     sys.modules["sys"] = sys
     sys.modules["builtins"] = builtins
-    try:
-        from . import uasyncio as uasyncio
 
-        print("Warning : using WAPY uasyncio")
-    except Exception as e:
-        sys.print_exception(e)
+#    try:
+#        from . import uasyncio as uasyncio
+#
+#        print("Warning : using WAPY uasyncio")
+#    except Exception as e:
+#        sys.print_exception(e)
 
 else:
+    sys.breakpointhook = breakpointhook
+
     # fallback to asyncio based implementation
     try:
         from . import uasyncio_cpy as uasyncio
@@ -56,7 +57,7 @@ else:
         pdb("INFO: no uasyncio implementation found")
         uasyncio = aio
 
-sys.modules["uasyncio"] = uasyncio
+    sys.modules["uasyncio"] = uasyncio
 
 
 # detect if cpython is really running on a emscripten browser
@@ -97,6 +98,7 @@ if hasattr(sys, "_emscripten_info"):
 
 else:
     is_browser = False
+    pdb("101: no emscripten browser interface")
     builtins.__EMSCRIPTEN__ = None
 
 

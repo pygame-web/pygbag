@@ -205,7 +205,7 @@ with open("build/stdlib.list","w") as tarlist:
             print(name, file=tarlist )
         else:
             stdlp = stdlp.replace('$(arch)','emsdk')
-            #print(stdlp)
+            print(stdlp)
             tarcmd=f"tar --directory=/{stdlp}usr/lib --files-from=build/stdlib.list -cf build/stdl.tar"
             print(tarcmd)
 os.system(tarcmd)

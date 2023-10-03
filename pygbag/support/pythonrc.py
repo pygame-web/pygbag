@@ -195,7 +195,9 @@ try:
     PyConfig["pkg_repolist"] = []
 
     aio.cross.simulator = False
-    sys.argv = PyConfig.pop("argv", [])
+    sys.argv.clear()
+    sys.argv.extend( PyConfig.pop("argv", []) )
+
 
 except Exception as e:
     sys.print_exception(e)
@@ -203,7 +205,13 @@ except Exception as e:
     PyConfig = {}
     PyConfig["dev_mode"] = 1
     PyConfig["run_filename"] = "main.py"
-    PyConfig["executable"] = sys.executable
+
+# TODO: use location of python js module.
+    if __UPY__:
+        PyConfig["executable"] = "upy"
+    else:
+        PyConfig["executable"] = sys.executable
+
     PyConfig["interactive"] = 1
     print(" - running in wasm simulator - ")
     aio.cross.simulator = True
@@ -436,8 +444,9 @@ class shell:
                 print("a program is already running, using 'stop' cmd before retrying")
                 cls.stop()
                 cls.pgzrunning = None
-                aio.defer(cls.spawn, (cmd, *argv), env, delay=500)
-
+                args = [cmd]
+                args.extend(argv)
+                aio.defer(cls.spawn, args, env, delay=500)
             else:
                 execfile(cmd)
             return True
@@ -826,12 +835,29 @@ ________________________
             await sub
 
 
-PyConfig["shell"] = shell
 builtins.shell = shell
 # end shell
 
 
-from types import SimpleNamespace
+
+if __UPY__:
+    import types
+    class SimpleNamespace:
+        def __init__(self, **kwargs):
+            for k,v in kwargs.items():
+                setattr(self, k, v)
+
+        def __repr__(self):
+            keys = sorted(self.__dict__)
+            items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
+            return "{}({})".format(type(self).__name__, ", ".join(items))
+
+        def __eq__(self, other):
+            return self.__dict__ == other.__dict__
+    types.SimpleNamespace = SimpleNamespace
+else:
+    from types import SimpleNamespace
+
 import builtins
 
 builtins.PyConfig = SimpleNamespace(**PyConfig)
@@ -866,7 +892,7 @@ if not aio.cross.simulator:
             url = "http:/" + url[5:]
         return url
 
-    __EMSCRIPTEN__.fix_url = fix_url
+    platform.fix_url = fix_url
 
     del fix_url
 
@@ -978,11 +1004,16 @@ if not aio.cross.simulator:
     import os
 
     # set correct umask ( emscripten default is 0 )
-    os.umask(0o022)  # already done in aio.toplevel
+    if hasattr(os, "umask"):
+        os.umask(0o022)  # already done in aio.toplevel
+        import zipfile
+    else:
+        pdb("1010: missing os.umask")
+        pdb("1011: missing zipfile")
 
-    import zipfile
+
     import aio.toplevel
-    import ast
+    #import ast
     from pathlib import Path
 
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
@@ -1049,6 +1080,7 @@ if not aio.cross.simulator:
 
         @classmethod
         def scan_imports(cls, code, filename, load_try=False, hint=""):
+            import ast
             required = []
             try:
                 root = ast.parse(code, filename)
@@ -1425,13 +1457,14 @@ def patch():
     global COLS, LINES, CONSOLE
     import platform
 
-    # DeprecationWarning: Using or importing the ABCs from 'collections'
-    # instead of from 'collections.abc' is deprecated since Python 3.3
-    # and in 3.10 it will stop working
-    import collections
-    from collections.abc import MutableMapping
+    if not __UPY__:
+        # DeprecationWarning: Using or importing the ABCs from 'collections'
+        # instead of from 'collections.abc' is deprecated since Python 3.3
+        # and in 3.10 it will stop working
+        import collections
+        from collections.abc import MutableMapping
 
-    collections.MutableMapping = MutableMapping
+        collections.MutableMapping = MutableMapping
 
     # could use that ?
     # import _sqlite3

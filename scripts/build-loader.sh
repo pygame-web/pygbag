@@ -12,7 +12,7 @@
 cp -rf ${SDKROOT}/prebuilt/emsdk/common/* ${SDKROOT}/prebuilt/emsdk/${PYBUILD}/
 
 # pre populated site-packages
-export REQUIREMENTS=$(realpath ${SDKROOT}/prebuilt/emsdk/${PYBUILD}/site-packages)
+export REQUIREMENTS=${SDKROOT}/prebuilt/emsdk/${PYBUILD}/site-packages
 
 # and wasm libraries
 export DYNLOAD=${SDKROOT}/prebuilt/emsdk/${PYBUILD}/lib-dynload
@@ -34,26 +34,7 @@ echo "
 " 1>&2
 
 
-
-# SDL2_image turned off : -ltiff
-
-# CF_SDL="-sUSE_SDL=2 -sUSE_ZLIB=1 -sUSE_BZIP2=1"
-
-
-# something triggers sdl2 *full* rebuild.
-# also for SDL2_mixer, ogg and vorbis
-# all pic
-
-
-# /
-# $EMPIC/libSDL2.a
-# $EMPIC/libSDL2_gfx.a
-# $EMPIC/libogg.a
-# $EMPIC/libvorbis.a
-# $EMPIC/libSDL2_mixer_ogg.a
-
 EMPIC=/opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic
-
 
 SUPPORT_FS=""
 
@@ -219,7 +200,7 @@ echo CPY_CFLAGS=$CPY_CFLAGS
 
 if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $CPY_CFLAGS $CF_SDL $CPOPTS \
  -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden\
- -I${PYDIR}/internal -I${PYDIR} -I./support -DPy_BUILD_CORE\
+ -I${PYDIR}/internal -I${PYDIR} -I./support -I./src/hpy/hpy/devel/include -DPy_BUILD_CORE\
  -o build/${MODE}.o support/__EMSCRIPTEN__-pymain.c
 then
     STDLIBFS="--preload-file build/stdlib-rootfs/python${PYBUILD}@/usr/lib/python${PYBUILD}"
@@ -233,36 +214,9 @@ then
 
 # TODO: test -sWEBGL2_BACKWARDS_COMPATIBILITY_EMULATION
 
+    LDFLAGS="-sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
 
-
-
-# /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic/libSDL2.a
-
-    CF_SDL="-I${SDKROOT}/devices/emsdk/usr/include/SDL2"
-    #LD_SDL2="-lSDL2_gfx -lSDL2_mixer -lSDL2_ttf"
-
-    LD_SDL2="$EMPIC/libSDL2.a"
-    LD_SDL2="$LD_SDL2 $EMPIC/libSDL2_gfx.a $EMPIC/libogg.a $EMPIC/libvorbis.a"
-    LD_SDL2="$LD_SDL2 $EMPIC/libSDL2_mixer_ogg.a $EMPIC/libSDL2_ttf.a"
-    LD_SDL2="$LD_SDL2 -lSDL2_image -lwebp -ljpeg -lpng -lharfbuzz -lfreetype"
-
-
-    #LDFLAGS="$LD_VENDOR -sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
-    LDFLAGS="$LD_SDL2"
-
-LDFLAGS="-sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
-
-# -sUSE_FREETYPE -sUSE_HARFBUZZ"
-
-
-    if echo ${PYBUILD}|grep -q 10$
-    then
-        echo " - no sqlite3 for 3.10 -"
-    else
-        LDFLAGS="$LDFLAGS -lsqlite3"
-    fi
-
-
+    LDFLAGS="$LDFLAGS -lsqlite3"
 
     LDFLAGS="-L${SDKROOT}/devices/emsdk/usr/lib $LDFLAGS -lssl -lcrypto -lffi -lbz2 -lz -ldl -lm"
 
@@ -371,5 +325,23 @@ else
     echo "pymain compilation failed"
     exit 182
 fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

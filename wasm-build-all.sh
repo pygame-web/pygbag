@@ -45,12 +45,10 @@ do
 done
 
 
-
-
-
-
-
-
+if echo "$@"|grep WAPY
+then
+ ./scripts/build-wapy2.sh
+fi
 
 
 

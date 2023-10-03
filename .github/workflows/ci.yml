@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.46.2bi
+        SDK_VERSION: 3.1.47.0bi
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: emsdk hpy _ctypes pygame
         BUILD_STATIC: emsdk _ctypes hpy
@@ -47,16 +47,17 @@ jobs:
             cd $GITHUB_WORKSPACE
             PYBUILD=3.11 bash ./scripts/build-loader.sh
 
-#    - name: build 3.12 packages
-#      run: |
-#            cd $GITHUB_WORKSPACE
-#            PYBUILD=3.12 bash ./scripts/build-pkg.sh
-#
-#    - name: build 3.12 loader
-#      run: |
-#            cd $GITHUB_WORKSPACE
-#            PYBUILD=3.12 bash ./scripts/build-loader.sh
-#
+
+    - name: build 3.12 packages
+      run: |
+            cd $GITHUB_WORKSPACE
+            PYBUILD=3.12 BUILD_STATIC="emsdk hpy" bash ./scripts/build-pkg.sh
+
+    - name: build 3.12 loader
+      run: |
+            cd $GITHUB_WORKSPACE
+            PYBUILD=3.12 BUILD_STATIC="emsdk hpy" bash ./scripts/build-loader.sh
+
 
     - name: publishing
       run: |

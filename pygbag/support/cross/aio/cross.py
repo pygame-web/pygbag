@@ -9,18 +9,39 @@ aio.prepro.DEBUG = DEBUG
 #
 platform_impl = False
 
-# that sym cannot be overloaded in a simulator
+# ================== leverage known python implementations ====================
+
+# always come down to upy choices because cpython syntax can more easily be adapted
+
+
+if not defined("__UPY__"):
+    define("__UPY__", hasattr(sys, "print_exception") )
+
+    if not __UPY__:
+        # setup exception display with same syntax as upy
+        import traceback
+
+        def print_exception(e, out=sys.stderr, **kw):
+            kw["file"] = out
+            traceback.print_exc(**kw)
+
+        sys.print_exception = print_exception
+        del print_exception
+
+
 
 if not defined("__WASM__"):
-    if __import__("os").uname().machine.startswith("wasm"):
-        import __WASM__
-    else:
-        __WASM__ = False
+    try:
+        # that sym cannot be overloaded in the simulator
+        if __import__("os").uname().machine.startswith("wasm"):
+            import __WASM__
+        else:
+            __WASM__ = False
+    except AttributeError:
+        # upy does not have os.uname
+        __WASM__ = True
 
     define("__WASM__", __WASM__)
-
-
-# those can
 
 
 if not defined("__wasi__"):
@@ -29,17 +50,8 @@ if not defined("__wasi__"):
     else:
         __wasi__ = False
 
-    # setup exception display with same syntax as upy
-    import traceback
-
-    def print_exception(e, out=sys.stderr, **kw):
-        kw["file"] = out
-        traceback.print_exc(**kw)
-
-    sys.print_exception = print_exception
-    del print_exception
-
 define("__wasi__", __wasi__)
+
 
 
 # this *is* the cpython way
@@ -121,13 +133,7 @@ if driver:
     sys.modules["platform"] = platform_impl
 
 
-# ================== leverage known python implementations ====================
 
-# always come down to upy choices because cpython syntax can more easily be adapted
-
-
-if not defined("__UPY__"):
-    define("__UPY__", hasattr(sys.implementation, "mpy"))
 
 
 if not __UPY__:
