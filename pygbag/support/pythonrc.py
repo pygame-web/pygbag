@@ -653,6 +653,10 @@ ________________________
 
     @classmethod
     def interactive(cls, prompt=False):
+        if prompt:
+            TopLevel_async_handler.mute_state = False
+            TopLevel_async_handler.muted = False
+
         if cls.is_interactive:
             return
         # if you don't reach that step

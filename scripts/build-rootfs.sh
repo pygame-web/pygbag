@@ -124,6 +124,10 @@ import secrets
 import plistlib
 from pkg_resources import resource_filename
 
+# netpbm
+from mimetypes import guess_type
+from pprint import pprint
+
 # pgex
 import typing
 try:

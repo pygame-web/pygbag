@@ -26,13 +26,13 @@ this = __import__(__name__)
 
 # those  __dunder__ are usually the same used in C conventions.
 
-try:
-    __UPY__
-except:
-    if hasattr(sys.implementation, "_mpy"):
-        builtins.__UPY__ = this
-    else:
-        builtins.__UPY__ = None
+#try:
+#    __UPY__
+#except:
+#    if hasattr(sys.implementation, "_mpy"):
+#        builtins.__UPY__ = this
+#    else:
+#        builtins.__UPY__ = None
 
 
 # force use a fixed, tested version of uasyncio to avoid non-determinism

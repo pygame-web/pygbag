@@ -15,7 +15,7 @@ platform_impl = False
 
 
 if not defined("__UPY__"):
-    define("__UPY__", hasattr(sys, "print_exception") )
+    define("__UPY__", hasattr(sys.implementation, "_mpy"))
 
     if not __UPY__:
         # setup exception display with same syntax as upy
