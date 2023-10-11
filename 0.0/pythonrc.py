@@ -1658,6 +1658,8 @@ def patch():
         panda3d.core.loadPrcFileData("", "support-threads #f")
         panda3d.core.loadPrcFileData("", "textures-power-2 down")
         panda3d.core.loadPrcFileData("", "textures-square down")
+        # samples expect that
+        panda3d.core.loadPrcFileData("", "default-model-extension .egg")
 
         def run(*argv, **env):
             print("ShowBase.run patched to launch asyncio.run(main())")
