@@ -2279,12 +2279,17 @@ console.warn("TODO: merge/replace location options over script options")
         vm.script.interpreter = "cpython"
         config.PYBUILD = pystr.substr(7) || "3.11"
     } else {
-        if (pystr.search('wapy')>=0) {
-            vm.script.interpreter = "wapy"
-            config.PYBUILD = pystr.substr(4) || "3.4"
+        if (pystr.search('python3')>=0) {
+            vm.script.interpreter = "python"
+            config.PYBUILD = pystr.substr(6) || "3.4"
         } else {
-            vm.script.interpreter = config.python || "cpython"
-            config.PYBUILD = pystr.substr(7) || "3.11"
+            if (pystr.search('wapy')>=0) {
+                vm.script.interpreter = "wapy"
+                config.PYBUILD = pystr.substr(4) || "3.4"
+            } else {
+                vm.script.interpreter = config.python || "cpython"
+                config.PYBUILD = pystr.substr(7) || "3.11"
+            }
         }
     }
 

@@ -35,10 +35,11 @@ VERB = True
 
 CACHE = None
 
-try:
-    from future_fstrings import fstring_decode
-except:
-    fstring_decode = False
+# does not support {x=}
+#try:
+#    from future_fstrings import fstring_decode
+#except:
+fstring_decode = False
 
 
 try:
