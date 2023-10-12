@@ -17,7 +17,6 @@ except:
     embed = False
 
 if not __UPY__:
-
     import code
 
     def install(pkg_file, sconf=None):
@@ -49,7 +48,6 @@ if not __UPY__:
         except Exception as ex:
             pdb(f"49: cannot install {pkg_file}")
             sys.print_exception(ex)
-
 
     async def get_repo_pkg(pkg_file, pkg, resume, ex):
         global HISTORY
@@ -106,7 +104,6 @@ if not __UPY__:
             except Exception as resume_ex:
                 sys.print_exception(ex, limit=-1)
         return None
-
 
     class AsyncInteractiveConsole(code.InteractiveConsole):
         instance = None
@@ -317,5 +314,6 @@ if not __UPY__:
                 cls.start_console(shell, ns=ns)
 
 else:
+
     class AsyncInteractiveConsole:
         ...

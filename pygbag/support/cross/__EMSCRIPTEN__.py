@@ -26,9 +26,9 @@ this = __import__(__name__)
 
 # those  __dunder__ are usually the same used in C conventions.
 
-#try:
+# try:
 #    __UPY__
-#except:
+# except:
 #    if hasattr(sys.implementation, "_mpy"):
 #        builtins.__UPY__ = this
 #    else:

@@ -36,9 +36,9 @@ VERB = True
 CACHE = None
 
 # does not support {x=}
-#try:
+# try:
 #    from future_fstrings import fstring_decode
-#except:
+# except:
 fstring_decode = False
 
 
@@ -85,9 +85,11 @@ class CodeHandler(SimpleHTTPRequestHandler):
     def send_head(self):
         global VERB, CDN, PROXY, BCDN, BPROXY, AUTO_REBUILD
         path = self.translate_path(self.path)
-        print(f"""
+        print(
+            f"""
 
-{self.path=} {path=}""")
+{self.path=} {path=}"""
+        )
 
         f = None
         if os.path.isdir(path):

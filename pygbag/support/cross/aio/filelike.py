@@ -3,13 +3,13 @@ import io
 
 if not __UPY__:
     import socket
+
     socket.setdefaulttimeout(0.0)
 else:
     print("7: usocket implementation required")
 
 
 import os  # unlink
-
 
 
 import aio
@@ -58,7 +58,6 @@ def mktemp(suffix=""):
 
 class fopen:
     if __WASM__ and hasattr(platform, "ffi"):
-
         flags = platform.ffi(
             {
                 "redirect": "follow",

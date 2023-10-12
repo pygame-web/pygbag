@@ -29,7 +29,6 @@ if not defined("__UPY__"):
         del print_exception
 
 
-
 if not defined("__WASM__"):
     try:
         # that sym cannot be overloaded in the simulator
@@ -51,7 +50,6 @@ if not defined("__wasi__"):
         __wasi__ = False
 
 define("__wasi__", __wasi__)
-
 
 
 # this *is* the cpython way
@@ -131,9 +129,6 @@ if driver:
 
     platform_impl.init_platform(driver)
     sys.modules["platform"] = platform_impl
-
-
-
 
 
 if not __UPY__:

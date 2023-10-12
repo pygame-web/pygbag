@@ -3,7 +3,6 @@ import builtins
 import inspect
 
 
-
 DEBUG = True
 NICE = 0.010
 
@@ -40,6 +39,7 @@ if not __UPY__:
     from .filelike import *
 else:
     import utime
+
     time_time = utime.ticks_ms
 
 
@@ -152,8 +152,11 @@ from asyncio import *
 __run__ = run
 
 if __UPY__:
-    def _set_running_loop(l):pass
-    sys.modules['asyncio.events'] = aio
+
+    def _set_running_loop(l):
+        pass
+
+    sys.modules["asyncio.events"] = aio
     aio.get_running_loop = aio.get_event_loop
     events = aio
 else:
@@ -170,8 +173,8 @@ except RuntimeError:
     loop = get_event_loop()
 
 
-#import asyncio.events
-#asyncio.events._set_running_loop(loop)
+# import asyncio.events
+# asyncio.events._set_running_loop(loop)
 _set_running_loop(loop)
 
 
