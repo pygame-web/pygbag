@@ -2264,12 +2264,13 @@ console.warn("TODO: merge/replace location options over script options")
     }
 
     // resolve python executable, cmdline first then script
-    var pystr = "cpython"
+    const default_version = "3.11"
+    var pystr = "cpython" + default_version
 
-    if (vm.cpy_argv.length && vm.cpy_argv[0].search('py')>=0) {
+    if (vm.cpy_argv.length && (vm.cpy_argv[0].search('py')>=0)) {
         pystr = vm.cpy_argv[0]
     } else {
-        if (cfg.python.search('py')>=0) {
+        if (cfg.python && (cfg.python.search('py')>=0)) {
             pystr = cfg.python
         }
         // fallback to cpython
@@ -2277,7 +2278,7 @@ console.warn("TODO: merge/replace location options over script options")
 
     if (pystr.search('cpython3')>=0) {
         vm.script.interpreter = "cpython"
-        config.PYBUILD = pystr.substr(7) || "3.11"
+        config.PYBUILD = pystr.substr(7) || default_version
     } else {
         if (pystr.search('python3')>=0) {
             vm.script.interpreter = "python"
@@ -2288,7 +2289,7 @@ console.warn("TODO: merge/replace location options over script options")
                 config.PYBUILD = pystr.substr(4) || "3.4"
             } else {
                 vm.script.interpreter = config.python || "cpython"
-                config.PYBUILD = pystr.substr(7) || "3.11"
+                config.PYBUILD = pystr.substr(7) || default_version
             }
         }
     }

@@ -196,7 +196,7 @@ try:
 
     aio.cross.simulator = False
     sys.argv.clear()
-    sys.argv.extend( PyConfig.pop("argv", []) )
+    sys.argv.extend(PyConfig.pop("argv", []))
 
 
 except Exception as e:
@@ -206,7 +206,7 @@ except Exception as e:
     PyConfig["dev_mode"] = 1
     PyConfig["run_filename"] = "main.py"
 
-# TODO: use location of python js module.
+    # TODO: use location of python js module.
     if __UPY__:
         PyConfig["executable"] = "upy"
     else:
@@ -843,12 +843,12 @@ builtins.shell = shell
 # end shell
 
 
-
 if __UPY__:
     import types
+
     class SimpleNamespace:
         def __init__(self, **kwargs):
-            for k,v in kwargs.items():
+            for k, v in kwargs.items():
                 setattr(self, k, v)
 
         def __repr__(self):
@@ -858,6 +858,7 @@ if __UPY__:
 
         def __eq__(self, other):
             return self.__dict__ == other.__dict__
+
     types.SimpleNamespace = SimpleNamespace
 else:
     from types import SimpleNamespace
@@ -1015,9 +1016,9 @@ if not aio.cross.simulator:
         pdb("1010: missing os.umask")
         pdb("1011: missing zipfile")
 
-
     import aio.toplevel
-    #import ast
+
+    # import ast
     from pathlib import Path
 
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
@@ -1085,6 +1086,7 @@ if not aio.cross.simulator:
         @classmethod
         def scan_imports(cls, code, filename, load_try=False, hint=""):
             import ast
+
             required = []
             try:
                 root = ast.parse(code, filename)
