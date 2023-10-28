@@ -1,12 +1,13 @@
 import sys
-
+import os
 import aio
 
 # to allow "import pygbag.aio as asyncio"
 sys.modules["pygbag.aio"] = aio
 
 # if not wasm cpu then run caller in simulator and block.
-if not __import__("os").uname().machine.startswith("wasm"):
+
+if hasattr(os, "uname") and not os.uname().machine.startswith("wasm"):
     import time
     from pathlib import Path
 
@@ -27,10 +28,10 @@ if not __import__("os").uname().machine.startswith("wasm"):
 
     aio.loop.create_task(
         pygbag.__main__.import_site(
-            sourcefile=sys.argv[-1],
+            sourcefile=sys.argv[0],
             simulator=True,
             async_input=custom_async_input,
-            async_pkg=aio.pep0723.check_list(filename=sys.argv[-1]),
+            async_pkg=aio.pep0723.check_list(filename=sys.argv[0]),
         )
     )
 

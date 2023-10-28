@@ -19,6 +19,14 @@ from packaging.requirements import Requirement
 
 from aio.filelike import fopen
 
+import platform
+
+print(platform)
+
+import platform_wasm.todo
+
+PATCHLIST = []
+
 
 class Config:
     READ_722 = False
@@ -181,7 +189,8 @@ async def install_pkg(sysconf, wheel_url, wheel_pkg):
 
 
 async def pip_install(pkg, sconf={}):
-    print("searching", pkg)
+    print("185: searching TODO: install from repo in found key", pkg)
+
     if not sconf:
         sconf = __import__("sysconfig").get_paths()
 
@@ -196,21 +205,28 @@ async def pip_install(pkg, sconf={}):
             else:
                 print("270: ERROR: cannot find package :", pkg)
     except FileNotFoundError:
-        print("190: ERROR: cannot find package :", pkg)
+        print("200: ERROR: cannot find package :", pkg)
         return
 
     except:
-        print("194: ERROR: cannot find package :", pkg)
+        print("204: ERROR: cannot find package :", pkg)
         return
 
-    try:
-        wheel_pkg, wheel_hash = wheel_url.rsplit("/", 1)[-1].split("#", 1)
-        await install_pkg(sconf, wheel_url, wheel_pkg)
-    except:
-        print("INVALID", pkg, "from", wheel_url)
+    if wheel_url:
+        try:
+            wheel_pkg, wheel_hash = wheel_url.rsplit("/", 1)[-1].split("#", 1)
+            await install_pkg(sconf, wheel_url, wheel_pkg)
+        except:
+            print("212: INVALID", pkg, "from", wheel_url)
 
 
 async def parse_code(code, env):
+    global PATCHLIST
+
+    # pythonrc is calling aio.pep0723.parse_code not check_list
+    # so do patching here
+    platform_wasm.todo.patch()
+
     maybe_missing = []
 
     if Config.READ_722:
@@ -235,7 +251,12 @@ async def parse_code(code, env):
 
     still_missing = []
 
+    import platform
+
     for dep in maybe_missing:
+        if dep in platform.patches:
+            PATCHLIST.append(dep)
+
         if not importlib.util.find_spec(dep) and dep not in still_missing:
             still_missing.append(dep.lower())
         else:
@@ -244,7 +265,10 @@ async def parse_code(code, env):
     return still_missing
 
 
+# parse_code does the patching
+# this is not called by pythonrc
 async def check_list(code=None, filename=None):
+    global PATCHLIST
     print()
     print("-" * 11, "computing required packages", "-" * 10)
 
@@ -267,42 +291,48 @@ async def check_list(code=None, filename=None):
 
     still_missing = await parse_code(code, env)
 
-    # nothing to do
-    if not len(still_missing):
-        return
+    # is there something to do ?
+    if len(still_missing):
+        importlib.invalidate_caches()
 
-    importlib.invalidate_caches()
+        # only do that once and for all.
+        if not len(Config.repos):
+            await async_imports_init()
+            await async_repos()
 
-    # only do that once and for all.
-    if not len(Config.repos):
-        await async_imports_init()
-        await async_repos()
+        # TODO: check for possible upgrade of env/* pkg
 
-    # TODO: check for possible upgrade of env/* pkg
+        maybe_missing = still_missing
+        still_missing = []
 
-    maybe_missing = still_missing
-    still_missing = []
+        for pkg in maybe_missing:
+            hit = ""
+            for repo in Config.pkg_repolist:
+                wheel_pkg = repo.get(pkg, "")
+                if wheel_pkg:
+                    wheel_url = repo["-CDN-"] + "/" + wheel_pkg
+                    wheel_pkg = wheel_url.rsplit("/", 1)[-1]
+                    await install_pkg(sconf, wheel_url, wheel_pkg)
+                    hit = pkg
 
-    for pkg in maybe_missing:
-        hit = ""
-        for repo in Config.pkg_repolist:
-            wheel_pkg = repo.get(pkg, "")
-            if wheel_pkg:
-                wheel_url = repo["-CDN-"] + "/" + wheel_pkg
-                wheel_pkg = wheel_url.rsplit("/", 1)[-1]
-                await install_pkg(sconf, wheel_url, wheel_pkg)
-                hit = pkg
+            if len(hit):
+                print("found on pygbag repo and installed to env :", hit)
+            else:
+                still_missing.append(pkg)
 
-        if len(hit):
-            print("found on pygbag repo and installed to env :", hit)
-        else:
-            still_missing.append(pkg)
+        for pkg in still_missing:
+            if (env / pkg).is_dir():
+                print("found in env :", pkg)
+                continue
+            await pip_install(pkg)
 
-    for pkg in still_missing:
-        if (env / pkg).is_dir():
-            print("found in env :", pkg)
-            continue
-        await pip_install(pkg)
+    import platform
+
+    # apply any patches
+    while len(PATCHLIST):
+        dep = PATCHLIST.pop(0)
+        print(f"314: patching {dep}")
+        platform.patches.pop(dep)()
 
     print("-" * 40)
     print()

@@ -6,17 +6,17 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.47.2bi
+        SDK_VERSION: 3.1.48.0bi
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: emsdk hpy _ctypes pygame
         BUILD_STATIC: emsdk _ctypes hpy
         STATIC: false
         BUILDS: 3.11 3.12
-        CYTHON: Cython-3.0.1-py2.py3-none-any.whl
+        CYTHON: Cython-3.0.4-py2.py3-none-any.whl
         LD_VENDOR: -sUSE_GLFW=3
 
     steps:
-    - uses: actions/checkout@v3.3.0
+    - uses: actions/checkout@v4.1.0
     - name: pygame-wasm-builder prepare
       run: |
             pwd

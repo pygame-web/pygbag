@@ -35,6 +35,8 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     module directory : {mod_dir}
     platform support : {support}
     {sys.argv=}
+    {sourcefile=}
+
 """
     )
 
@@ -87,14 +89,18 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
             pass
 
         def __repr__(self):
-            return "\nNoOp:%s:" % self.__descr
+            return "\nNoOp: %s" % self.__descr
 
         __str__ = __repr__
 
     # fake host document.window
     import platform as fakehost
 
+    def truc(*argv, **kw):
+        print("truc", argv, kw)
+
     fakehost.window = NoOp("platform.window")
+    fakehost.window.get_terminal_console = truc
 
     import aio.filelike
 
@@ -167,8 +173,11 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     sys.modules["__EMSCRIPTEN__"] = __EMSCRIPTEN__
     sys.modules["embed"] = __EMSCRIPTEN__
 
+    print(" =============== pythonrc =================")
     with open(support / "pythonrc.py", "r") as file:
         exec(file.read(), globals(), globals())
+
+    print(" =============== /pythonrc =================")
 
     import zipfile
     import aio.toplevel
@@ -218,6 +227,14 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
                 if len(maybe):
                     return maybe
             return None
+
+        async def async_get_pkg(cls, want, ex, resume):
+            print(
+                """
+224:TODO: PEP723
+    async def async_get_pkg(cls, want, ex, resume)
+"""
+            )
 
     # start async top level machinery and add a console.
     await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
