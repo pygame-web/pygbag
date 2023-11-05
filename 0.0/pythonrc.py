@@ -192,15 +192,12 @@ except:
 
 try:
     PyConfig
-    PyConfig["pkg_repolist"] = []
+except NameError:
+    PyConfig = None
 
-    aio.cross.simulator = False
-    sys.argv.clear()
-    sys.argv.extend(PyConfig.pop("argv", []))
-
-
-except Exception as e:
-    sys.print_exception(e)
+# in simulator there's no PyConfig
+# would need to get one from live cpython
+if PyConfig is None:
     # TODO: build a pyconfig extracted from C here
     PyConfig = {}
     PyConfig["dev_mode"] = 1
@@ -215,6 +212,13 @@ except Exception as e:
     PyConfig["interactive"] = 1
     print(" - running in wasm simulator - ")
     aio.cross.simulator = True
+else:
+    PyConfig["pkg_repolist"] = []
+
+    aio.cross.simulator = False
+    sys.argv.clear()
+    sys.argv.extend(PyConfig.pop("argv", []))
+
 
 PyConfig["imports_ready"] = False
 PyConfig["pygbag"] = 0
@@ -625,11 +629,12 @@ ________________________
     @classmethod
     async def preload_code(cls, code, callback=None, hint=""):
         # get a relevant list of modules likely to be imported
-        DBG(f"617: preload_code({len(code)=} {hint=}")
-        maybe_wanted = list(TopLevel_async_handler.list_imports(code, file=None, hint=hint))
+        PyConfig.dev_mode = 1
+        DBG(f"632: preload_code({len(code)=} {hint=}")
 
         import aio
         import aio.pep0723
+        from aio.pep0723 import Config
 
         if not aio.cross.simulator:
             # don't use an env path, but site-packages instead
@@ -637,17 +642,37 @@ ________________________
             sconf = __import__("sysconfig").get_paths()
             env = Path(sconf["purelib"])
 
-            DBG(f"628: aio.pep0723.check_list {env=}")
+            if not len(Config.repos):
+                if not len(Config.PKG_INDEXES):
+                    Config.PKG_INDEXES = PyConfig.pkg_indexes
+                for cdn in Config.PKG_INDEXES:
+                    async with platform.fopen(Path(cdn) / Config.REPO_DATA) as source:
+                        Config.repos.append(json.loads(source.read()))
+
+                DBG("650: FIXME (this is pyodide maintened stuff, use (auto)PEP723 asap)")
+                print("651: referenced packages :", len(Config.repos[0]["packages"]))
+
+            DBG(f"644: aio.pep0723.check_list {env=}")
             deps = await aio.pep0723.parse_code(code, env)
-            DBG(f"629: aio.pep0723.pip_install {deps=}")
+            DBG(f"646: aio.pep0723.pip_install {deps=}")
+
+            # auto import plumbing to avoid rely too much on import error
+            maybe_wanted = list(TopLevel_async_handler.list_imports(code, file=None, hint=hint))
+            DBG(f"635: {maybe_wanted=}")
+            for dep in maybe_wanted:
+                if not dep in deps:
+                    deps.append(dep)
+
             for dep in deps:
                 await aio.pep0723.pip_install(dep)
+
+            await TopLevel_async_handler.async_imports(callback, *maybe_wanted)
+
         # else:
         #   sim use a local folder venv model
         #   await aio.pep0723.check_list(code=code, filename=None) is done in pygbag.aio
 
-        await TopLevel_async_handler.async_imports(callback, *maybe_wanted)
-        #        await TopLevel_async_handler.async_imports(callback, *TopLevel_async_handler.list_imports(code, file=None))
+
         PyConfig.imports_ready = True
         return True
 
@@ -1030,9 +1055,7 @@ if not aio.cross.simulator:
         HTML_MARK = '"' * 3 + " # BEGIN -->"
 
         repos = []
-        mapping = {
-            "pygame": "pygame.base",
-        }
+
         may_need = []
         ignore = ["ctypes", "distutils", "installer", "sysconfig"]
         ignore += ["python-dateutil", "matplotlib-pyodide"]
@@ -1046,7 +1069,7 @@ if not aio.cross.simulator:
             "matplotlib": ["numpy", "six", "cycler", "PIL", "pygame-ce"],
             "bokeh": ["numpy", "yaml", "typing_extensions", "jinja2", "markupsafe"],
             "igraph": ["texttable"],
-            "pygame_gui": ["i18n"],
+            "pygame_gui": ["pygame.base", "i18n"],
             "ursina": ["numpy", "screeninfo", "gltf", "PIL", "pyperclip", "panda3d"],
         }
 
@@ -1054,7 +1077,7 @@ if not aio.cross.simulator:
 
         from pathlib import Path
 
-        repodata = "repodata.json"
+        #repodata = "repodata.json"
 
         async def raw_input(self, prompt=">>> "):
             if len(self.buffer):
@@ -1085,6 +1108,7 @@ if not aio.cross.simulator:
 
         @classmethod
         def scan_imports(cls, code, filename, load_try=False, hint=""):
+            import aio.pep0723
             import ast
 
             required = []
@@ -1092,7 +1116,7 @@ if not aio.cross.simulator:
                 root = ast.parse(code, filename)
             except SyntaxError as e:
                 print("_" * 40)
-                print("1004:", filename)
+                print("1111:", filename, hint)
                 print("_" * 40)
                 for count, line in enumerate(code.split("\n")):
                     print(str(count).zfill(3), line)
@@ -1113,7 +1137,7 @@ if not aio.cross.simulator:
                     else:
                         mod = n.name.split(".")[0]
 
-                    mod = cls.mapping.get(mod, mod)
+                    mod = aio.pep0723.Config.mapping.get(mod, mod)
 
                     if mod in cls.ignore:
                         continue
@@ -1134,12 +1158,19 @@ if not aio.cross.simulator:
                     if not mod in required:
                         required.append(mod)
 
-            DBG(f"1095: scan_imports {hint=} {filename=} {len(code)=} {required}")
+            DBG(f"1153: scan_imports {hint=} {filename=} {len(code)=} {required}")
             return required
 
         @classmethod
         def list_imports(cls, code=None, file=None, hint=""):
-            DBG(f"1103: list_imports {len(code)=} {file=} {hint=}")
+            import aio.pep0723
+            DBG(f"""
+
+1168: list_imports {len(code)=} {file=} {hint=}")
+{aio.pep0723.Config.pkg_repolist[0]['-CDN-']=}
+
+""")
+
             if code is None:
                 if file:
                     with open(file) as fcode:
@@ -1152,7 +1183,7 @@ if not aio.cross.simulator:
             for want in cls.scan_imports(code, file, hint=hint):
                 # DBG(f"1114: requesting module {want=} for {file=} ")
                 repo = None
-                for repo in PyConfig.pkg_repolist:
+                for repo in aio.pep0723.Config.pkg_repolist:
                     if want in cls.may_need:
                         DBG(f"1118: skip module {want=} reason: already requested")
                         break
@@ -1168,9 +1199,9 @@ if not aio.cross.simulator:
                         break
                 else:
                     if repo:
-                        DBG(f"1132: {repo['-CDN-']=} does not provide {want=}")
+                        DBG(f"1187: {repo['-CDN-']=} does not provide {want=}")
                     else:
-                        pdb("1134: no pkg repository available")
+                        print("1189: no pkg repository available")
 
         # TODO: re order repo on failures
         # TODO: try to download from pypi with
@@ -1190,8 +1221,8 @@ if not aio.cross.simulator:
 
             if mod in cls.missing_fence:
                 return []
-
-            for dep in cls.repos[0]["packages"].get(mod, {}).get("depends", []):
+            from aio.pep0723 import Config
+            for dep in Config.repos[0]["packages"].get(mod, {}).get("depends", []):
                 if dep in cls.ignore:
                     continue
 
@@ -1262,6 +1293,7 @@ if not aio.cross.simulator:
 
         @classmethod
         async def async_get_pkg(cls, want, ex, resume):
+            import aio.pep0723
             pkg_file = ""
 
             miss_list = cls.imports(want)
@@ -1273,7 +1305,7 @@ if not aio.cross.simulator:
                 DBG(f"1230: FIXME dependency table for manually built module '{want}' {miss_list=}")
                 await cls.async_imports(None, *miss_list)
 
-            for repo in PyConfig.pkg_repolist:
+            for repo in aio.pep0723.Config.pkg_repolist:
                 DBG(f"1234: {want=} found : {want in repo}")
 
                 if want in repo:
@@ -1306,27 +1338,6 @@ if not aio.cross.simulator:
             return cls.async_get_pkg(want, ex, resume)
 
         @classmethod
-        async def async_imports_init(cls):
-            for cdn in PyConfig.pkg_indexes:
-                async with platform.fopen(Path(cdn) / cls.repodata) as source:
-                    cls.repos.append(json.loads(source.read()))
-
-            DBG("referenced packages :", len(cls.repos[0]["packages"]))
-
-            if not len(PyConfig.pkg_repolist):
-                await cls.async_repos()
-
-            if window.location.href.startswith("https://pmp-p.ddns.net/pygbag/"):
-                print(" ===============  REDIRECTION TO DEV HOST  ================ ")
-                for idx, repo in enumerate(PyConfig.pkg_repolist):
-                    repo["-CDN-"] = "https://pmp-p.ddns.net/archives/repo/"
-            elif PyConfig.pygbag > 0:
-                #            if PyConfig.pygbag > 0:
-                for idx, repo in enumerate(PyConfig.pkg_repolist):
-                    DBG("1264:", repo["-CDN-"], "REMAPPED TO", PyConfig.pkg_indexes[-1])
-                    repo["-CDN-"] = PyConfig.pkg_indexes[-1]
-
-        @classmethod
         async def async_imports(cls, callback, *wanted, **kw):
             def default_cb(pkg, error=None):
                 DBG(f"\tinstalling {pkg}")
@@ -1334,11 +1345,6 @@ if not aio.cross.simulator:
                     pdb(msg)
 
             callback = callback or default_cb
-
-            # init dep solver.
-            if not len(cls.repos):
-                await cls.async_imports_init()
-                del cls.async_imports_init
 
             print("1302: ============= ", wanted)
 
@@ -1409,39 +1415,39 @@ if not aio.cross.simulator:
             # Print New Line on Complete
             print()
 
-        @classmethod
-        async def async_repos(cls):
-            abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
-            apitag = __import__("sysconfig").get_config_var("HOST_GNU_TYPE")
-            apitag = apitag.replace("-", "_")
-
-            for repo in PyConfig.pkg_indexes:
-                if apitag.find("mvp") > 0:
-                    idx = f"{repo}index.json"
-                else:
-                    idx = f"{repo}index-bi.json"
-
-                async with platform.fopen(idx, "r") as index:
-                    try:
-                        data = index.read()
-                        if isinstance(data, bytes):
-                            data = data.decode()
-                        data = data.replace("<abi>", abitag)
-                        data = data.replace("<api>", apitag)
-                        repo = json.loads(data)
-                    except:
-                        pdb(f"1394: {repo=}: malformed json index {data}")
-                        continue
-                    if repo not in PyConfig.pkg_repolist:
-                        PyConfig.pkg_repolist.append(repo)
-
-            if PyConfig.dev_mode > 0:
-                for idx, repo in enumerate(PyConfig.pkg_repolist):
-                    try:
-                        print("1353:", repo["-CDN-"], idx, "REMAPPED TO", PyConfig.pkg_indexes[idx])
-                        repo["-CDN-"] = PyConfig.pkg_indexes[idx]
-                    except Exception as e:
-                        sys.print_exception(e)
+#        @classmethod
+#        async def async_repos(cls):
+#            abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+#            apitag = __import__("sysconfig").get_config_var("HOST_GNU_TYPE")
+#            apitag = apitag.replace("-", "_")
+#
+#            for repo in PyConfig.pkg_indexes:
+#                if apitag.find("mvp") > 0:
+#                    idx = f"{repo}index.json"
+#                else:
+#                    idx = f"{repo}index-bi.json"
+#
+#                async with platform.fopen(idx, "r") as index:
+#                    try:
+#                        data = index.read()
+#                        if isinstance(data, bytes):
+#                            data = data.decode()
+#                        data = data.replace("<abi>", abitag)
+#                        data = data.replace("<api>", apitag)
+#                        repo = json.loads(data)
+#                    except:
+#                        pdb(f"1394: {repo=}: malformed json index {data}")
+#                        continue
+#                    if repo not in PyConfig.pkg_repolist:
+#                        PyConfig.pkg_repolist.append(repo)
+#
+#            if PyConfig.dev_mode > 0:
+#                for idx, repo in enumerate(PyConfig.pkg_repolist):
+#                    try:
+#                        print("1353:", repo["-CDN-"], idx, "REMAPPED TO", PyConfig.pkg_indexes[idx])
+#                        repo["-CDN-"] = PyConfig.pkg_indexes[idx]
+#                    except Exception as e:
+#                        sys.print_exception(e)
 
     # end TopLevel_async_handler
 
