@@ -341,6 +341,9 @@ embed_isatty(PyObject *self, PyObject *argv) {
     return Py_BuildValue("i", isatty(fd) );
 }
 
+
+#if TEST_ASYNCSLEEP
+
 #include "pycore_ceval.h"
 #include "pycore_function.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
@@ -492,7 +495,7 @@ puts("481");
     puts("done");
     Py_RETURN_NONE;
 }
-
+#endif // TEST_ASYNCSLEEP
 
 #if SDL2
 static PyObject *
@@ -507,8 +510,9 @@ embed_get_sdl_version(PyObject *self, PyObject *_null)
 
 static PyMethodDef mod_embed_methods[] = {
     {"run", (PyCFunction)embed_run, METH_VARARGS | METH_KEYWORDS, "start aio stepping"},
-
+#if TEST_ASYNCSLEEP
     {"bcrun", (PyCFunction)embed_bcrun, METH_VARARGS, ""},
+#endif
     {"preload", (PyCFunction)embed_preload,  METH_VARARGS, "emscripten_run_preload_plugins"},
     {"dlopen", (PyCFunction)embed_dlopen, METH_VARARGS | METH_KEYWORDS, ""},
     {"dlcall", (PyCFunction)embed_dlcall, METH_VARARGS | METH_KEYWORDS, ""},
