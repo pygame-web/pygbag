@@ -2,13 +2,36 @@ from pathlib import Path
 
 dbg = True
 
+# q:what to do with the extreme case $HOME/main.py ?
+# or folders > 512MiB total
+# a: maybe break on too many files around the yield
+
+
+IGNORE = """
+/.ssh
+/.local
+/.config
+/.git
+/.github
+/.vscode
+/.idea
+/dist
+/build
+/venv
+/ignore
+/ATTIC
+""".strip().split('\n')
+
+SKIP_EXT= ["pyc", "pyx", "pyd", "pyi", "exe", "log", "DS_Store"]
 
 def filter(walked):
-    global dbg
+    global dbg, IGNORE, SKIP_EXT
     for folder, filenames in walked:
         blocking = False
 
-        for block in ["/.git", "/.github", "/build", "/venv", "/ignore", "/.idea"]:
+        for block in IGNORE:
+            if not block:
+                continue
             if folder.match(block):
                 if dbg:
                     print("REJ 1", folder)
@@ -33,7 +56,7 @@ def filter(walked):
                 continue
 
             ext = filename.rsplit(".", 1)[-1].lower()
-            if ext in ["pyc", "pyx", "pyd", "pyi", "exe", "log", "DS_Store"]:
+            if ext in SKIP_EXT:
                 if dbg:
                     print("REJ 4", folder, filename)
                 continue

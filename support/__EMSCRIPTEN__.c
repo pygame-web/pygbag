@@ -332,8 +332,6 @@ embed_prompt(PyObject *self, PyObject *_null) {
     Py_RETURN_NONE;
 }
 
-
-
 static PyObject *
 embed_isatty(PyObject *self, PyObject *argv) {
     int fd = 0;
@@ -342,6 +340,159 @@ embed_isatty(PyObject *self, PyObject *argv) {
     }
     return Py_BuildValue("i", isatty(fd) );
 }
+
+#include "pycore_ceval.h"
+#include "pycore_function.h"
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_frame.h"
+
+static void
+_PyEvalFrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
+{
+    // Make sure that this is, indeed, the top frame. We can't check this in
+    // _PyThreadState_PopFrame, since f_code is already cleared at that point:
+    assert((PyObject **)frame + frame->f_code->co_nlocalsplus +
+        frame->f_code->co_stacksize + FRAME_SPECIALS_SIZE == tstate->datastack_top);
+    tstate->recursion_remaining--;
+    assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
+    assert(frame->owner == FRAME_OWNED_BY_THREAD);
+    _PyFrame_Clear(frame);
+    tstate->recursion_remaining++;
+    _PyThreadState_PopFrame(tstate, frame);
+}
+
+extern PyObject *WASM_PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag);
+
+static PyObject *
+embed_bcrun(PyObject *self, PyObject *argv) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *globals = NULL;
+    PyObject *locals = NULL;
+
+#if 0
+    const char *bc = NULL;
+    if (!PyArg_ParseTuple(argv, "y", &bc)) {
+#else
+    PyObject *co = NULL;
+    if (!PyArg_ParseTuple(argv, "OO", &co, &globals)) {
+
+#endif
+        return NULL;
+    }
+
+    PyObject *builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    if (builtins == NULL) {
+        return NULL;
+    }
+
+
+    locals = globals;
+
+    puts("got bc");
+    /*
+    PyObject* local_dict = PyDict_New();
+    PyObject* obj = PyEval_EvalCode(co, globals , globals);
+*/
+    PyFrameConstructor desc = {
+        .fc_globals = globals,
+        .fc_builtins = builtins,
+        .fc_name = ((PyCodeObject *)co)->co_name,
+        .fc_qualname = ((PyCodeObject *)co)->co_name,
+        .fc_code = co,
+        .fc_defaults = NULL,
+        .fc_kwdefaults = NULL,
+        .fc_closure = NULL
+    };
+    PyFunctionObject *func = _PyFunction_FromConstructor(&desc);
+    if (func == NULL) {
+        return NULL;
+    }
+    PyObject* const* args = NULL;
+    size_t argcount = 0;
+    PyObject *kwnames = NULL;
+
+    //PyObject *res = _PyEval_Vector(tstate, func, locals, NULL, 0, NULL);
+    /* _PyEvalFramePushAndInit consumes the references
+     * to func and all its arguments */
+    Py_INCREF(func);
+    for (size_t i = 0; i < argcount; i++) {
+        Py_INCREF(args[i]);
+    }
+    if (kwnames) {
+        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
+        for (Py_ssize_t i = 0; i < kwcount; i++) {
+            Py_INCREF(args[i+argcount]);
+        }
+    }
+/*
+    _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
+        tstate, func, locals, args, argcount, kwnames);
+*/
+
+    PyCodeObject * code = (PyCodeObject *)func->func_code;
+    size_t size = code->co_nlocalsplus + code->co_stacksize + FRAME_SPECIALS_SIZE;
+    CALL_STAT_INC(frames_pushed);
+    _PyInterpreterFrame *frame = _PyThreadState_BumpFramePointer(tstate, size);
+    if (frame == NULL) {
+        goto fail;
+    }
+    _PyFrame_InitializeSpecials(frame, func, locals, code->co_nlocalsplus);
+    PyObject **localsarray = &frame->localsplus[0];
+    for (int i = 0; i < code->co_nlocalsplus; i++) {
+        localsarray[i] = NULL;
+    }
+    /*
+    if (initialize_locals(tstate, func, localsarray, args, argcount, kwnames)) {
+        assert(frame->owner != FRAME_OWNED_BY_GENERATOR);
+        _PyEvalFrameClearAndPop(tstate, frame);
+    }
+    */
+    goto skip;
+
+fail:
+    /* Consume the references */
+    for (size_t i = 0; i < argcount; i++) {
+        Py_DECREF(args[i]);
+    }
+    if (kwnames) {
+        Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
+        for (Py_ssize_t i = 0; i < kwcount; i++) {
+            Py_DECREF(args[i+argcount]);
+        }
+    }
+    PyErr_NoMemory();
+
+skip:
+
+// _PyEvalFramePushAndInit
+    if (frame == NULL) {
+        return NULL;
+    }
+
+    int throwflag = 0;
+/*
+    PyObject *retval = _PyEval_EvalFrame(tstate, frame, 0);
+    _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
+*/
+
+    //PyObject *retval = _PyEval_EvalFrameDefault(tstate, frame, throwflag);
+puts("479");
+    PyObject *retval = WASM_PyEval_EvalFrameDefault(tstate, frame, throwflag);
+puts("481");
+
+    assert(
+        _PyFrame_GetStackPointer(frame) == _PyFrame_Stackbase(frame) ||
+        _PyFrame_GetStackPointer(frame) == frame->localsplus
+    );
+
+    _PyEvalFrameClearAndPop(tstate, frame);
+    Py_DECREF(func);
+//_PyEval_Vector
+
+    puts("done");
+    Py_RETURN_NONE;
+}
+
 
 #if SDL2
 static PyObject *
@@ -357,6 +508,7 @@ embed_get_sdl_version(PyObject *self, PyObject *_null)
 static PyMethodDef mod_embed_methods[] = {
     {"run", (PyCFunction)embed_run, METH_VARARGS | METH_KEYWORDS, "start aio stepping"},
 
+    {"bcrun", (PyCFunction)embed_bcrun, METH_VARARGS, ""},
     {"preload", (PyCFunction)embed_preload,  METH_VARARGS, "emscripten_run_preload_plugins"},
     {"dlopen", (PyCFunction)embed_dlopen, METH_VARARGS | METH_KEYWORDS, ""},
     {"dlcall", (PyCFunction)embed_dlcall, METH_VARARGS | METH_KEYWORDS, ""},
@@ -961,8 +1113,19 @@ EM_ASM({
         SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, target);
     }
 #endif
-
+#if ASYNCIFIED
+    clock_t start = clock()+100;
+    while (1) {
+        main_iteration();
+        clock_t current = clock();
+        if (current > start) {
+            start = current+100;
+            emscripten_sleep(1);
+        }
+    }
+#else
     emscripten_set_main_loop( (em_callback_func)main_iteration, 0, 1);
+#endif
     puts("\nEnd");
     return 0;
 }

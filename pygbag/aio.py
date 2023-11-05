@@ -1,9 +1,12 @@
 import sys
 import os
+
+# this aio is the support/cross one, not the current file.
 import aio
 
 # to allow "import pygbag.aio as asyncio"
 sys.modules["pygbag.aio"] = aio
+
 
 # if not wasm cpu then run caller in simulator and block.
 
@@ -15,7 +18,6 @@ if hasattr(os, "uname") and not os.uname().machine.startswith("wasm"):
 
     import aio.pep0723
 
-    aio.pep0723.Config.dev_mode = ".-X.dev." in ".".join(sys.orig_argv)
     if aio.pep0723.Config.dev_mode:
         aio.pep0723.Config.PKG_INDEXES.extend(["http://localhost:8000/archives/repo/"])
     else:
@@ -52,9 +54,10 @@ if hasattr(os, "uname") and not os.uname().machine.startswith("wasm"):
         dt = next - time.time()
         if dt < 0:
             past = int(-dt * 1000)
-            # do not spam for 2 ms late
-            if past > 2:
+            # do not spam for <4 ms late (50Hz vs 60Hz)
+            if past > 4:
                 print(f"aio: violation frame is {past} ms late")
+            # too late do not sleep at all
         else:
             time.sleep(dt)
     print("sim loop exited")

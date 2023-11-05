@@ -106,9 +106,8 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
     fakehost.fopen = aio.filelike.fopen
 
-    # cannot fake a cpu __WASM__ will be False
+    # cannot fake a wasm cpu but fake the platform AND the module
 
-    # but fake the platform AND the module
     sys.platform = "emscripten"
 
     class fake_EventTarget:
@@ -187,10 +186,10 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
         HTML_MARK = '"' * 3 + " # BEGIN -->"
 
-        @classmethod
-        async def async_repos(cls):
-            abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
-            print(f"{abitag=}")
+#        @classmethod
+#        async def async_repos(cls):
+#            abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+#            print(f"{abitag=}")
 
         @classmethod
         async def async_imports(cls, callback, *wanted, **kw):

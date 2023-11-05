@@ -1,6 +1,8 @@
 import os
 import sys
 from pathlib import Path
+import warnings
+
 
 
 """
@@ -25,6 +27,14 @@ https://github.com/scour-project/scour
 
 
 """
+
+BAD = {
+    "wav" : "ogg",
+    "bmp" : "png",
+    "mp3" : "ogg",
+}
+
+
 if sys.platform != "linux":
 
     def optimize(folder, filenames, **kw):
@@ -34,10 +44,18 @@ if sys.platform != "linux":
 else:
 
     def optimize(folder, filenames, **kw):
+        global BAD
         print("optimizing", folder)
         png_quality = 50
 
         done_list = []
+
+        try:
+            import black
+            print("Applying black format")
+            os.popen(f'black -t py311 -l 132 "{folder}"').read()
+        except ImportError:
+            warnings.warn(f"Black not found for processing {folder=}")
 
         if os.popen("pngquant 2>&1").read().count("pngfile"):
             print(f"    -> with pngquant --quality {png_quality}", folder)
@@ -58,8 +76,15 @@ else:
                 if fp.stem.endswith("-pygbag"):
                     continue
 
+# TODO: still issue a warning
                 if fp.suffix == ".mp3":
-                    continue
+                    ...
+
+                if fp.suffix == ".wav":
+                    ...
+
+                if fp.suffix == ".bmp":
+                    ...
 
                 if fp not in done_list:
                     done_list.append(fp)
@@ -67,6 +92,30 @@ else:
             return
 
         for fp in filenames:
+            fname = f"{folder}{fp}"
+            if fp.suffix == ".py":
+                tofix = []
+                for bad in BAD.keys():
+                    with open(fname,"r") as source:
+                        for l in source.readlines():
+                            if l.find(f'.{bad}"')>0:
+                                tofix.append( [bad,BAD[bad]] )
+                                break
+
+                if len(tofix):
+                    fixname = Path(f"{fp.parent}/{fp.stem}-pygbag.py")
+                    fixfull = Path(f"{folder}/{fixname}")
+                    with open(fname,"r", encoding="utf-8") as source:
+                        data = open(fname,"r").read()
+                        with open(fixfull, "w", encoding="utf-8") as dest:
+                            while len(tofix):
+                                bad, good = tofix.pop(0)
+                                warnings.warn(f"potential {bad.upper()} use in {fname}, prefer .{good} !")
+                                data = data.replace(f'.{bad}"',f'.{good}"')
+                            dest.write(data)
+                    yield fixname
+                    continue
+
             if fp.suffix == ".png":
                 if png_quality >= 0:
                     if fp.stem.endswith("-pygbag"):
@@ -80,7 +129,7 @@ else:
                             print("opt-skip(38)", fp)
                             continue
 
-                        osexec = f'pngquant -f --ext -pygbag.png --quality {png_quality} "{folder}{fp}"'
+                        osexec = f'pngquant -f --ext -pygbag.png --quality {png_quality} "{fname}"'
                         os.system(osexec)
                         if opt.is_file():
                             yield translated(opt)
@@ -98,7 +147,7 @@ else:
                         print("opt-skip(73)", fp)
                         continue
 
-                    osexec = f'ffmpeg -i "{folder}{fp}" -ac 1 -r 22000 "{opt}"'
+                    osexec = f'ffmpeg -i "{fname}" -ac 1 -r 22000 "{opt}"'
 
                     if has_ffmpeg:
                         os.system(osexec)

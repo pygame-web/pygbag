@@ -13,6 +13,8 @@ window.BrowserFS.Buffer = BFSRequire('buffer')
 var bfs2 = false
 
 async function import_browserfs() {
+    if (window.BrowserFS)
+        return
     console.warn("late import", config.cdn+"browserfs.min.js" )
     var script = document.createElement("script")
     script.src = vm.config.cdn + "browserfs.min.js"
@@ -1222,7 +1224,7 @@ async function media_prepare(trackid) {
             BrowserFS.ZipFS = BrowserFS.FileSystem.ZipFS
 
             function apk_cb(e, apkfs){
-                console.log(__FILE__, "930 mounting", hint, "onto", track.mount.point)
+                console.log(__FILE__, "1225: mounting", hint, "onto", track.mount.point)
 
                 BrowserFS.InMemory.Create(
                     function(e, memfs) {
@@ -1231,8 +1233,9 @@ async function media_prepare(trackid) {
                                 BrowserFS.MountableFileSystem.Create({
                                     '/' : ovfs
                                     }, async function(e, mfs) {
-                                        await BrowserFS.initialize(mfs);
-                                        await vm.FS.mount(vm.BFS, {root: track.mount.path}, track.mount.point);
+                                        await BrowserFS.initialize(mfs)
+                                        await vm.FS.mount(vm.BFS, {root: track.mount.path}, track.mount.point)
+                                        console.log("1236: mount complete")
                                         setTimeout(()=>{track.ready=true}, 0)
                                     })
                             }
@@ -1264,10 +1267,8 @@ async function media_prepare(trackid) {
             });
 
             vm.FS.mount(vm.BFS, { root: track.mount.path, }, track.mount.point);
-
+            setTimeout(()=>{track.ready=true}, 0)
         } // bfs2
-
-        setTimeout(()=>{track.ready=true}, 0)
 
     } // track type mount
 }
@@ -1287,7 +1288,7 @@ function MM_play(track, loops) {
             console.error(`** MEDIA USER ACTION REQUIRED [${track.test}] **`)
             if (track.test && track.test>0) {
                 track.test += 1
-                setTimeout(MM_play, 1000, track, loops)
+                setTimeout(MM_play, 2000, track, loops)
             }
 
         });

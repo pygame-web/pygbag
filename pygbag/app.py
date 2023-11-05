@@ -81,7 +81,8 @@ def set_args(program):
         app_folder = patharg.resolve()
         mainscript = DEFAULT_SCRIPT
 
-    sys.path.insert(0, str(app_folder))
+    # print("84: prepending to sys.path", str(app_folder) )
+    # sys.path.insert(0, str(app_folder))
 
     if patharg.suffix == "pyw":
         required.append("79: Error, no .pyw allowed use .py for python script")

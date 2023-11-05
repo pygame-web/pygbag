@@ -26,7 +26,7 @@ print(platform)
 import platform_wasm.todo
 
 PATCHLIST = []
-
+HISTORY = []
 
 class Config:
     READ_722 = False
@@ -38,7 +38,13 @@ class Config:
     REPO_DATA = "repodata.json"
     repos = []
     pkg_repolist = []
-    dev_mode = ".-X.dev." in ".".join(sys.orig_argv)
+    dev_mode = ".-X.dev." in ".".join(['']+sys.orig_argv+[''])
+
+    mapping = {
+        "pygame": "pygame.base",
+        "pygame-ce": "pygame.base",
+        "python-i18n" : "i18n",
+    }
 
 
 def read_dependency_block_722(code):
@@ -106,8 +112,6 @@ def read_dependency_block_723x(script):
         return None
 
 
-HISTORY = []
-
 
 def install(pkg_file, sconf=None):
     global HISTORY
@@ -140,24 +144,39 @@ def install(pkg_file, sconf=None):
         sys.print_exception(ex)
 
 
-async def async_imports_init():
-    for cdn in Config.PKG_INDEXES:
-        print("init cdn :", Config.PKG_INDEXES)
-        async with fopen(Path(cdn) / Config.REPO_DATA) as source:
-            Config.repos.append(json.loads(source.read()))
 
-        pdb("referenced packages :", len(Config.repos[-1]["packages"]))
+async def async_imports_init():
+    ...
+
+#    see pythonrc
+#            if not len(Config.repos):
+#                for cdn in (Config.PKG_INDEXES or PyConfig.pkg_indexes):
+#                    async with platform.fopen(Path(cdn) / Config.REPO_DATA) as source:
+#                        Config.repos.append(json.loads(source.read()))
+#
+#                DBG("1203: FIXME (this is pyodide maintened stuff, use PEP723 asap) referenced packages :", len(cls.repos[0]["packages"]))
+#
+
 
 
 async def async_repos():
     abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+
+    apitag = __import__("sysconfig").get_config_var("HOST_GNU_TYPE")
+    apitag = apitag.replace("-", "_")
+    print("163: async_repos", Config.PKG_INDEXES)
     for repo in Config.PKG_INDEXES:
-        async with fopen(f"{repo}index.json", "r") as index:
+        if apitag.find("mvp") > 0:
+            idx = f"{repo}index.json"
+        else:
+            idx = f"{repo}index-bi.json"
+        async with fopen(idx, "r", encoding='UTF-8') as index:
             try:
                 data = index.read()
                 if isinstance(data, bytes):
                     data = data.decode()
                 data = data.replace("<abi>", abitag)
+                data = data.replace("<api>", apitag)
                 repo = json.loads(data)
             except:
                 pdb(f"110: {repo=}: malformed json index {data}")
@@ -165,19 +184,31 @@ async def async_repos():
             if repo not in Config.pkg_repolist:
                 Config.pkg_repolist.append(repo)
 
-    if not aio.cross.simulator:
-        if window.location.href.startswith("https://pmp-p.ddns.net/pygbag"):
-            print(" ===============  REDIRECTION TO DEV HOST  ================ ")
-            for idx, repo in enumerate(PyConfig.pkg_repolist):
-                repo["-CDN-"] = "https://pmp-p.ddns.net/archives/repo/"
-
+    repo = None
     if Config.dev_mode > 0:
         for idx, repo in enumerate(Config.pkg_repolist):
             try:
-                print("120:", repo["-CDN-"], idx, "REMAPPED TO", Config.PKG_INDEXES[idx])
                 repo["-CDN-"] = Config.PKG_INDEXES[idx]
             except Exception as e:
                 sys.print_exception(e)
+
+    if not aio.cross.simulator:
+        import platform
+        print("193:", platform.window.location.href )
+        if platform.window.location.href.startswith("https://pmp-p.ddns.net/pygbag"):
+            for idx, repo in enumerate(Config.pkg_repolist):
+                repo["-CDN-"] = "https://pmp-p.ddns.net/archives/repo/"
+        elif platform.window.location.href.startswith("http://192.168.1.66/pygbag"):
+            for idx, repo in enumerate(Config.pkg_repolist):
+                repo["-CDN-"] = "http://192.168.1.66/archives/repo/"
+    if repo:
+        print(f"""
+
+===============  REDIRECTION TO DEV HOST {repo['-CDN-']}  ================
+{abitag=}
+{apitag=}
+
+""")
 
 
 async def install_pkg(sysconf, wheel_url, wheel_pkg):
@@ -187,30 +218,61 @@ async def install_pkg(sysconf, wheel_url, wheel_pkg):
             target.write(pkg.read())
     install(target_filename, sysconf)
 
-
+# FIXME: HISTORY and invalidate caches
 async def pip_install(pkg, sconf={}):
-    print("185: searching TODO: install from repo in found key", pkg)
+    if pkg in HISTORY:
+        return
+    print("225: searching", pkg)
 
     if not sconf:
         sconf = __import__("sysconfig").get_paths()
 
     wheel_url = ""
-    try:
-        async with fopen(f"https://pypi.org/simple/{pkg}/") as html:
-            if html:
-                for line in html.readlines():
-                    if line.find("href=") > 0:
-                        if line.find("-py3-none-any.whl") > 0:
-                            wheel_url = line.split('"', 2)[1]
-            else:
-                print("270: ERROR: cannot find package :", pkg)
-    except FileNotFoundError:
-        print("200: ERROR: cannot find package :", pkg)
-        return
 
-    except:
-        print("204: ERROR: cannot find package :", pkg)
-        return
+    # hack for WASM wheel repo
+    if pkg in Config.mapping:
+        pkg = Config.mapping[pkg]
+        if pkg in HISTORY:
+            return
+        print("228: package renamed to", pkg)
+
+    for repo in Config.pkg_repolist:
+        if pkg in repo:
+            wheel_url = f"{repo['-CDN-']}{repo[pkg]}#"
+#                pkg_file = f"/tmp/{repo[want].rsplit('/',1)[-1]}"
+#                if pkg_file in aio.toplevel.HISTORY:
+#                    break
+
+#                cfg = {"io": "url", "type": "fs", "path": pkg_file}
+#                print(f"1205: async_get_pkg({pkg_url})")
+#
+#                track = platform.window.MM.prepare(pkg_url, json.dumps(cfg))
+#
+#                try:
+#                    await cls.pv(track)
+#                    zipfile.ZipFile(pkg_file).close()
+#                    break
+#                except (IOError, zipfile.BadZipFile):
+#                    pdb(f"1294: network error on {repo['-CDN-']}, cannot install {pkg_file}")
+
+    # try to get a pure python wheel from pypi
+    if not wheel_url:
+        try:
+            async with fopen(f"https://pypi.org/simple/{pkg}/") as html:
+                if html:
+                    for line in html.readlines():
+                        if line.find("href=") > 0:
+                            if line.find("-py3-none-any.whl") > 0:
+                                wheel_url = line.split('"', 2)[1]
+                else:
+                    print("270: ERROR: cannot find package :", pkg)
+        except FileNotFoundError:
+            print("200: ERROR: cannot find package :", pkg)
+            return
+
+        except:
+            print("204: ERROR: cannot find package :", pkg)
+            return
 
     if wheel_url:
         try:
@@ -221,11 +283,19 @@ async def pip_install(pkg, sconf={}):
 
 
 async def parse_code(code, env):
-    global PATCHLIST
+    global PATCHLIST, async_imports_init, async_repos
 
     # pythonrc is calling aio.pep0723.parse_code not check_list
     # so do patching here
-    platform_wasm.todo.patch()
+    patchlevel = platform_wasm.todo.patch()
+    if patchlevel:
+        print("264:parse_code() patches loaded :", list(patchlevel.keys()) )
+        platform_wasm.todo.patch = lambda :None
+        # and only do that once and for all.
+        await async_imports_init()
+        await async_repos()
+        del async_imports_init, async_repos
+
 
     maybe_missing = []
 
@@ -294,11 +364,6 @@ async def check_list(code=None, filename=None):
     # is there something to do ?
     if len(still_missing):
         importlib.invalidate_caches()
-
-        # only do that once and for all.
-        if not len(Config.repos):
-            await async_imports_init()
-            await async_repos()
 
         # TODO: check for possible upgrade of env/* pkg
 

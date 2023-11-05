@@ -308,7 +308,7 @@ if not __UPY__:
             """start async import system with optionnal async console"""
             if cls.instance is None:
                 cls.make_instance(shell, ns)
-                await cls.instance.async_repos()
+                #await cls.instance.async_repos()
 
             if console:
                 cls.start_console(shell, ns=ns)
