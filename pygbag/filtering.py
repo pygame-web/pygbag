@@ -1,6 +1,6 @@
 from pathlib import Path
 
-dbg = True
+dbg = False
 
 # q:what to do with the extreme case $HOME/main.py ?
 # or folders > 512MiB total

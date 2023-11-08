@@ -1,18 +1,17 @@
+import sys
 import asyncio
-
 asyncrun = asyncio.run
 
-import sys
+from .__init__ import VERSION
 
-from .__init__ import __version__
-
-print(f" *pygbag {__version__}*")
+print(f" *pygbag {VERSION}*")
 
 from pathlib import Path
 
 
 async def import_site(sourcefile=None, simulator=False, async_input=None, async_pkg=None):
     import sys
+    import os
     from pathlib import Path
 
     if ("--sim" not in sys.argv) and ("--piny" not in sys.argv) and not simulator:
@@ -27,7 +26,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
     mod_dir = Path(__file__).parent
     support = mod_dir / "support"
-
+    cur_dir = os.getcwd()
     print(
         f"""
             - single thread no-os wasm simulator -
@@ -36,6 +35,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     platform support : {support}
     {sys.argv=}
     {sourcefile=}
+    {cur_dir=}
 
 """
     )
@@ -117,6 +117,11 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
         async def process(self):
             ...
 
+
+    def patch_platform_system():
+        return 'Emscripten'
+
+
     # et = EventTarget()
     class __EMSCRIPTEN__(object):
         EventTarget = fake_EventTarget()
@@ -124,7 +129,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
         def __init__(self):
             import platform
-
+            platform.system = patch_platform_system
             self.platform = platform
 
         def __getattribute__(self, name):
@@ -185,11 +190,6 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
         HTML_MARK = '"' * 3 + " # BEGIN -->"
-
-#        @classmethod
-#        async def async_repos(cls):
-#            abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
-#            print(f"{abitag=}")
 
         @classmethod
         async def async_imports(cls, callback, *wanted, **kw):
@@ -261,6 +261,9 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
         aio.clock.start(x=80)
 
         print(__name__, "sim repl ready for", sourcefile)
+
+        if sys.path[0]!=cur_dir:
+            sys.path.insert(0,cur_dir)
 
         await shell.runpy(sourcefile)
         shell.interactive()

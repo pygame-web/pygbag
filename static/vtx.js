@@ -10,7 +10,7 @@ readline.complete = function (line) {
 
 }
 
-function rawstdin(line) {
+function rawstdin_send(line) {
     //console.log("RAW:", line )
     python.rawstdin(line)
 }
@@ -116,7 +116,7 @@ export class WasmTerminal {
 
 // TODO: check mouse pos
         if (window.RAW_MODE)
-            rawstdin(data)
+            rawstdin_send(data)
 
         // TODO: Handle ANSI escape sequences
         if (ord === 0x1b) {
@@ -187,7 +187,7 @@ export class WasmTerminal {
 
                         case 60:
                             if (!window.RAW_MODE)
-                                rawstdin(data)
+                                rawstdin_send(data)
                             break;
 
                         default:

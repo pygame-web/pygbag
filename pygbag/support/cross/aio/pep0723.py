@@ -1,7 +1,9 @@
+#
 # https://peps.python.org/pep-0722/ – Dependency specification for single-file scripts
+# https://peps.python.org/pep-0723
 # https://peps.python.org/pep-0508/ – Dependency specification for Python Software Packages
-
 # https://setuptools.pypa.io/en/latest/userguide/ext_modules.html
+#
 
 import sys
 import os
@@ -20,9 +22,6 @@ from packaging.requirements import Requirement
 from aio.filelike import fopen
 
 import platform
-
-print(platform)
-
 import platform_wasm.todo
 
 PATCHLIST = []
@@ -136,7 +135,10 @@ def install(pkg_file, sconf=None):
                     "INSTALLER": b"pygbag",
                 },
             )
+        if pkg_file not in HISTORY:
             HISTORY.append(pkg_file)
+            importlib.invalidate_caches()
+        print("142: {pkg_file} installed")
     except FileExistsError as ex:
         print(f"38: {pkg_file} already installed (or partially)", ex)
     except Exception as ex:
@@ -195,7 +197,10 @@ async def async_repos():
     if not aio.cross.simulator:
         import platform
         print("193:", platform.window.location.href )
-        if platform.window.location.href.startswith("https://pmp-p.ddns.net/pygbag"):
+        if platform.window.location.href.startswith("http://localhost:8"):
+            for idx, repo in enumerate(Config.pkg_repolist):
+                repo["-CDN-"] = "http://localhost:8000/archives/repo/"
+        elif platform.window.location.href.startswith("https://pmp-p.ddns.net/pygbag"):
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = "https://pmp-p.ddns.net/archives/repo/"
         elif platform.window.location.href.startswith("http://192.168.1.66/pygbag"):
@@ -283,19 +288,7 @@ async def pip_install(pkg, sconf={}):
 
 
 async def parse_code(code, env):
-    global PATCHLIST, async_imports_init, async_repos
-
-    # pythonrc is calling aio.pep0723.parse_code not check_list
-    # so do patching here
-    patchlevel = platform_wasm.todo.patch()
-    if patchlevel:
-        print("264:parse_code() patches loaded :", list(patchlevel.keys()) )
-        platform_wasm.todo.patch = lambda :None
-        # and only do that once and for all.
-        await async_imports_init()
-        await async_repos()
-        del async_imports_init, async_repos
-
+    global PATCHLIST
 
     maybe_missing = []
 
@@ -338,9 +331,22 @@ async def parse_code(code, env):
 # parse_code does the patching
 # this is not called by pythonrc
 async def check_list(code=None, filename=None):
-    global PATCHLIST
+    global PATCHLIST, async_imports_init, async_repos
     print()
     print("-" * 11, "computing required packages", "-" * 10)
+
+
+    # pythonrc is calling aio.pep0723.parse_code not check_list
+    # so do patching here
+    patchlevel = platform_wasm.todo.patch()
+    if patchlevel:
+        print("264:parse_code() patches loaded :", list(patchlevel.keys()) )
+        platform_wasm.todo.patch = lambda :None
+        # and only do that once and for all.
+        await async_imports_init()
+        await async_repos()
+        del async_imports_init, async_repos
+
 
     # store installed wheel somewhere
     env = Path(os.getcwd()) / "build" / "env"
@@ -352,6 +358,9 @@ async def check_list(code=None, filename=None):
 
     sconf = __import__("sysconfig").get_paths()
     sconf["purelib"] = sconf["platlib"] = env.as_posix()
+
+    if sconf["platlib"] not in sys.path:
+        sys.path.append(sconf["platlib"])
 
     # mandatory
     importlib.invalidate_caches()
@@ -401,3 +410,24 @@ async def check_list(code=None, filename=None):
 
     print("-" * 40)
     print()
+
+    return still_missing
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# aio.pep0723

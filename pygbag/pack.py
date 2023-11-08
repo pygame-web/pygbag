@@ -25,8 +25,9 @@ async def pack_files(zf, packlist, zfolders, target_folder):
         zpath.insert(0, str(target_folder))
         zpath.append(str(asset)[1:])
 
-        # print(f"\t{str(asset)[1:]}")
         zip_content = target_folder / str(asset)[1:]
+        print(f"\t{target_folder} : {str(asset)[1:]}")
+
 
         zpath = list(zfolders)
         zpath.append(str(asset)[1:].replace("-pygbag.", "."))

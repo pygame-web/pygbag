@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.48.4bi
+        SDK_VERSION: 3.1.49.0bi
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: emsdk hpy _ctypes pygame
         BUILD_STATIC: emsdk _ctypes hpy

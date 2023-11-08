@@ -104,16 +104,17 @@ else:
 
                 if len(tofix):
                     fixname = Path(f"{fp.parent}/{fp.stem}-pygbag.py")
-                    fixfull = Path(f"{folder}/{fixname}")
+                    opt = Path(f"{folder}/{fixname}")
                     with open(fname,"r", encoding="utf-8") as source:
                         data = open(fname,"r").read()
-                        with open(fixfull, "w", encoding="utf-8") as dest:
+                        with open(opt, "w", encoding="utf-8") as dest:
                             while len(tofix):
                                 bad, good = tofix.pop(0)
                                 warnings.warn(f"potential {bad.upper()} use in {fname}, prefer .{good} !")
                                 data = data.replace(f'.{bad}"',f'.{good}"')
                             dest.write(data)
-                    yield fixname
+
+                    yield translated(opt)
                     continue
 
             if fp.suffix == ".png":

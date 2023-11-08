@@ -414,10 +414,9 @@ class shell:
         for arg in argv:
             if arg == "install":
                 continue
-            import aio.toplevel
-
+            import aio.pep0723
             # yield f"attempting to install {arg}"
-            await PyConfig.importer.async_imports(None, arg)
+            await aio.pep0723.pip_install(arg)
 
     @classmethod
     def cd(cls, *argv):
@@ -486,11 +485,11 @@ class shell:
 
     @classmethod
     def install(cls, *argv, **env):
-        import aio.toplevel
+        import aio.pep0723
 
         for pkg_file in argv:
             try:
-                aio.toplevel.install(pkg_file)
+                aio.pep0723.install(pkg_file)
                 yield f"{pkg_file} installed"
             except (IOError, zipfile.BadZipFile):
                 pdb("397: invalid package", pkg_file)
@@ -653,7 +652,8 @@ ________________________
                 print("651: referenced packages :", len(Config.repos[0]["packages"]))
 
             DBG(f"644: aio.pep0723.check_list {env=}")
-            deps = await aio.pep0723.parse_code(code, env)
+            #deps = await aio.pep0723.parse_code(code, env)
+            deps = await aio.pep0723.check_list(code) #, env)
             DBG(f"646: aio.pep0723.pip_install {deps=}")
 
             # auto import plumbing to avoid rely too much on import error
@@ -1414,40 +1414,6 @@ if not aio.cross.simulator:
 
             # Print New Line on Complete
             print()
-
-#        @classmethod
-#        async def async_repos(cls):
-#            abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
-#            apitag = __import__("sysconfig").get_config_var("HOST_GNU_TYPE")
-#            apitag = apitag.replace("-", "_")
-#
-#            for repo in PyConfig.pkg_indexes:
-#                if apitag.find("mvp") > 0:
-#                    idx = f"{repo}index.json"
-#                else:
-#                    idx = f"{repo}index-bi.json"
-#
-#                async with platform.fopen(idx, "r") as index:
-#                    try:
-#                        data = index.read()
-#                        if isinstance(data, bytes):
-#                            data = data.decode()
-#                        data = data.replace("<abi>", abitag)
-#                        data = data.replace("<api>", apitag)
-#                        repo = json.loads(data)
-#                    except:
-#                        pdb(f"1394: {repo=}: malformed json index {data}")
-#                        continue
-#                    if repo not in PyConfig.pkg_repolist:
-#                        PyConfig.pkg_repolist.append(repo)
-#
-#            if PyConfig.dev_mode > 0:
-#                for idx, repo in enumerate(PyConfig.pkg_repolist):
-#                    try:
-#                        print("1353:", repo["-CDN-"], idx, "REMAPPED TO", PyConfig.pkg_indexes[idx])
-#                        repo["-CDN-"] = PyConfig.pkg_indexes[idx]
-#                    except Exception as e:
-#                        sys.print_exception(e)
 
     # end TopLevel_async_handler
 

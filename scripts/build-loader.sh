@@ -263,7 +263,8 @@ emcc $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG \\
      --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \\
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \\
      -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \\
-     $LDFLAGS
+     $LDFLAGS -sERROR_ON_UNDEFINED_SYMBOLS=0
+
 
 END
     chmod +x ./final_link.sh

@@ -302,6 +302,9 @@ static PyObject *
 embed_os_read(PyObject *self, PyObject *_null); //forward
 
 static PyObject *
+embed_stdin_select(PyObject *self, PyObject *_null); // forward
+
+static PyObject *
 embed_flush(PyObject *self, PyObject *_null) {
     fprintf( stdout, "%c", 4);
     fprintf( stderr, "%c", 4);
@@ -530,6 +533,8 @@ static PyMethodDef mod_embed_methods[] = {
 
     {"readline", (PyCFunction)embed_readline,  METH_NOARGS, "get current line"},
     {"os_read",  (PyCFunction)embed_os_read,  METH_NOARGS, "get current raw stdin"},
+    {"stdin_select", (PyCFunction)embed_stdin_select,  METH_NOARGS, "get current raw stdin bytes length"},
+
     {"flush", (PyCFunction)embed_flush,  METH_NOARGS, "flush stdio+stderr"},
 
     {"set_ps1", (PyCFunction)embed_set_ps1,  METH_NOARGS, "set prompt output to >>> "},
@@ -680,6 +685,11 @@ embed_os_read(PyObject *self, PyObject *_null) {
     }
     return Py_BuildValue("y", buf );
 #undef file
+}
+
+static PyObject *
+embed_stdin_select(PyObject *self, PyObject *_null) {
+    return Py_BuildValue("i", embed_os_read_bufsize );
 }
 
 

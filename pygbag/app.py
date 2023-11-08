@@ -15,7 +15,7 @@ import hashlib
 import shutil
 from datetime import datetime
 
-from .__init__ import __version__
+from .__init__ import VERSION
 
 import pygbag
 
@@ -31,7 +31,7 @@ CACHE_PATH = CACHE_ROOT / "web-cache"
 CACHE_VERSION = CACHE_ROOT / "version.txt"
 CACHE_APP = CACHE_ROOT / "web"
 
-cdn_dot = __version__.split(".")
+cdn_dot = VERSION.split(".")
 cdn_dot.pop()
 cdn_version = ".".join(cdn_dot)
 del cdn_dot
@@ -110,7 +110,7 @@ def set_args(program):
 
 
 def cache_check(app_folder, devmode=False):
-    global CACHE_PATH, CACHE_APP, __version__
+    global CACHE_PATH, CACHE_APP, VERSION
 
     version_file = app_folder / CACHE_VERSION
 
@@ -124,8 +124,8 @@ def cache_check(app_folder, devmode=False):
         try:
             with open(version_file, "r") as file:
                 cache_ver = file.read()
-                if cache_ver != __version__:
-                    print(f"115: cache {cache_ver} mismatch, want {__version__}, cleaning ...")
+                if cache_ver != VERSION:
+                    print(f"115: cache {cache_ver} mismatch, want {VERSION}, cleaning ...")
                     clear_cache = True
         except:
             # something's wrong in cache structure, try clean it up
@@ -162,7 +162,7 @@ def cache_check(app_folder, devmode=False):
         make_cache_dirs()
 
         with open(version_file, "w") as file:
-            file.write(__version__)
+            file.write(VERSION)
 
     return build_dir, cache_dir
 
@@ -235,8 +235,8 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
 
     parser.add_argument(
         "--version",
-        default=__version__,
-        help="override prebuilt version path [default:%s]" % __version__,
+        default=VERSION,
+        help="override prebuilt version path [default:%s]" % VERSION,
     )
 
     parser.add_argument("--build", action="store_true", help="build only, do not run test server")
@@ -348,7 +348,7 @@ now packing application ....
         "title": (args.title or app_name),
         "directory": app_name,
         "spdx": "cookiecutter.spdx",
-        "version": __version__,
+        "version": VERSION,
         "PYBUILD": args.PYBUILD,
     }
 
