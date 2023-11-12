@@ -1438,17 +1438,21 @@ except:
 # x10 mouse and xterm stuff
 # https://github.com/muesli/termenv/pull/104
 # https://xtermjs.org/docs/api/vtfeatures/
-def ESC(*argv):
-    for arg in argv:
-        sys.__stdout__.write(chr(0x1B))
-        sys.__stdout__.write(arg)
-    embed.flush()
+
+if not aio.cross.simulator:
+    def ESC(*argv):
+        for arg in argv:
+            sys.__stdout__.write(chr(0x1B))
+            sys.__stdout__.write(arg)
+        embed.flush()
 
 
-def CSI(*argv):
-    for arg in argv:
-        ESC(f"[{arg}")
+    def CSI(*argv):
+        for arg in argv:
+            ESC(f"[{arg}")
 
+    builtins.ESC = ESC
+    builtins.CSI = CSI
 
 try:
     console

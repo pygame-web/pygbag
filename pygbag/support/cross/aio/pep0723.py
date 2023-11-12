@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 
 import re
+print(sys.path)
 import tomllib
 
 import json
@@ -138,7 +139,7 @@ def install(pkg_file, sconf=None):
         if pkg_file not in HISTORY:
             HISTORY.append(pkg_file)
             importlib.invalidate_caches()
-        print("142: {pkg_file} installed")
+        print(f"142: {pkg_file} installed")
     except FileExistsError as ex:
         print(f"38: {pkg_file} already installed (or partially)", ex)
     except Exception as ex:
@@ -354,7 +355,9 @@ async def check_list(code=None, filename=None):
 
     # we want host to load wasm packages too
     # so make pure/bin folder first for imports
-    sys.path.insert(0, env.as_posix())
+
+    if env.as_posix() not in sys.path:
+        sys.path.insert(0, env.as_posix())
 
     sconf = __import__("sysconfig").get_paths()
     sconf["purelib"] = sconf["platlib"] = env.as_posix()

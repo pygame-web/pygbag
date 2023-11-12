@@ -721,14 +721,14 @@ console.warn("TODO: user defined canvas")
             if (vm.config.debug)
                 console.warn("too tall : have",max_height,"want",want_h)
             want_h = max_height
-            want_w = want_h * ar
+            want_w = Math.trunc(want_h * ar)
         }
 
         if (want_w > max_width) {
             if (vm.config.debug)
                 console.warn("too wide : have",max_width,"want",want_w)
             want_w = max_width
-            want_h = want_h / ar
+            want_h = Math.trunc(want_h / ar)
         }
 
 
@@ -805,13 +805,13 @@ console.warn("TODO: user defined canvas")
         if (want_h > max_height) {
             //console.warn ("Too much H")
             want_h = max_height
-            want_w = want_h * ar
+            want_w = Math.trunc(want_h * ar)
         }
 
         if (want_w > max_width) {
             //console.warn("Too much W")
             want_w = max_width
-            want_h = want_h / ar
+            want_h = Math.trunc(want_h / ar)
         }
 
         // restore phy size

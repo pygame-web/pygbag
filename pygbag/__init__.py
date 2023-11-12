@@ -28,6 +28,8 @@ sys.path.append(str(Path(__file__).parent / "support/cross"))
 
 # WaPy<=>CPython compat
 
+import builtins
+
 try:
     # embed builtin module handles I/O on wasm
     import embed
@@ -35,7 +37,7 @@ try:
     # aio function implemented only on stackless WaPy
     sched_yield
 except:
-    import builtins
+
 
     builtins.sched_yield = lambda: None
 
@@ -50,13 +52,19 @@ if not hasattr(sys, "print_exception"):
     sys.print_exception = print_exception
 
 
-def ESC(*argv):
+def ESC(*argv, flush=False):
     for arg in argv:
         sys.__stdout__.write(chr(0x1B))
         sys.__stdout__.write(arg)
-    embed.flush()
+    if flush:
+        sys.stdout.flush()
 
 
 def CSI(*argv):
     for arg in argv:
-        ESC(f"[{arg}")
+        ESC(f"[{arg}", flush=False)
+    sys.stdout.flush()
+
+
+builtins.CSI = CSI
+builtins.ESC = ESC

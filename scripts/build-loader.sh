@@ -84,8 +84,8 @@ fi
 
 export PATCH_FS="--preload-file $(realpath platform_wasm/platform_wasm)@/data/data/org.python/assets/site-packages/platform_wasm"
 
-
-LOPTS="-sMAIN_MODULE --bind -fno-rtti"
+# =2 will break pyodide module reuses
+LOPTS="-sMAIN_MODULE=1"
 
 # O0/g3 is much faster to build and easier to debug
 
@@ -250,9 +250,11 @@ then
 
     " 1>&2
 
+#  -std=gnu99 -std=c++23
+
     cat > final_link.sh <<END
 #!/bin/bash
-emcc $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG \\
+emcc $FINAL_OPTS $LOPTS  -D__PYDK__=1 -DNDEBUG \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=4MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
      $CF_SDL \\
      --use-preload-plugins \\
@@ -263,7 +265,10 @@ emcc $FINAL_OPTS $LOPTS -std=gnu99 -D__PYDK__=1 -DNDEBUG \\
      --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \\
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \\
      -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \\
-     $LDFLAGS -sERROR_ON_UNDEFINED_SYMBOLS=0
+     $LDFLAGS -lembind -sERROR_ON_UNDEFINED_SYMBOLS=0
+
+
+# --bind -fno-rtti
 
 
 END

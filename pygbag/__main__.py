@@ -100,6 +100,8 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
         print("truc", argv, kw)
 
     fakehost.window = NoOp("platform.window")
+    fakehost.window.console = NoOp("platform.window.console")
+    fakehost.window.console.log = print
     fakehost.window.get_terminal_console = truc
 
     import aio.filelike
