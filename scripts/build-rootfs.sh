@@ -111,13 +111,17 @@ try:
 except:
     print('_curses not built')
 
+#rich
+import getpass
+import fractions
+
 #nurses_2
 import tty
 
 # cffi
 import copy
 
-# datetime 
+# datetime
 import datetime
 import _strptime
 

@@ -210,6 +210,16 @@ if not __UPY__:
                     embed.prompt()
 
         async def interact(self):
+
+            # in raw mode we don't want that loop to read input
+            import sys
+            from platform import window
+
+            if sys.platform in ('emscripten','wasi') and not aio.cross.simulator:
+                raw_mix = True
+            else:
+                raw_mix = False
+
             # multiline input clumsy sentinel
             last_line = ""
 
@@ -227,6 +237,9 @@ if not __UPY__:
 
             while not aio.exit:
                 await asyncio.sleep(0)
+                #if raw_mix:
+                if window.RAW_MODE:
+                    continue
 
                 if aio.exit:
                     return
