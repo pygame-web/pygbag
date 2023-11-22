@@ -636,8 +636,7 @@ ________________________
         from aio.pep0723 import Config
 
         if not aio.cross.simulator:
-            # don't use an env path, but site-packages instead
-            # we can only do purelib for now until pypi host wasm wheels
+            # env path is set by pep0723
             sconf = __import__("sysconfig").get_paths()
             env = Path(sconf["purelib"])
 
@@ -651,10 +650,9 @@ ________________________
                 DBG("650: FIXME (this is pyodide maintened stuff, use (auto)PEP723 asap)")
                 print("651: referenced packages :", len(Config.repos[0]["packages"]))
 
-            DBG(f"644: aio.pep0723.check_list {env=}")
-            #deps = await aio.pep0723.parse_code(code, env)
-            deps = await aio.pep0723.check_list(code) #, env)
-            DBG(f"646: aio.pep0723.pip_install {deps=}")
+            DBG(f"654: aio.pep0723.check_list {aio.pep0723.env=}")
+            deps = await aio.pep0723.check_list(code)
+            DBG(f"656: aio.pep0723.pip_install {deps=}")
 
             # auto import plumbing to avoid rely too much on import error
             maybe_wanted = list(TopLevel_async_handler.list_imports(code, file=None, hint=hint))
