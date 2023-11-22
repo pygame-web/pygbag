@@ -58,6 +58,7 @@ if not __UPY__:
         import sysconfig
         import importlib
         from pathlib import Path
+        import aio.pep0723
 
         if not pkg_file in HISTORY:
             sconf = sysconfig.get_paths()
@@ -74,22 +75,24 @@ if not __UPY__:
                 pdb(f"75: failed to install {pkg_file}")
                 sys.print_exception(rx)
 
-            # let wasm compilation happen
-            await asyncio.sleep(0)
-
+            # wasm compilation
             try:
                 platform.explore(platlib)
+                platform.explore(aio.pep0723.sconf["platlib"])
                 await asyncio.sleep(0)
                 importlib.invalidate_caches()
                 # print(f"{pkg_file} installed, preloading", embed.preloading())
             except Exception as rx:
                 pdb(f"failed to preload {pkg_file}")
                 sys.print_exception(rx)
+            # let wasm compilation happen
+            await asyncio.sleep(0)
         else:
             print(f"90: {pkg_file} already installed")
 
         if pkg in platform.patches:
-            print("93:", pkg, "requires patching")
+            print("92:", pkg, "requires patching")
+            await asyncio.sleep(0)
             platform.patches.pop(pkg)()
 
         if resume and ex:

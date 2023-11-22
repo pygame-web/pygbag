@@ -405,7 +405,12 @@ async def check_list(code=None, filename=None):
                 continue
             await pip_install(pkg, sconf)
 
-    import platform
+    # wasm compilation
+    if not aio.cross.simulator:
+        import platform
+        import asyncio
+        platform.explore(sconf["platlib"])
+        await asyncio.sleep(0)
 
     # apply any patches
     while len(PATCHLIST):
@@ -418,6 +423,7 @@ async def check_list(code=None, filename=None):
 
     print("-" * 40)
     print()
+
 
     return still_missing
 
