@@ -90,20 +90,31 @@ function reverse(s){
     return s.split("").reverse().join("");
 }
 
+
 // please comment here if you find a bug
 // https://stackoverflow.com/questions/5202085/javascript-equivalent-of-pythons-rsplit
 
 String.prototype.rsplit = function(sep, maxsplit) {
     var result = []
-    if ( (sep === undefined) ) {
+    var src = this
+    var nullsep = false
+
+    if ( (sep === undefined) || (sep === null) || (!sep) ) {
         sep = " "
-        maxsplit = 0
+        nullsep = true
+        src = src.replaceAll(sep+sep,sep)
+        src = src.replaceAll(sep+sep,sep)
     }
 
-    if (maxsplit === 0  )
-        return [this]
+    if (nullsep && !src)
+        return []
 
-    var data = this.split(sep)
+    if (maxsplit === 0  )
+        return [src]
+
+    maxsplit = maxsplit || -1
+
+    var data = src.split(sep)
 
 
     if (!maxsplit || (maxsplit<0) || (data.length==maxsplit+1) )
@@ -122,7 +133,6 @@ String.prototype.rsplit = function(sep, maxsplit) {
     }
     return [this]
 }
-
 
 function jsimport(url, sync) {
     const jsloader=document.createElement('script')

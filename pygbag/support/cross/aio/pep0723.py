@@ -8,6 +8,7 @@
 import sys
 import os
 from pathlib import Path
+import glob
 
 import re
 print(sys.path)
@@ -24,6 +25,27 @@ from aio.filelike import fopen
 
 import platform
 import platform_wasm.todo
+
+
+# TODO: maybe control wheel cache with $XDG_CACHE_HOME/pip
+
+
+# store installed wheel somewhere
+env = Path(os.getcwd()) / "build" / "env"
+env.mkdir(parents=True, exist_ok=True)
+
+# we want host to load wasm packages too
+# so make pure/bin folder first for imports
+
+if env.as_posix() not in sys.path:
+    sys.path.insert(0, env.as_posix())
+
+sconf = __import__("sysconfig").get_paths()
+sconf["purelib"] = sconf["platlib"] = env.as_posix()
+
+if sconf["platlib"] not in sys.path:
+    sys.path.append(sconf["platlib"])
+
 
 PATCHLIST = []
 HISTORY = []
@@ -225,13 +247,15 @@ async def install_pkg(sysconf, wheel_url, wheel_pkg):
     install(target_filename, sysconf)
 
 # FIXME: HISTORY and invalidate caches
-async def pip_install(pkg, sconf={}):
+async def pip_install(pkg, sysconf={}):
+    global sconf
     if pkg in HISTORY:
         return
-    print("225: searching", pkg)
 
-    if not sconf:
-        sconf = __import__("sysconfig").get_paths()
+    print("253: searching", pkg)
+
+    if not sysconf:
+        sysconf = sconf
 
     wheel_url = ""
 
@@ -245,21 +269,6 @@ async def pip_install(pkg, sconf={}):
     for repo in Config.pkg_repolist:
         if pkg in repo:
             wheel_url = f"{repo['-CDN-']}{repo[pkg]}#"
-#                pkg_file = f"/tmp/{repo[want].rsplit('/',1)[-1]}"
-#                if pkg_file in aio.toplevel.HISTORY:
-#                    break
-
-#                cfg = {"io": "url", "type": "fs", "path": pkg_file}
-#                print(f"1205: async_get_pkg({pkg_url})")
-#
-#                track = platform.window.MM.prepare(pkg_url, json.dumps(cfg))
-#
-#                try:
-#                    await cls.pv(track)
-#                    zipfile.ZipFile(pkg_file).close()
-#                    break
-#                except (IOError, zipfile.BadZipFile):
-#                    pdb(f"1294: network error on {repo['-CDN-']}, cannot install {pkg_file}")
 
     # try to get a pure python wheel from pypi
     if not wheel_url:
@@ -283,7 +292,9 @@ async def pip_install(pkg, sconf={}):
     if wheel_url:
         try:
             wheel_pkg, wheel_hash = wheel_url.rsplit("/", 1)[-1].split("#", 1)
-            await install_pkg(sconf, wheel_url, wheel_pkg)
+            await install_pkg(sysconf, wheel_url, wheel_pkg)
+            if pkg not in HISTORY:
+                HISTORY.append(pkg)
         except:
             print("212: INVALID", pkg, "from", wheel_url)
 
@@ -301,7 +312,7 @@ async def parse_code(code, env):
                 continue
             elif pkg not in maybe_missing:
                 # do not change case ( eg PIL )
-                maybe_missing.append(pkg)
+                maybe_missing.append(pkg.lower().replace('-','_'))
 
     if Config.READ_723:
         for req in read_dependency_block_723(code):
@@ -311,7 +322,7 @@ async def parse_code(code, env):
                 continue
             elif pkg not in maybe_missing:
                 # do not change case ( eg PIL )
-                maybe_missing.append(pkg)
+                maybe_missing.append(pkg.lower().replace('-','_'))
 
     still_missing = []
 
@@ -322,7 +333,7 @@ async def parse_code(code, env):
             PATCHLIST.append(dep)
 
         if not importlib.util.find_spec(dep) and dep not in still_missing:
-            still_missing.append(dep.lower())
+            still_missing.append(dep)
         else:
             print("found in path :", dep)
 
@@ -332,7 +343,7 @@ async def parse_code(code, env):
 # parse_code does the patching
 # this is not called by pythonrc
 async def check_list(code=None, filename=None):
-    global PATCHLIST, async_imports_init, async_repos
+    global PATCHLIST, async_imports_init, async_repos, env, sconf
     print()
     print("-" * 11, "computing required packages", "-" * 10)
 
@@ -348,22 +359,6 @@ async def check_list(code=None, filename=None):
         await async_repos()
         del async_imports_init, async_repos
 
-
-    # store installed wheel somewhere
-    env = Path(os.getcwd()) / "build" / "env"
-    env.mkdir(parents=True, exist_ok=True)
-
-    # we want host to load wasm packages too
-    # so make pure/bin folder first for imports
-
-    if env.as_posix() not in sys.path:
-        sys.path.insert(0, env.as_posix())
-
-    sconf = __import__("sysconfig").get_paths()
-    sconf["purelib"] = sconf["platlib"] = env.as_posix()
-
-    if sconf["platlib"] not in sys.path:
-        sys.path.append(sconf["platlib"])
 
     # mandatory
     importlib.invalidate_caches()
@@ -398,10 +393,17 @@ async def check_list(code=None, filename=None):
                 still_missing.append(pkg)
 
         for pkg in still_missing:
-            if (env / pkg).is_dir():
+            di = f"{(env / pkg).as_posix()}-*.dist-info"
+            gg = glob.glob( di)
+            if gg:
+                print("found in env :", gg[0].rsplit('/',1)[-1])
+                continue
+
+            pkg_final = pkg.replace('-','_')
+            if (env / pkg_final).is_dir():
                 print("found in env :", pkg)
                 continue
-            await pip_install(pkg)
+            await pip_install(pkg, sconf)
 
     import platform
 
@@ -409,15 +411,15 @@ async def check_list(code=None, filename=None):
     while len(PATCHLIST):
         dep = PATCHLIST.pop(0)
         print(f"314: patching {dep}")
-        platform.patches.pop(dep)()
+        try:
+            platform.patches.pop(dep)()
+        except Exception as e:
+            sys.print_exception(e)
 
     print("-" * 40)
     print()
 
     return still_missing
-
-
-
 
 
 

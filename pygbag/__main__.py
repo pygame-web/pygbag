@@ -105,6 +105,11 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     fakehost.window.get_terminal_console = truc
     fakehost.window.RAW_MODE = 0
 
+    def set_raw_mode(mode):
+        import platform as fakehost
+        fakehost.window.RAW_MODE = mode
+    fakehost.window.set_raw_mode = set_raw_mode
+    fakehost.window.set_raw_mode(0)
 
     import aio.filelike
 
@@ -180,6 +185,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
     sys.modules["__EMSCRIPTEN__"] = __EMSCRIPTEN__
     sys.modules["embed"] = __EMSCRIPTEN__
+
 
     print(" =============== pythonrc =================")
     with open(support / "pythonrc.py", "r") as file:

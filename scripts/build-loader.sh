@@ -254,7 +254,10 @@ then
 
     cat > final_link.sh <<END
 #!/bin/bash
-emcc $FINAL_OPTS $LOPTS  -D__PYDK__=1 -DNDEBUG \\
+emcc \\
+ $FINAL_OPTS \\
+ $LOPTS \\
+ -D__PYDK__=1 -DNDEBUG \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=4MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
      $CF_SDL \\
      --use-preload-plugins \\

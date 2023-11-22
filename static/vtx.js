@@ -2,6 +2,8 @@
 
 var readline = { last_cx : -1 , index : 0, history : ["help()"] }
 
+// two modes based on RAW_MODE: default readline emulation or python.rawstdin
+
 readline.complete = function (line) {
     if ( readline.history[ readline.history.length -1 ] != line )
         readline.history.push(line);
@@ -9,12 +11,6 @@ readline.complete = function (line) {
     python.readline(line + "\n")
 
 }
-
-function rawstdin_send(line) {
-    //console.log("RAW:", line )
-    python.rawstdin(line)
-}
-
 
 if (!window.Terminal) {
     var xterm_cdn
@@ -53,6 +49,8 @@ export class WasmTerminal {
 
         this.nodup = 1
 
+
+
         this.xterm = new Terminal(
             {
 //                allowTransparency: true,
@@ -60,9 +58,11 @@ export class WasmTerminal {
                 scrollback: 10000,
                 fontSize: 14,
                 theme: { background: '#1a1c1f' },
-                cols: (cols || 132), rows: (rows || 30)
+                cols: (cols || 132), rows: (rows || 32)
             }
         );
+
+        //this.xterm.activeProtocol("ANY");
 
         if (typeof(Worker) !== "undefined") {
 
@@ -82,8 +82,6 @@ export class WasmTerminal {
                 console.warn("SIXEL N/I")
             }
         }
-
-
 
         this.xterm.open(document.getElementById(hostid))
 
@@ -109,14 +107,18 @@ export class WasmTerminal {
 
     handleTermData = (data) => {
 
+
+
+// TODO: check mouse Y pos for raw mode in debug mode
+        if (window.RAW_MODE) {
+            python.rawstdin(data)
+            return
+        }
+
         const ord = data.charCodeAt(0);
         let ofs;
 
         const cx = this.xterm.buffer.active.cursorX
-
-// TODO: check mouse pos
-        if (window.RAW_MODE)
-            rawstdin_send(data)
 
         // TODO: Handle ANSI escape sequences
         if (ord === 0x1b) {

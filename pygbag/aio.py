@@ -7,14 +7,24 @@ import aio
 # to allow "import pygbag.aio as asyncio"
 sys.modules["pygbag.aio"] = aio
 
-
-# if not wasm cpu then run caller in simulator and block.
-
 if hasattr(os, "uname") and not os.uname().machine.startswith("wasm"):
     import time
     from pathlib import Path
 
-    import aioconsole
+    try:
+        import aioconsole, aiohttp
+    except:
+        print(f"""
+
+pygbag simulator rely on both aioconsole and aiohttp
+please use :
+
+    {sys.interpreter} -m pip install aioconsole aiohttp
+
+""")
+        raise SystemExit
+
+
 
     import aio.pep0723
 
@@ -23,9 +33,15 @@ if hasattr(os, "uname") and not os.uname().machine.startswith("wasm"):
     else:
         aio.pep0723.Config.PKG_INDEXES.extend(["https://pygame-web.github.io/archives/repo/"])
 
+
     import pygbag.__main__
 
     async def custom_async_input():
+        import platform
+        if platform.window.RAW_MODE:
+# TODO: FIXME: implement embed.os_read and debug focus handler
+            #return await asyncio.sleep(0)
+            ...
         return await aioconsole.ainput("››› ")
 
     aio.loop.create_task(
