@@ -46,7 +46,6 @@ sconf["purelib"] = sconf["platlib"] = env.as_posix()
 if sconf["platlib"] not in sys.path:
     sys.path.append(sconf["platlib"])
 
-
 PATCHLIST = []
 HISTORY = []
 
@@ -298,9 +297,9 @@ async def pip_install(pkg, sysconf={}):
         except:
             print("212: INVALID", pkg, "from", wheel_url)
 
-
+PYGAME=0
 async def parse_code(code, env):
-    global PATCHLIST
+    global PATCHLIST, PYGAME
 
     maybe_missing = []
 
@@ -331,6 +330,12 @@ async def parse_code(code, env):
     for dep in maybe_missing:
         if dep in platform.patches:
             PATCHLIST.append(dep)
+
+        # special case of pygame code in pygbag site-packages
+        if dep == 'pygame.base' and not PYGAME:
+            PYGAME=1
+            still_missing.append(dep)
+            continue
 
         if not importlib.util.find_spec(dep) and dep not in still_missing:
             still_missing.append(dep)

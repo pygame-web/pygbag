@@ -16,7 +16,8 @@ if $CI
 then
     export PYGBAG_BUILD=0.0
 else
-    export PYGBAG_BUILD=$($SYS_PYTHON -c "print(__import__('pygbag').__version__)"|tail -n 1|cut -f1-2 -d.)
+#    export PYGBAG_BUILD=$($SYS_PYTHON -c "print(__import__('pygbag').VERSION)"|tail -n 1|cut -f1-2 -d.)
+    export PYGBAG_BUILD=0.0
 fi
 
 export DIST_DIR=$(pwd)/build/web/archives/${PYGBAG_BUILD}
