@@ -652,6 +652,7 @@ ________________________
 
             DBG(f"654: aio.pep0723.check_list {aio.pep0723.env=}")
             deps = await aio.pep0723.check_list(code)
+
             DBG(f"656: aio.pep0723.pip_install {deps=}")
 
             # auto import plumbing to avoid rely too much on import error
@@ -1239,9 +1240,10 @@ if not aio.cross.simulator:
                 deps.reverse()
                 DBG(
                     f"""
-1176: added {deps=} for {mod=}
-{cls.missing_fence=}
-
+1242:
+    added {deps=} for {mod=}
+1243:
+    {cls.missing_fence=}
 
 """
                 )
@@ -1344,11 +1346,11 @@ if not aio.cross.simulator:
 
             callback = callback or default_cb
 
-            print("1302: ============= ", wanted)
+            print("1302: unscheduled imports :", wanted)
 
             wants = cls.imports(*wanted)
             all = list(cls.missing_fence)
-            print("1305: PRE REQ ", cls.missing_fence)
+            print("1305: pre-required :", cls.missing_fence)
             all.extend(wants)
             print("1308: IMPORT FINAL ", all)
 
@@ -1356,8 +1358,21 @@ if not aio.cross.simulator:
                 nonlocal all
                 if not mod in all:
                     return
+                print(f'1359: FIXME: re-ordering of {mod=} from {aio.pep0723.sconf["platlib"]=}')
                 all.remove(mod)
                 await cls.async_get_pkg(mod, None, None)
+
+                # anticipated wasm compilation
+                if not aio.cross.simulator:
+                    import platform
+                    #sconf = sysconfig.get_paths()
+                    #platlib = sconf["platlib"]
+                    #platform.explore(platlib)
+                    platform.explore(aio.pep0723.sconf["platlib"])
+                    await asyncio.sleep(0)
+                    await asyncio.sleep(0)
+                    await asyncio.sleep(0)
+
                 __import__(mod)
 
             # always put numpy first
