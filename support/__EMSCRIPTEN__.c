@@ -344,6 +344,13 @@ embed_isatty(PyObject *self, PyObject *argv) {
     return Py_BuildValue("i", isatty(fd) );
 }
 
+/*
+static PyObject *
+embed_PyErr_Clear(PyObject *self, PyObject *_null) {
+    PyErr_Clear();
+    Py_RETURN_NONE;
+}
+*/
 
 #if TEST_ASYNCSLEEP
 
@@ -511,11 +518,14 @@ embed_get_sdl_version(PyObject *self, PyObject *_null)
 }
 #endif
 
+
+
 static PyMethodDef mod_embed_methods[] = {
     {"run", (PyCFunction)embed_run, METH_VARARGS | METH_KEYWORDS, "start aio stepping"},
 #if TEST_ASYNCSLEEP
     {"bcrun", (PyCFunction)embed_bcrun, METH_VARARGS, ""},
 #endif
+    //{"PyErr_Clear", (PyCFunction)embed_PyErr_Clear, METH_NOARGS, ""},
     {"preload", (PyCFunction)embed_preload,  METH_VARARGS, "emscripten_run_preload_plugins"},
     {"dlopen", (PyCFunction)embed_dlopen, METH_VARARGS | METH_KEYWORDS, ""},
     {"dlcall", (PyCFunction)embed_dlcall, METH_VARARGS | METH_KEYWORDS, ""},

@@ -91,9 +91,11 @@ if not __UPY__:
             print(f"90: {pkg_file} already installed")
 
         if pkg in platform.patches:
-            print("92:", pkg, "requires patching")
+            print("94:", pkg, "requires patching")
             await asyncio.sleep(0)
             platform.patches.pop(pkg)()
+            await asyncio.sleep(0)
+            print("97:", pkg, "patched")
 
         if resume and ex:
             try:
