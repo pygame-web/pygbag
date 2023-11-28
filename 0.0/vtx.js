@@ -131,6 +131,17 @@ export class WasmTerminal {
                     var histo = ">>> "
 
                     switch ( data.charCodeAt(2) ) {
+                        // "?"
+                        case 63:
+                            const c4 = data.charCodeAt(4)
+                            const c5 = data.charCodeAt(5)
+                            if ((c4==54) && (c5==99)) {
+                            // Primary Device Attribute of Sixel support : 4
+                            // "?6c" https://github.com/odknt/st/issues/1
+                                console.log("query")
+
+                            }
+
 
                         case 65:
                             //console.log("VT UP")
@@ -188,8 +199,7 @@ export class WasmTerminal {
                             break;
 
                         case 60:
-                            if (!window.RAW_MODE)
-                                rawstdin_send(data)
+                              //  python.rawstdin(data)
                             break;
 
                         default:
