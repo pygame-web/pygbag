@@ -21,6 +21,7 @@ PYCONFIG_PKG_INDEXES = ["https://pygame-web.github.io/archives/repo/"]
 
 # the sim does not preload assets and cannot access currentline
 # unless using https://github.com/pmp-p/aioprompt/blob/master/aioprompt/__init__.py
+# or a thread
 
 if not defined("undefined"):
 
@@ -665,13 +666,6 @@ ________________________
             for dep in deps:
                 await aio.pep0723.pip_install(dep)
 
-            await TopLevel_async_handler.async_imports(callback, *maybe_wanted)
-
-        # else:
-        #   sim use a local folder venv model
-        #   await aio.pep0723.check_list(code=code, filename=None) is done in pygbag.aio
-
-
         PyConfig.imports_ready = True
         return True
 
@@ -862,7 +856,8 @@ ________________________
         else:
             await sub
 
-
+import os
+os.shell = shell
 builtins.shell = shell
 # end shell
 
@@ -1078,7 +1073,7 @@ if not aio.cross.simulator:
 
         #repodata = "repodata.json"
 
-        async def raw_input(self, prompt=">>> "):
+        async def input_console(self, prompt=">>> "):
             if len(self.buffer):
                 return self.buffer.pop(0)
 
@@ -1163,9 +1158,14 @@ if not aio.cross.simulator:
         @classmethod
         def list_imports(cls, code=None, file=None, hint=""):
             import aio.pep0723
-            DBG(f"""
 
-1168: list_imports {len(code)=} {file=} {hint=}")
+            if not len(aio.pep0723.Config.pkg_repolist):
+                print("""
+1170: pep0723 REPOSITORY MISSING
+""")
+            else:
+                DBG(f"""
+1175: list_imports {len(code)=} {file=} {hint=}")
 {aio.pep0723.Config.pkg_repolist[0]['-CDN-']=}
 
 """)
@@ -1291,119 +1291,20 @@ if not aio.cross.simulator:
 
             return wants
 
-        @classmethod
-        async def async_get_pkg(cls, want, ex, resume):
-            import aio.pep0723
-            pkg_file = ""
-
-            miss_list = cls.imports(want)
-
-            if want in miss_list:
-                miss_list.remove(want)
-
-            if len(miss_list):
-                DBG(f"1230: FIXME dependency table for manually built module '{want}' {miss_list=}")
-                await cls.async_imports(None, *miss_list)
-
-            for repo in aio.pep0723.Config.pkg_repolist:
-                DBG(f"1234: {want=} found : {want in repo}")
-
-                if want in repo:
-                    pkg_url = f"{repo['-CDN-']}{repo[want]}"
-
-                    pkg_file = f"/tmp/{repo[want].rsplit('/',1)[-1]}"
-
-                    if pkg_file in aio.toplevel.HISTORY:
-                        break
-
-                    cfg = {"io": "url", "type": "fs", "path": pkg_file}
-                    print(f"1205: async_get_pkg({pkg_url})")
-
-                    track = platform.window.MM.prepare(pkg_url, json.dumps(cfg))
-
-                    try:
-                        await cls.pv(track)
-                        zipfile.ZipFile(pkg_file).close()
-                        break
-                    except (IOError, zipfile.BadZipFile):
-                        pdb(f"1294: network error on {repo['-CDN-']}, cannot install {pkg_file}")
-            else:
-                print(f"PKG NOT FOUND : {want=}, {resume=}, {ex=}")
-                return None
-            return await aio.toplevel.get_repo_pkg(pkg_file, want, resume, ex)
-
-        # returns an awaitable as shell does not await directly
-        @classmethod
-        def get_pkg(cls, want, ex=None, resume=None):
-            return cls.async_get_pkg(want, ex, resume)
-
-        @classmethod
-        async def async_imports(cls, callback, *wanted, **kw):
-            def default_cb(pkg, error=None):
-                DBG(f"\tinstalling {pkg}")
-                if error:
-                    pdb(msg)
-
-            callback = callback or default_cb
-
-            print("1302: unscheduled imports :", wanted)
-
-            wants = cls.imports(*wanted)
-            all = list(cls.missing_fence)
-            print("1305: pre-required :", cls.missing_fence)
-            all.extend(wants)
-            print("1308: IMPORT FINAL ", all)
-
-            async def import_now(mod):
-                nonlocal all
-                if not mod in all:
-                    return
-                print(f'1359: FIXME: re-ordering of {mod=} from {aio.pep0723.sconf["platlib"]=}')
-                all.remove(mod)
-                await cls.async_get_pkg(mod, None, None)
-
-                # anticipated wasm compilation
-                if not aio.cross.simulator:
-                    import platform
-                    #sconf = sysconfig.get_paths()
-                    #platlib = sconf["platlib"]
-                    #platform.explore(platlib)
-                    platform.explore(aio.pep0723.sconf["platlib"])
-                    await asyncio.sleep(0)
-                    await asyncio.sleep(0)
-                    await asyncio.sleep(0)
-
-                __import__(mod)
-
-            # always put numpy first
-            await import_now("numpy")
-
-            # pygame must be early for plotting
-            if ("matplotlib" in all) and ("pygame" not in sys.modules):
-                await import_now("pygame")
-
-            for req in all:
-                if req == "pyyaml":
-                    req = "yaml"
-
-                if req == "python-dateutil":
-                    req = "dateutil"
-
-                if req == "pillow":
-                    req = "PIL"
-
-                if req in cls.ignore or req in sys.modules:
-                    print(f"1373: {req=} in {cls.ignore=} or sys.modules")
-                    continue
-
-                callback(req)
-
-                try:
-                    await cls.async_get_pkg(req, None, None)
-                except (IOError, zipfile.BadZipFile):
-                    msg = f"928: cannot download {req} pkg"
-                    callback(req, error=msg)
-                    continue
+#            # pygame must be early for plotting
+#            if ("matplotlib" in all) and ("pygame" not in sys.modules):
+#                await import_now("pygame")
+#
+#            for req in all:
+#                if req == "pyyaml":
+#                    req = "yaml"
+#
+#                if req == "python-dateutil":
+#                    req = "dateutil"
+#
+#                if req == "pillow":
+#                    req = "PIL"
+#
 
         @classmethod
         async def pv(cls, track, prefix="", suffix="", decimals=1, length=70, fill="X", printEnd="\r"):
@@ -1429,6 +1330,8 @@ if not aio.cross.simulator:
             print()
 
     # end TopLevel_async_handler
+
+    aio.toplevel.handler = TopLevel_async_handler
 
 
 else:

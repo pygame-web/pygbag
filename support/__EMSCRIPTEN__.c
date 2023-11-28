@@ -967,7 +967,7 @@ main(int argc, char **argv)
 // defaults
     setenv("LC_ALL", "C.UTF-8", 0);
     setenv("TERMINFO", "/usr/share/terminfo", 0);
-    setenv("COLS","132", 0);
+    setenv("COLUMNS","132", 0);
     setenv("LINES","30", 0);
 //    setenv("PYTHONINTMAXSTRDIGITS", "0", 0);
     setenv("LANG", "en_US.UTF-8", 0);

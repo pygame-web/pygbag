@@ -65,6 +65,7 @@ class Config:
         "pygame": "pygame.base",
         "pygame-ce": "pygame.base",
         "python-i18n" : "i18n",
+        "pillow" : "PIL",
     }
 
 
@@ -259,8 +260,8 @@ async def pip_install(pkg, sysconf={}):
     wheel_url = ""
 
     # hack for WASM wheel repo
-    if pkg in Config.mapping:
-        pkg = Config.mapping[pkg]
+    if pkg.lower() in Config.mapping:
+        pkg = Config.mapping[pkg.lower()]
         if pkg in HISTORY:
             return
         print("228: package renamed to", pkg)
@@ -408,7 +409,7 @@ async def check_list(code=None, filename=None):
             if (env / pkg_final).is_dir():
                 print("found in env :", pkg)
                 continue
-            await pip_install(pkg, sconf)
+            await pip_install(pkg_final, sconf)
 
     # wasm compilation
     if not aio.cross.simulator:
@@ -422,6 +423,7 @@ async def check_list(code=None, filename=None):
         dep = PATCHLIST.pop(0)
         print(f"314: patching {dep}")
         try:
+            import platform
             platform.patches.pop(dep)()
         except Exception as e:
             sys.print_exception(e)

@@ -1,5 +1,7 @@
 """ packager+server for pygbag wasm loader """
 
+" ^(⌒(oo)⌒)^ "
+
 import sys
 
 # some Linux distro are stuck in the past. Better safe than sorry
@@ -52,7 +54,7 @@ if not hasattr(sys, "print_exception"):
     sys.print_exception = print_exception
 
 
-def ESC(*argv, flush=False):
+def ESC(*argv, flush=True):
     for arg in argv:
         sys.__stdout__.write(chr(0x1B))
         sys.__stdout__.write(arg)

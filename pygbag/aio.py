@@ -13,13 +13,13 @@ if hasattr(os, "uname") and not os.uname().machine.startswith("wasm"):
 
     try:
         import aioconsole, aiohttp
-    except:
-        print(f"""
+    except Exception as e:
+        print(e,f"""
 
 pygbag simulator rely on both aioconsole and aiohttp
 please use :
 
-    {sys.interpreter} -m pip install aioconsole aiohttp
+    {sys.executable} -m pip install aioconsole aiohttp asyncio_socks_server token_util
 
 """)
         raise SystemExit

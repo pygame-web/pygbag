@@ -201,9 +201,9 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
         HTML_MARK = '"' * 3 + " # BEGIN -->"
 
-        @classmethod
-        async def async_imports(cls, callback, *wanted, **kw):
-            ...
+#        @classmethod
+#        async def async_imports(cls, callback, *wanted, **kw):
+#            ...
 
         @classmethod
         def list_imports(cls, code=None, file=None, hint=""):
@@ -222,7 +222,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
                 self.buffer.insert(0, "#")
             print(f"178: {count} lines queued for async eval")
 
-        async def raw_input(self, prompt=">>> "):
+        async def input_console(self, prompt=">>> "):
             if len(self.buffer):
                 return self.buffer.pop(0)
 
@@ -247,11 +247,12 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
     # start async top level machinery and add a console.
     await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
-    ns = vars(__import__(__name__))
 
-    ns["TopLevel_async_handler"] = TopLevel_async_handler
-    # FIXME: store it elsewhere.
-    __import__("builtins").TopLevel_async_handler = TopLevel_async_handler
+    #ns = vars(__import__(__name__))
+
+    #ns["TopLevel_async_handler"] = TopLevel_async_handler
+
+    aio.toplevel.handler = TopLevel_async_handler
 
     sourcefile = sourcefile or str(sys.argv[-1])
 
