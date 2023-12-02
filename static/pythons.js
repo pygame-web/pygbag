@@ -1012,13 +1012,11 @@ async function feat_vtx(debug_hidden) {
     const { WasmTerminal } = await import("./vtx.js")
     const lines = get_terminal_lines() // including virtual get_terminal_console()
     const py = window.document.body.clientHeight
-    var fntsize = Math.floor(py/lines) - 4
+    var fntsize = Math.floor(py/lines) - 7
 
-    if (lines<40)
-        fntsize -= 1
+//    if (lines<45)
+  //      fntsize -= 3
 
-    if (py>600)
-        fntsize += 1
     if (py>720)
         fntsize += 1
     if (py>1024)
@@ -1069,6 +1067,9 @@ function feat_stdout() {
 
 
 function focus_handler(ev) {
+    if (!window.canvas)
+        return
+
     if (ev.type == "click") {
         canvas.removeEventListener("click", MM.focus_handler)
         canvas.focus()
@@ -1076,18 +1077,21 @@ function focus_handler(ev) {
     }
 
     if (ev.type == "mouseenter") {
-        canvas.focus()
-        console.log("canvas focus set")
+        console.log("focus set")
         if (MM.focus_lost && MM.current_trackid) {
             console.warn("resuming music queue")
             MM[MM.current_trackid].media.play()
         }
-
+        if (!window.canvas)
+            return
+        canvas.focus()
         canvas.removeEventListener("mouseenter", MM.focus_handler)
         return
     }
 
     if (ev.type == "focus") {
+        if (!window.canvas)
+            return
         queue_event("focus", ev )
         console.log("focus set")
         canvas.focus()
@@ -1096,6 +1100,8 @@ function focus_handler(ev) {
 
     // for autofocus
     if (ev.type == "blur") {
+        if (!window.canvas)
+            return
         // remove initial focuser that may still be there
         try {
             canvas.removeEventListener("click", MM.focus_handler)
