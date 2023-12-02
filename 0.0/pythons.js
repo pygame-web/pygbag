@@ -50,21 +50,25 @@ const FETCH_FLAGS = {
 
 
 window.get_terminal_cols = function () {
-    var cdefault = vm.config.cols || 132
-    const cols = (window.terminal && terminal.dataset.cols) || cdefault
+    var cdefault = 132
+    if (window.terminal)
+        if (vm && vm.config.columns)
+            cdefault = Number(vm.config.columns || cdefault)
+    const cols = (window.terminal && terminal.dataset.columns) || cdefault
     return Number(cols)
 }
 
 window.get_terminal_console = function () {
     var cdefault = 0
     if (window.terminal)
-        if (vm && vm.config.debug)
-            cdefault = 10
+        if (vm && vm.config.console)
+            cdefault = Number( vm.config.console || cdefault)
     return Number( (window.terminal && terminal.dataset.console) || cdefault )
 }
 
 window.get_terminal_lines = function () {
-    return Number( (window.terminal && terminal.dataset.lines) || vm.config.lines) + get_terminal_console()
+    return Number( (window.terminal && terminal.dataset.lines) || vm.config.lines)
+   // + get_terminal_console() for the phy size
 }
 
 
@@ -1006,10 +1010,30 @@ async function feat_vtx(debug_hidden) {
     }
 
     const { WasmTerminal } = await import("./vtx.js")
+    const lines = get_terminal_lines() // including virtual get_terminal_console()
+    const py = window.document.body.clientHeight
+    var fntsize = Math.floor(py/lines) - 4
 
-    vm.vt = new WasmTerminal("terminal", get_terminal_cols(), get_terminal_lines(), [
+    if (lines<40)
+        fntsize -= 1
+
+    if (py>600)
+        fntsize += 1
+    if (py>720)
+        fntsize += 1
+    if (py>1024)
+        fntsize += 1
+    console.warn("fnt:",window.document.body.clientHeight ,"/", lines,"=", fntsize)
+    vm.vt = new WasmTerminal(
+        "terminal",
+        get_terminal_cols(),
+        lines,
+        fntsize,
+        config.fbdev,
+        [
             { url : (config.cdn || "./") + "xtermjsixel/xterm-addon-image-worker.js", sixelSupport:true}
-    ] )
+        ]
+    )
 }
 
 
@@ -1114,6 +1138,10 @@ function feat_snd() {
     // to set user media engagement status and possibly make it blocking
     MM.UME = !vm.config.ume_block
     MM.is_safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    if (!MM.is_safari)
+        MM.is_safari = navigator.userAgent.search("iPhone")>=0;
+
     if (!MM.UME && !MM.is_safari)
         MM_play( {auto:1, test:1, media: new Audio(config.cdn+"empty.ogg")} , 1)
 
@@ -2327,8 +2355,10 @@ console.warn("TODO: merge/replace location options over script options")
 //FIXME: should debug force -i or just display vt ?
 config.interactive = config.interactive || (location.search.search("-i")>=0) //??=
 
-    config.cols = cfg.cols || 132
+    config.columns = cfg.columns || 132
     config.lines = cfg.lines || 32
+    config.console = cfg.console || 10
+    config.fbdev = cfg.os.search("fbdev")>=0
 
     config.gui_debug = config.gui_debug ||  2  //??=
 
@@ -2431,8 +2461,9 @@ function auto_start(cfg) {
                 cfg = {
                     module : false,
                     python : script.dataset.python,
-                    cols : script.dataset.cols,
+                    cols : script.dataset.columns,
                     lines : script.dataset.lines,
+                    console : script.dataset.console,
                     url : script.src,
                     os : script.dataset.os || "gui",
                     text : code,

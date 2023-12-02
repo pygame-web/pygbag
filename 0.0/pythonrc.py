@@ -593,7 +593,7 @@ ________________________
         if not cls.pgzrunning:
             # pgzrun does its own cleanup call
             aio.defer(aio.recycle.cleanup, (), {}, delay=500)
-            aio.defer(embed.prompt, (), {}, delay=800)
+            aio.defer(platform.prompt, (), {}, delay=800)
 
     @classmethod
     def uptime(cls, *argv, **env):
@@ -666,14 +666,16 @@ ________________________
             for dep in deps:
                 await aio.pep0723.pip_install(dep)
 
+            aio.pep0723.do_patches()
+
         PyConfig.imports_ready = True
         return True
 
     @classmethod
     def interactive(cls, prompt=False):
         if prompt:
-            TopLevel_async_handler.mute_state = False
-            TopLevel_async_handler.muted = False
+            aio.toplevel.handler.mute_state = False
+            aio.toplevel.handler.muted = False
 
         if cls.is_interactive:
             return
@@ -682,13 +684,15 @@ ________________________
         DBG("651: starting EventTarget in a few seconds")
 
         print()
-        TopLevel_async_handler.instance.banner()
+        aio.toplevel.handler.instance.banner()
 
         aio.create_task(platform.EventTarget.process())
         cls.is_interactive = True
 
         if not shell.pgzrunning:
-            del __import__("__main__").__file__
+            # __main__@stdin has no __file__
+            if hasattr( __import__("__main__") , "__file__"):
+                del __import__("__main__").__file__
             if prompt:
                 cls.runner.prompt()
         else:
@@ -702,11 +706,11 @@ ________________________
             has_pygame = False
             with open(file_name, "r") as code_file:
                 code = code_file.read()
-                code = code.rsplit(TopLevel_async_handler.HTML_MARK, 1)[0]
+                code = code.rsplit(aio.toplevel.handler.HTML_MARK, 1)[0]
 
                 # do not check site/final/packed code
                 # preload code must be fully async and no pgzero based
-                if TopLevel_async_handler.muted:
+                if aio.toplevel.handler.muted:
                     return True
 
                 if code[0:320].find("#!pgzrun") >= 0:
@@ -725,6 +729,7 @@ ________________________
 
         code = ""
         shell.pgzrunning = None
+
         DBG(f"690: : runpy({main=})")
         # REMOVE THAT IT SHOULD BE DONE IN SIM ANALYSER AND HANDLED PROPERLY
         if not check_code(main):
@@ -747,13 +752,13 @@ ________________________
         await cls.preload_code(code, **kw)
 
         # get an async executor to catch import errors
-        if TopLevel_async_handler.instance:
+        if aio.toplevel.handler.instance:
             DBG("715: starting shell")
-            TopLevel_async_handler.instance.start_console(shell)
+            aio.toplevel.handler.instance.start_console(shell)
         else:
             pdb("718: no async handler loader, starting a default async console")
             shell.debug()
-            await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
+            await aio.toplevel.handler.start_toplevel(platform.shell, console=True)
 
         # TODO: check if that thing really works
         if shell.pgzrunning:
@@ -765,15 +770,17 @@ ________________________
 
             pgzrun.go = lambda: None
             cb = kw.pop("callback", None)
-            await TopLevel_async_handler.async_imports(cb, "pygame.base", "pgzero", "pyfxr", **kw)
+            await aio.toplevel.handler.async_imports(cb, "pygame.base", "pgzero", "pyfxr", **kw)
             import pgzero
             import pgzero.runner
 
             pgzero.runner.prepare_mod(__main__)
+
         # finally eval async
-        TopLevel_async_handler.instance.eval(code)
+        aio.toplevel.handler.instance.eval(code)
+
         # go back to prompt
-        if not TopLevel_async_handler.muted:
+        if not aio.toplevel.handler.muted:
             print("going interactive")
             DBG("746: TODO detect input/print to select repl debug")
             cls.interactive()
@@ -783,11 +790,11 @@ ________________________
     @classmethod
     async def source(cls, main, *args, **kw):
         # this is not interactive turn off prompting
-        TopLevel_async_handler.muted = True
+        aio.toplevel.handler.muted = True
         try:
             return await cls.runpy(main, *args, **kw)
         finally:
-            TopLevel_async_handler.muted = TopLevel_async_handler.mute_state
+            aio.toplevel.handler.muted = aio.toplevel.handler.mute_state
 
     @classmethod
     def parse_sync(shell, line, **env):
@@ -1073,18 +1080,7 @@ if not aio.cross.simulator:
 
         #repodata = "repodata.json"
 
-        async def input_console(self, prompt=">>> "):
-            if len(self.buffer):
-                return self.buffer.pop(0)
 
-            # if program wants I/O do not empty buffers
-            if self.shell.is_interactive:
-                maybe = embed.readline()
-
-                if len(maybe):
-                    return maybe
-            return None
-            # raise EOFError
 
         def eval(self, source):
             for count, line in enumerate(source.split("\n")):
