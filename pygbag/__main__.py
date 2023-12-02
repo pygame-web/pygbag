@@ -93,17 +93,31 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
         __str__ = __repr__
 
+    class window_navigator:
+        userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+
     # fake host document.window
     import platform as fakehost
+
 
     def truc(*argv, **kw):
         print("truc", argv, kw)
 
+    def prompt():
+        # FIXME for js style console should be
+        # CSI(f"{TTY.LINES+TTY.CONSOLE};1H{prompt}")
+        print('\r>>> ',end='')
+
+    fakehost.is_browser = False
+    fakehost.async_input = async_input
     fakehost.window = NoOp("platform.window")
     fakehost.window.console = NoOp("platform.window.console")
     fakehost.window.console.log = print
     fakehost.window.get_terminal_console = truc
     fakehost.window.RAW_MODE = 0
+    fakehost.window.navigator = window_navigator
+    fakehost.readline = lambda :""
+    fakehost.prompt = prompt
 
     def set_raw_mode(mode):
         import platform as fakehost
@@ -222,20 +236,6 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
                 self.buffer.insert(0, "#")
             print(f"178: {count} lines queued for async eval")
 
-        async def input_console(self, prompt=">>> "):
-            if len(self.buffer):
-                return self.buffer.pop(0)
-
-            # if program wants I/O do not empty buffers
-            if self.shell.is_interactive:
-                if async_input:
-                    maybe = await async_input()
-                else:
-                    maybe = ""
-
-                if len(maybe):
-                    return maybe
-            return None
 
         async def async_get_pkg(cls, want, ex, resume):
             print(

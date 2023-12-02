@@ -340,7 +340,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
                     aio.defer(execfile, [f"{ROOTDIR}/{loadermain}"], {})
                 else:
                     pdb(f"no {loadermain} found for {sys.argv[0]} in {ROOTDIR}")
-                aio.defer(embed.prompt, (), {}, delay=2000)
+                #aio.defer(embed.prompt, (), {}, delay=2000)
 
     # C should unlock aio loop when preload count reach 0.
 
@@ -350,7 +350,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
             global fix_preload_table_apk, ROOTDIR
             pdb("no assets preloaded")
             os.chdir(ROOTDIR)
-            aio.defer(embed.prompt, (), {})
+            #aio.defer(embed.prompt, (), {})
 
         # unlock embed looper because no preloading
         embed.run()

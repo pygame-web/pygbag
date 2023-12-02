@@ -63,8 +63,8 @@ class Config:
 
     mapping = {
         "pygame": "pygame.base",
-        "pygame-ce": "pygame.base",
-        "python-i18n" : "i18n",
+        "pygame_ce": "pygame.base",
+        "python_i18n" : "i18n",
         "pillow" : "PIL",
     }
 
@@ -246,6 +246,19 @@ async def install_pkg(sysconf, wheel_url, wheel_pkg):
             target.write(pkg.read())
     install(target_filename, sysconf)
 
+def do_patches():
+    global PATCHLIST
+    # apply any patches
+    while len(PATCHLIST):
+        dep = PATCHLIST.pop(0)
+        print(f"254: patching {dep}")
+        try:
+            import platform
+            platform.patches.pop(dep)()
+        except Exception as e:
+            sys.print_exception(e)
+
+
 # FIXME: HISTORY and invalidate caches
 async def pip_install(pkg, sysconf={}):
     global sconf
@@ -264,7 +277,11 @@ async def pip_install(pkg, sysconf={}):
         pkg = Config.mapping[pkg.lower()]
         if pkg in HISTORY:
             return
-        print("228: package renamed to", pkg)
+        print("279: package renamed to", pkg)
+
+    if pkg in platform.patches:
+        if not pkg in PATCHLIST:
+            PATCHLIST.append(pkg)
 
     for repo in Config.pkg_repolist:
         if pkg in repo:
@@ -280,13 +297,13 @@ async def pip_install(pkg, sysconf={}):
                             if line.find("-py3-none-any.whl") > 0:
                                 wheel_url = line.split('"', 2)[1]
                 else:
-                    print("270: ERROR: cannot find package :", pkg)
+                    print("283: ERROR: cannot find package :", pkg)
         except FileNotFoundError:
-            print("200: ERROR: cannot find package :", pkg)
+            print("285: ERROR: cannot find package :", pkg)
             return
 
         except:
-            print("204: ERROR: cannot find package :", pkg)
+            print("289: ERROR: cannot find package :", pkg)
             return
 
     if wheel_url:
@@ -296,7 +313,7 @@ async def pip_install(pkg, sysconf={}):
             if pkg not in HISTORY:
                 HISTORY.append(pkg)
         except:
-            print("212: INVALID", pkg, "from", wheel_url)
+            print("299: INVALID", pkg, "from", wheel_url)
 
 PYGAME=0
 async def parse_code(code, env):
@@ -418,15 +435,7 @@ async def check_list(code=None, filename=None):
         platform.explore(sconf["platlib"])
         await asyncio.sleep(0)
 
-    # apply any patches
-    while len(PATCHLIST):
-        dep = PATCHLIST.pop(0)
-        print(f"314: patching {dep}")
-        try:
-            import platform
-            platform.patches.pop(dep)()
-        except Exception as e:
-            sys.print_exception(e)
+    do_patches()
 
     print("-" * 40)
     print()

@@ -12,18 +12,18 @@ if hasattr(os, "uname") and not os.uname().machine.startswith("wasm"):
     from pathlib import Path
 
     try:
-        import aioconsole, aiohttp
+        #import aioconsole, aiohttp
+        import aiohttp
     except Exception as e:
         print(e,f"""
 
-pygbag simulator rely on both aioconsole and aiohttp
+pygbag simulator rely on : aiohttp asyncio_socks_server token_util
 please use :
 
-    {sys.executable} -m pip install aioconsole aiohttp asyncio_socks_server token_util
+    {sys.executable} -m pip install aiohttp asyncio_socks_server token_util
 
 """)
         raise SystemExit
-
 
 
     import aio.pep0723
@@ -35,20 +35,21 @@ please use :
 
 
     import pygbag.__main__
-
-    async def custom_async_input():
-        import platform
-        if platform.window.RAW_MODE:
-# TODO: FIXME: implement embed.os_read and debug focus handler
-            #return await asyncio.sleep(0)
-            ...
-        return await aioconsole.ainput("››› ")
+#
+#    async def custom_async_input():
+#        import platform
+#        if platform.window.RAW_MODE:
+## TODO: FIXME: implement embed.os_read and debug focus handler
+#            #return await asyncio.sleep(0)
+#            ...
+#        return await aioconsole.ainput("››› ")
 
     aio.loop.create_task(
         pygbag.__main__.import_site(
             sourcefile=sys.argv[0],
             simulator=True,
-            async_input=custom_async_input,
+#            async_input=custom_async_input,
+            async_input=None,
             async_pkg=aio.pep0723.check_list(filename=sys.argv[0]),
         )
     )
@@ -61,7 +62,7 @@ please use :
     aio.started = True
 
     while not aio.exit:
-        next = time.time() + 0.016
+        next = time.time() + 0.0155
         try:
             aio.loop._run_once()
         except KeyboardInterrupt:
@@ -72,7 +73,7 @@ please use :
             past = int(-dt * 1000)
             # do not spam for <4 ms late (50Hz vs 60Hz)
             if past > 4:
-                print(f"aio: violation frame is {past} ms late")
+                print(f"\raio: violation frame is {past} ms late")
             # too late do not sleep at all
         else:
             time.sleep(dt)

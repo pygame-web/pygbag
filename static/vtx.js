@@ -41,40 +41,63 @@ if (!window.Terminal) {
 
 
 export class WasmTerminal {
-    constructor(hostid, cols, rows, addons_list) {
+    constructor(hostid, cols, rows, fontsize, is_fbdev, addons_list) {
         this.input = ''
         this.resolveInput = null
         this.activeInput = true
         this.inputStartCursor = null
 
         this.nodup = 1
+        var theme = { background: '#1a1c1f' }
+        var transparency = false
 
-
+        if (is_fbdev) {
+            theme = {
+                foreground: '#ffffff',
+                background: 'rgba(0, 0, 0, 0)',
+                cursor: '#ffffff',
+                selection: 'rgba(255, 255, 255, 0.3)',
+                black: '#000000',
+                red: '#e06c75',
+                brightRed: '#e06c75',
+                green: '#A4EFA1',
+                brightGreen: '#A4EFA1',
+                brightYellow: '#EDDC96',
+                yellow: '#EDDC96',
+                magenta: '#e39ef7',
+                brightMagenta: '#e39ef7',
+                cyan: '#5fcbd8',
+                brightBlue: '#5fcbd8',
+                brightCyan: '#5fcbd8',
+                blue: '#5fcbd8',
+                white: '#d0d0d0',
+                brightBlack: '#808080',
+                brightWhite: '#ffffff'
+            }
+            transparency = true
+        }
 
         this.xterm = new Terminal(
             {
-//                allowTransparency: true,
+                theme: theme,
+                allowTransparency: transparency,
                 allowProposedApi : true ,   // xterm 0.5 + sixel
-                scrollback: 10000,
-                fontSize: 14,
-                theme: { background: '#1a1c1f' },
+                scrollback: 0,
+                fontSize: (fontsize || 12),
                 cols: (cols || 132), rows: (rows || 32)
             }
         );
 
-        //this.xterm.activeProtocol("ANY");
-
         if (typeof(Worker) !== "undefined") {
 
             for (const addon of (addons_list||[]) ) {
-                console.warn(hostid,cols,rows, addon)
+                console.warn(hostid, cols, rows, addon)
                 const imageAddon = new ImageAddon.ImageAddon(addon.url , addon);
                 this.xterm.loadAddon(imageAddon);
                 this.sixel = function write(data) {
                     this.xterm.write(data)
                 }
             }
-
 
         } else {
             console.warn("No worker support, not loading xterm addons")

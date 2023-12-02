@@ -1,4 +1,5 @@
 import sys
+import os
 import aio
 
 # https://bugs.python.org/issue34616
@@ -46,11 +47,20 @@ if not __UPY__:
                         print("NoOp shell", line)
 
                 self.shell = shell
+
             self.rv = None
 
-        # need to subclass
-        # @staticmethod
-        # def get_pkg(want, ex=None, resume=None):
+            try:
+                sys.ps1
+            except AttributeError:
+                sys.ps1 = ">>> "
+
+            try:
+                sys.ps2
+            except AttributeError:
+                sys.ps2 = "--- "
+
+
 
         def runsource(self, source, filename="<stdin>", symbol="single"):
             if len(self.buffer) > 1:
@@ -123,97 +133,101 @@ if not __UPY__:
 
             self.write("\nPython %s on %s\n%s\n" % (sys.version, sys.platform, cprt))
 
-        def prompt(self):
+        def prompt(self, prompt=None):
             if not self.__class__.muted and self.shell.is_interactive:
-                if embed:
-                    embed.prompt()
+                import platform
+                # that is the browser one
+                #platform.prompt(prompt or sys.ps1)
+                embed.prompt()
+
+        async def input_console(self, prompt=">>> "):
+            if len(self.buffer):
+                return self.buffer.pop(0)
+
+            # if program wants I/O do not empty buffers
+            if self.shell.is_interactive:
+                if not aio.cross.simulator:
+                    maybe = embed.readline()
+                elif aio.async_input:
+                    maybe = await aio.async_input()
+                else:
+                    maybe = ""
+
+                if len(maybe):
+                    return maybe
+            return None
+
+
+        # can be used to mix console and app
+        async def interact_step(self, prompt=None):
+
+            if aio.exit:
+                return
+
+            if prompt is None:
+                prompt = sys.ps1
+
+            try:
+                try:
+                    self.line = await self.input_console(prompt)
+                    if self.line is None:
+                        return
+
+                except EOFError:
+                    self.write("\n")
+                    return
+                else:
+                    if self.push(self.line):
+                        if self.one_liner:
+                            prompt = sys.ps2
+                            if embed:
+                                embed.set_ps2()
+                            print("Sorry, multi line input editing is not supported", file=sys.stderr)
+                            self.one_liner = False
+                            self.resetbuffer()
+                        else:
+                            return
+                    else:
+                        prompt = sys.ps1
+
+            except KeyboardInterrupt:
+                self.write("\nKeyboardInterrupt\n")
+                self.resetbuffer()
+                self.one_liner = True
+
+            if aio.exit:
+                return
+
+            try:
+                # if async prepare is required
+                while len(self.shell.coro):
+                    self.rv = await self.shell.coro.pop(0)
+
+                # if self.rv not in [undefined, None, False, True]:
+                if inspect.isawaitable(self.rv):
+                    await self.rv
+            except RuntimeError as re:
+                if str(re).endswith("awaited coroutine"):
+                    ...
+                else:
+                    sys.print_exception(ex)
+
+            except Exception as ex:
+                print(type(self.rv), self.rv)
+                sys.print_exception(ex)
+
+            self.prompt()
 
         async def interact(self):
-
-            # in raw mode we don't want that loop to read input
+            # in repl+raw mode we don't want that loop to read input
             import sys
             from platform import window
 
-            if sys.platform in ('emscripten','wasi') and not aio.cross.simulator:
-                raw_mix = True
-            else:
-                raw_mix = False
-
-            # multiline input clumsy sentinel
-            last_line = ""
-
-            try:
-                sys.ps1
-            except AttributeError:
-                sys.ps1 = ">>> "
-
-            try:
-                sys.ps2
-            except AttributeError:
-                sys.ps2 = "--- "
-
-            prompt = sys.ps1
-
             while not aio.exit:
                 await asyncio.sleep(0)
-                #if raw_mix:
                 if window.RAW_MODE:
                     continue
-
-                if aio.exit:
-                    return
-
-                try:
-                    try:
-                        self.line = await self.input_console(prompt)
-                        if self.line is None:
-                            continue
-
-                    except EOFError:
-                        self.write("\n")
-                        break
-                    else:
-                        if self.push(self.line):
-                            if self.one_liner:
-                                prompt = sys.ps2
-                                if embed:
-                                    embed.set_ps2()
-                                print("Sorry, multi line input editing is not supported", file=sys.stderr)
-                                self.one_liner = False
-                                self.resetbuffer()
-                            else:
-                                continue
-                        else:
-                            prompt = sys.ps1
-
-                except KeyboardInterrupt:
-                    self.write("\nKeyboardInterrupt\n")
-                    self.resetbuffer()
-                    self.one_liner = True
-
-                if aio.exit:
-                    return
-
-                try:
-                    # if async prepare is required
-                    while len(self.shell.coro):
-                        self.rv = await self.shell.coro.pop(0)
-
-                    # if self.rv not in [undefined, None, False, True]:
-                    if inspect.isawaitable(self.rv):
-                        await self.rv
-                except RuntimeError as re:
-                    if str(re).endswith("awaited coroutine"):
-                        ...
-                    else:
-                        sys.print_exception(ex)
-
-                except Exception as ex:
-                    print(type(self.rv), self.rv)
-                    sys.print_exception(ex)
-
-                self.prompt()
-
+                await self.interact_step(sys.ps1)
             aio.exit_now(0)
 
         @classmethod
@@ -222,6 +236,8 @@ if not __UPY__:
                 vars(__import__(ns)),
                 shell=shell,
             )
+            import platform
+            platform.shell = shell
             shell.runner = cls.instance
             del AsyncInteractiveConsole.make_instance
 
