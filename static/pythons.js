@@ -1012,15 +1012,12 @@ async function feat_vtx(debug_hidden) {
     const { WasmTerminal } = await import("./vtx.js")
     const lines = get_terminal_lines() // including virtual get_terminal_console()
     const py = window.document.body.clientHeight
-    var fntsize = Math.floor(py/lines) - 7
+    var fntsize = Math.floor(py/lines) - 2
 
-//    if (lines<45)
-  //      fntsize -= 3
+    // why ????????
+    if (fntsize>32) fntsize--
+    if (fntsize>20) fntsize--
 
-    if (py>720)
-        fntsize += 1
-    if (py>1024)
-        fntsize += 1
     console.warn("fnt:",window.document.body.clientHeight ,"/", lines,"=", fntsize)
     vm.vt = new WasmTerminal(
         "terminal",

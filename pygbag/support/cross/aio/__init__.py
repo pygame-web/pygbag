@@ -148,6 +148,7 @@ spent = 0.00001
 leave = enter + spent
 
 from asyncio import *
+from asyncio import exceptions
 
 __run__ = run
 

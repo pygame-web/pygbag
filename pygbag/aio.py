@@ -78,3 +78,4 @@ please use :
         else:
             time.sleep(dt)
     print("sim loop exited")
+    sys.stdout.flush()
