@@ -10,14 +10,12 @@ import ast
 import types
 import inspect
 
-HISTORY = []
-
-try:
-    import embed
-except:
-    embed = False
-
 if not __UPY__:
+    try:
+        from . import repl
+    except:
+        repl = None
+
     import code
 
     class AsyncInteractiveConsole(code.InteractiveConsole):
@@ -61,7 +59,6 @@ if not __UPY__:
                 sys.ps2 = "--- "
 
 
-
         def runsource(self, source, filename="<stdin>", symbol="single"):
             if len(self.buffer) > 1:
                 symbol = "exec"
@@ -90,8 +87,8 @@ if not __UPY__:
 
         def runcode(self, code):
 
-            if embed:
-                embed.set_ps1()
+            if repl:
+                repl.set_ps1()
             self.rv = undefined
 
             bc = types.FunctionType(code, self.locals)
@@ -138,7 +135,7 @@ if not __UPY__:
                 import platform
                 # that is the browser one
                 #platform.prompt(prompt or sys.ps1)
-                embed.prompt()
+                if repl:repl.prompt()
 
         async def input_console(self, prompt=">>> "):
             if len(self.buffer):
@@ -146,8 +143,8 @@ if not __UPY__:
 
             # if program wants I/O do not empty buffers
             if self.shell.is_interactive:
-                if not aio.cross.simulator:
-                    maybe = embed.readline()
+                if repl and not aio.cross.simulator:
+                    maybe = repl.readline()
                 elif aio.async_input:
                     maybe = await aio.async_input()
                 else:
@@ -180,8 +177,8 @@ if not __UPY__:
                     if self.push(self.line):
                         if self.one_liner:
                             prompt = sys.ps2
-                            if embed:
-                                embed.set_ps2()
+                            if repl:
+                                repl.set_ps2()
                             print("Sorry, multi line input editing is not supported", file=sys.stderr)
                             self.one_liner = False
                             self.resetbuffer()
@@ -262,6 +259,8 @@ if not __UPY__:
                 cls.start_console(shell, ns=ns)
 
 else:
+
+    # TODO upy event driven async repl
 
     class AsyncInteractiveConsole:
         ...

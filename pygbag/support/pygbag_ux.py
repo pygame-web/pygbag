@@ -52,7 +52,7 @@ from pathlib import Path
 
 # ====================== pygame
 
-def pg_load(fn, alpha=True):
+def pg_load(fn, resize=None, width=0, height=0, alpha=True):
     import pygame
     from pathlib import Path
 
@@ -60,6 +60,12 @@ def pg_load(fn, alpha=True):
         media = pygame.image.load(fn)
     else:
         media = pygame.image.load( Path(__file__).parent / "offline.png" )
+
+    if resize:
+        tmp = pygame.transform.smoothscale(media, resize )
+        media = tmp
+    elif (width and height):
+        media = pygame.transform.smoothscale(media, (width,heigh,) )
 
     try:
         if alpha:
@@ -69,4 +75,3 @@ def pg_load(fn, alpha=True):
     # offscreen case
     except:
         return media
-

@@ -220,6 +220,31 @@ else:
     sys.argv.clear()
     sys.argv.extend(PyConfig.pop("argv", []))
 
+    sys.executable = PyConfig["executable"]
+    sys.orig_argv.clear()
+
+    sys.orig_argv.append(sys.executable)
+
+    # env is passed in orig_argv ?ENV1=V1&ENV2=V2#
+    for arg in PyConfig["orig_argv"]:
+        if '=' not in arg:
+            sys.orig_argv.append(arg)
+        else:
+            k,v = arg.split('=',1)
+            os.environ[k]=v
+
+    home = f"/home/{os.environ.get('USER','web_user')}"
+    if home!="/home/web_user":
+        # in case user name is not fs compatible
+        try:
+            os.rename("/home/web_user", home)
+        except:
+            home = "/home/web_user"
+
+    os.environ["HOME"] = home;
+    os.environ["APPDATA"] = home
+    del home
+
 
 PyConfig["imports_ready"] = False
 PyConfig["pygbag"] = 0
@@ -404,6 +429,13 @@ class shell:
                 yield e
 
         return True
+
+    @classmethod
+    def env(cls, *argv):
+        for k in os.environ:
+            yield f"{k}={os.environ[k]}"
+        return True
+
 
     @classmethod
     def pwd(cls, *argv):
