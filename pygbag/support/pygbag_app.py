@@ -1,4 +1,11 @@
-this = __import__(__name__)
+import sys
+
+if sys.platform not in ('emscripten','wasi') or aio.cross.simulator:
+    sleep_delay = 0
+else:
+    sleep_delay = 0.0155
+
+
 
 from pygbag_ui import Tui, TTY
 import pygbag_ui as ui
@@ -7,41 +14,30 @@ from pygbag_ux import *
 ux_dim(1280 // 2 , 720 // 2)
 
 
-if 1:
+class vpad:
+    X = 0
+    Z = 1
+    Y = 2
+    evx = []
+    evy = []
+    evz = []
+    axis = [evx, evz, evy]
 
-    import pygame
-    class vpad:
-        X = 0
-        Z = 1
-        Y = 2
-        evx = []
-        evy = []
-        evz = []
-        axis = [evx, evz, evy]
+    LZ = 0.5
 
-        LZ = 0.5
+    @classmethod
+    def get_axis(self, n):
+        if len(self.axis[n]):
+            return self.axis[n].pop(0)
+        return 0.0
 
-        @classmethod
-        def get_axis(self, n):
-            if len(self.axis[n]):
-                return self.axis[n].pop(0)
-            return 0.0
-
-        @classmethod
-        def emit(self, axis, value):
-            self.axis[axis].append(float(value))
-            ev = pygame.event.Event(pygame.JOYAXISMOTION)
-            pygame.event.post(ev)
-            return False
-
-
-
-
-import sys
-if sys.platform not in ('emscripten','wasi') or aio.cross.simulator:
-    sleep_delay = 0
-else:
-    sleep_delay = 0.0155
+    @classmethod
+    def emit(self, axis, value):
+        import pygame
+        self.axis[axis].append(float(value))
+        ev = pygame.event.Event(pygame.JOYAXISMOTION)
+        pygame.event.post(ev)
+        return False
 
 
 
@@ -62,7 +58,7 @@ def console():
     if sys.platform not in ('emscripten','wasi') or aio.cross.simulator:
         LINES = LINES - CONSOLE
 
-    TTY.set_raw(1)
+    ui.TTY.set_raw(1)
     import select,os,platform
 
     platform.shell.is_interactive = False

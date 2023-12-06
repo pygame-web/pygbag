@@ -118,12 +118,12 @@ def FS(tree, silent=FS_SILENT, debug=FS_DEBUG):
     return preload_list
 
 
-async def preload(chroot=None, chdir=True, silent=FS_SILENT, debug=FS_DEBUG, standalone=False):
+async def preload(chroot=None, chdir=True, silent=FS_SILENT, debug=FS_DEBUG, isolated=False):
     global preload_list, preloaded
 
     # if not using FS, do not change directory
     if not len(preload_list):
-        if standalone:
+        if isolated:
             return []
         # return all previous filesets
         return preloaded.copy()
@@ -173,12 +173,13 @@ async def preload(chroot=None, chdir=True, silent=FS_SILENT, debug=FS_DEBUG, sta
         if not silent:
             print("FS:174:", filename)
 
-    preloaded.extend(fileset)
+    if not isolated:
+        preloaded.extend(fileset)
 
     if chdir:
         os.chdir(chroot)
 
-    if standalone:
+    if isolated:
         return fileset
 
     await asyncio.sleep(0)
