@@ -144,7 +144,7 @@ export class WasmTerminal {
                 case 0x5b:
 
                     const cursor = readline.history.length  + readline.index
-                    var histo = ">>> "
+                    var histo = ">h> "
 
                     switch ( data.charCodeAt(2) ) {
                         // "?"
@@ -172,7 +172,7 @@ export class WasmTerminal {
 
                             if ( cursor >0 ) {
                                 readline.index--
-                                histo = ">>> " +readline.history[cursor-1]
+                                histo = ">h> " +readline.history[cursor-1]
                                 //console.log(__FILE__," histo-up  :", readline.index, cursor, histo)
 
                                 this.ESC("[132D","[2K")
