@@ -51,7 +51,7 @@ if not __UPY__:
             try:
                 sys.ps1
             except AttributeError:
-                sys.ps1 = ">>> "
+                sys.ps1 = ">A> "
 
             try:
                 sys.ps2
@@ -137,7 +137,7 @@ if not __UPY__:
                 #platform.prompt(prompt or sys.ps1)
                 if repl:repl.prompt()
 
-        async def input_console(self, prompt=">>> "):
+        async def input_console(self, prompt=">I> "):
             if len(self.buffer):
                 return self.buffer.pop(0)
 

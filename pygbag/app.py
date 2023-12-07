@@ -65,6 +65,8 @@ else:
     DEFAULT_PORT = 8000
     DEFAULT_TMPL = "default.tmpl"
 
+DEFAULT_WIDTH = 1280
+DEFAULT_HEIGHT = 720
 
 def set_args(program):
     global DEFAULT_SCRIPT
@@ -193,11 +195,17 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         help="Specify alternate bind address [default: localhost]",
     )
 
-    #    parser.add_argument(
-    #        "--directory",
-    #        default=build_dir.as_posix(),
-    #        help="Specify alternative directory [default:%s]" % build_dir,
-    #    )
+    parser.add_argument(
+        "--width",
+        default=DEFAULT_WIDTH,
+        help="framebuffer width [default:%d]" % DEFAULT_WIDTH,
+    )
+
+    parser.add_argument(
+        "--height",
+        default=DEFAULT_HEIGHT,
+        help="framebuffer width [default:%d]" % DEFAULT_HEIGHT,
+    )
 
     parser.add_argument(
         "--PYBUILD",
@@ -339,6 +347,8 @@ now packing application ....
         "cdn": args.cdn,
         "proxy": f"http://{args.bind}:{args.port}/",
         "xtermjs": "1",
+        "width" : args.width,
+        "height" : args.height,
         "ume_block": args.ume_block,
         "can_close": args.can_close,
         "archive": app_name,

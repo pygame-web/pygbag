@@ -1319,43 +1319,7 @@ if not aio.cross.simulator:
 
             return wants
 
-#            # pygame must be early for plotting
-#            if ("matplotlib" in all) and ("pygame" not in sys.modules):
-#                await import_now("pygame")
-#
-#            for req in all:
-#                if req == "pyyaml":
-#                    req = "yaml"
-#
-#                if req == "python-dateutil":
-#                    req = "dateutil"
-#
-#                if req == "pillow":
-#                    req = "PIL"
-#
 
-        @classmethod
-        async def pv(cls, track, prefix="", suffix="", decimals=1, length=70, fill="X", printEnd="\r"):
-            # Progress Bar Printing Function
-            def print_pg_bar(total, iteration):
-                if iteration > total:
-                    iteration = total
-                percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-                filledLength = int(length * iteration // total)
-                bar = fill * filledLength + "-" * (length - filledLength)
-                print(f"\r{prefix} |{bar}| {percent}% {suffix}", end=printEnd)
-
-            # Update Progress Bar
-            while True:
-                if track.pos < 0:
-                    raise IOError(404)
-                print_pg_bar(track.len or 100, track.pos or 0)
-                if track.avail:
-                    break
-                await asyncio.sleep(0.02)
-
-            # Print New Line on Complete
-            print()
 
     # end TopLevel_async_handler
 

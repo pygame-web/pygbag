@@ -49,6 +49,9 @@ import asyncio.selector_events
 
 import multiprocessing
 
+# mypy
+import typing_extensions
+
 # for dom event subscriptions and js interface
 import webbrowser
 import platform

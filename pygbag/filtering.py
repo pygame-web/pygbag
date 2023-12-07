@@ -8,6 +8,7 @@ dbg = False
 
 
 IGNORE = """
+/.mypy_cache
 /.ssh
 /.local
 /.config

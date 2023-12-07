@@ -211,23 +211,23 @@ if is_browser:
 
 # =============================  PRELOADING      ==============================
 
-preld_counter = -1
+preloading = -1
 prelist = {}
 ROOTDIR = f"/data/data/{sys.argv[0]}/assets"
 
 
 def explore(root):
-    global prelist, preld_counter
+    global prelist, preloading
 
-    if preld_counter < 0:
-        preld_counter = 0
+    if preloading < 0:
+        preloading = 0
 
     import shutil
 
     for current, dirnames, filenames in os.walk(root):
         for filename in filenames:
             if filename.endswith(".so"):
-                preld_counter += 1
+                preloading += 1
                 src = f"{current}/{filename}"
                 embed.preload(src)
 
@@ -265,26 +265,26 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
     if loaderhome:
         pdb(f"241: appdir mapped to {loaderhome} by loader")
         ROOTDIR = str(loaderhome)
-
-    # simulator won't run javascript for now
-    if not hasattr(embed, "run_script"):
-        pdb("246: no js engine")
-        return False
-
-    # do not do stuff if not called properly from our js loader.
-    if PyConfig.executable is None:
-        # running in sim
-        pdb("252: running in simulator")
-        return False
-
-    sys.executable = PyConfig.executable or "python"
+#
+#    # simulator won't run javascript for now
+#    if not hasattr(embed, "run_script"):
+#        pdb("246: no js engine")
+#        return False
+#
+#    # do not do stuff if not called properly from our js loader.
+#    if PyConfig.executable is None:
+#        # running in sim
+#        pdb("252: running in simulator")
+#        return False
+#
+#    #sys.executable = PyConfig.executable or "python"
 
     preloadedWasm = "so"
     preloadedImages = "png jpeg jpg gif"
     preloadedAudios = "wav ogg mp4"
 
     def preload_apk(p=None):
-        global preld_counter, prelist, ROOTDIR
+        global preloading, prelist, ROOTDIR
         global explore, preloadedWasm, preloadedImages, preloadedAudios
         ROOTDIR = p or ROOTDIR
         if os.path.isdir(ROOTDIR):
@@ -295,19 +295,19 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
 
         ROOTDIR = os.getcwd()
         LSRC = len(ROOTDIR) + 1
-        preld_counter = -1
+        preloading = -1
         prelist = {}
 
         sys.path.insert(0, ROOTDIR)
 
         explore(ROOTDIR)
 
-        if preld_counter < 0:
+        if preloading < 0:
             pdb(f"{ROOTDIR=}")
             pdb(f"{os.getcwd()=}")
 
-        print(f"284: assets found :", preld_counter)
-        if not preld_counter:
+        print(f"284: assets found :", preloading)
+        if not preloading:
             embed.run()
 
         return True

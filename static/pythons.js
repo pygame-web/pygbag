@@ -1145,17 +1145,21 @@ function feat_snd() {
     if (!MM.is_safari)
         MM.is_safari = navigator.userAgent.search("iPhone")>=0;
 
-    if (!MM.UME && !MM.is_safari)
-        MM_play( {auto:1, test:1, media: new Audio(config.cdn+"empty.ogg")} , 1)
-
-    if (MM.is_safari) {
-        MM.is_safari = function unlock_ume() {
-                console.warn("safari ume unlocking")
+    if (!MM.UME) {
+        if (MM.is_safari) {
+            console.warn("safari ume unlocking")
+            MM.is_safari = function unlock_ume() {
                 MM.UME = 1
                 window.removeEventListener("click", MM.is_safari)
                 MM.is_safari = 1
             }
-        window.addEventListener("click", MM.is_safari)
+            window.addEventListener("click", MM.is_safari)
+        } else {
+            console.warn("Auto ume unlocker safari==", MM.is_safari)
+            MM_play( {auto:1, test:1, media: new Audio(config.cdn+"empty.ogg")} , 1)
+        }
+    } else {
+        console.warn("NO ume unlocker, safari ==", MM.is_safari)
     }
 }
 
@@ -2423,7 +2427,7 @@ config.interactive = config.interactive || (location.search.search("-i")>=0) //?
             "malloc_stats" : 0 ,
             "platlibdir" : "lib",
             "prefix" : "/data/data/org.python/assets/site-packages",
-            "ps1" : ">>> ",
+            "ps1" : ">J> ",
             "ps2" : "... "
         }`)
 

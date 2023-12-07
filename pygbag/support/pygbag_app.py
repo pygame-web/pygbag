@@ -7,64 +7,48 @@ else:
 
 
 
-from pygbag_ui import Tui, TTY
+from pygbag_ui import Tui, TTY, clear
+
 import pygbag_ui as ui
-from pygbag_ux import *
+import pygbag_ux as ux
 
-ux_dim(1280 // 2 , 720 // 2)
+#ux.dim(1280 // 2 , 720 // 2)
 
-
-class vpad:
-    X = 0
-    Z = 1
-    Y = 2
-    evx = []
-    evy = []
-    evz = []
-    axis = [evx, evz, evy]
-
-    LZ = 0.5
+class console:
 
     @classmethod
-    def get_axis(self, n):
-        if len(self.axis[n]):
-            return self.axis[n].pop(0)
-        return 0.0
+    def log(self, *argv, **kw):
+        import io
+        sio = io.StringIO()
+        kw['file']=sio
+        print(*argv,**kw)
+        ui.clog.append(sio.read())
+
 
     @classmethod
-    def emit(self, axis, value):
-        import pygame
-        self.axis[axis].append(float(value))
-        ev = pygame.event.Event(pygame.JOYAXISMOTION)
-        pygame.event.post(ev)
-        return False
+    def get(self):
+        import platform
+        try:
+            platform.window.pyconsole.hidden = False
+            platform.window.document.body.style.background = "#000000";
+        except:
+            ...
 
+        import os
+        _, LINES = os.get_terminal_size()
+        CONSOLE = os.get_console_size()
 
+        # split the display
+        if sys.platform not in ('emscripten','wasi') or aio.cross.simulator:
+            LINES = LINES - CONSOLE
 
+        TTY.set_raw(1)
 
-def console():
-    import platform
-    try:
-        platform.window.pyconsole.hidden = False
-        platform.window.document.body.style.background = "#000000";
-    except:
-        ...
+        platform.shell.is_interactive = False
+        platform.shell.interactive(True)
+        aio.toplevel.handler.muted = False
 
-    import os
-    _, LINES = os.get_terminal_size()
-    CONSOLE = os.get_console_size()
-
-    # split the display
-    if sys.platform not in ('emscripten','wasi') or aio.cross.simulator:
-        LINES = LINES - CONSOLE
-
-    ui.TTY.set_raw(1)
-    import select,os,platform
-
-    platform.shell.is_interactive = False
-    platform.shell.interactive(True)
-    aio.toplevel.handler.muted = False
-
-    ui.clear(LINES, CONSOLE, '>>> ')
+        clear(LINES, CONSOLE) #, '>C> ')
+        return self
 
 

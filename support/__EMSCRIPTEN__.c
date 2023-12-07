@@ -328,7 +328,7 @@ embed_set_ps2(PyObject *self, PyObject *_null) {
 static PyObject *
 embed_prompt(PyObject *self, PyObject *_null) {
     if (sys_ps==1)
-        fprintf( stderr, ">>> ");
+        fprintf( stderr, ">=> ");
     else
         fprintf( stderr, "... ");
     embed_flush(self,_null);
@@ -1114,6 +1114,8 @@ EM_ASM({
 
 
     PyRun_SimpleString("import sys, os, json, builtins, time");
+    PyRun_SimpleString("sys.ps1 = ''");
+
     //PyRun_SimpleString("import hpy;import hpy.universal;print('HPy init done')");
 #if defined(FT)
     int error;

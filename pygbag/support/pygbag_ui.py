@@ -158,7 +158,7 @@ class TTY:
         if len(self.prompts):
             self.prompts.clear()
             import platform
-            print("\r>+> ",end="")
+            print("\r>>> ",end="")
             self.flush()
 
 
@@ -370,10 +370,8 @@ def clear(LINES=0, CONSOLE=0, prompt=""):
                 break
 
         goto_xz(1, TTY.LINES + 1)
-        if prompt:
-            CSI("0J", "1J", f"{TTY.LINES+1};{TTY.LINES+TTY.CONSOLE}r", f"{TTY.LINES+TTY.CONSOLE-1};1H{prompt}")
-        else:
-            CSI("1J", f"{TTY.LINES+1};{TTY.LINES+TTY.CONSOLE}r", f"{TTY.LINES+1};1H{prompt}")
+        CSI("0J", "1J", f"{TTY.LINES+1};{TTY.LINES+TTY.CONSOLE}r", f"{TTY.LINES+TTY.CONSOLE-1};1H{prompt}")
+
     elif CONSOLE < 0:
         goto_xz(1, TTY.LINES + 1)
         CSI(f"0J", f"{TTY.LINES+1};1H{prompt}")

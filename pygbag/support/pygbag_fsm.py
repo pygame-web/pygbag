@@ -67,7 +67,7 @@ def state_refs(*argv):
 
 def build(pkg, **kw):
     global story
-    steps = []  # INTRO, BORED, WANDERING, EXPLORATION, BOOTING, PLAY
+    steps = []
 
     for k, v in vars(pkg).items():
         if v in [State, Draft]:

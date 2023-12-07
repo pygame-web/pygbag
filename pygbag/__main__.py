@@ -106,7 +106,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     def prompt():
         # FIXME for js style console should be
         # CSI(f"{TTY.LINES+TTY.CONSOLE};1H{prompt}")
-        print('\r>>> ',end='')
+        print('\r>X> ',end='')
 
     fakehost.is_browser = False
     fakehost.async_input = async_input

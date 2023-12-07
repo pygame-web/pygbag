@@ -3,7 +3,7 @@
 WIDTH = 1280  # {{cookiecutter.width}}
 HEIGHT = 720  # {{cookiecutter.height}}
 
-def ux_dim(w,h):
+def dim(w,h):
     global WIDTH, HEIGHT
     WIDTH = int(w)
     HEIGHT = int(h)
@@ -21,21 +21,21 @@ def u(real, ref, v):
         return result
     return int((real / ref) * v)
 
-def ux(*argv):
+def x(*argv):
     global WIDTH, REFX
     acc = 0
     for v in argv:
         acc += u(WIDTH, REFX, v)
     return acc
 
-def uy(*argv):
+def y(*argv):
     global HEIGHT, REFY
     acc = 0
     for v in argv:
         acc += u(HEIGHT, REFY, v)
     return acc
 
-def ur(*argv):
+def r(*argv):
     x = ux(argv[0])
     y = uy(argv[1])
     ret = [x, y]
@@ -75,3 +75,29 @@ def pg_load(fn, resize=None, width=0, height=0, alpha=True):
     # offscreen case
     except:
         return media
+
+
+class vpad:
+    X = 0
+    Z = 1
+    Y = 2
+    evx = []
+    evy = []
+    evz = []
+    axis = [evx, evz, evy]
+
+    LZ = 0.5
+
+    @classmethod
+    def get_axis(self, n):
+        if len(self.axis[n]):
+            return self.axis[n].pop(0)
+        return 0.0
+
+    @classmethod
+    def emit(self, axis, value):
+        import pygame
+        self.axis[axis].append(float(value))
+        ev = pygame.event.Event(pygame.JOYAXISMOTION)
+        pygame.event.post(ev)
+        return False
