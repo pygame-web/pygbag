@@ -68,7 +68,7 @@ class fopen:
         print("69: platform has no object serializer")
         flags = {}
 
-    def __init__(self, maybe_url, mode="r", flags=None, encoding='UTF-8', errors=None, newline=None, closefd=True, opener=None):
+    def __init__(self, maybe_url, mode="r", flags=None, encoding="UTF-8", errors=None, newline=None, closefd=True, opener=None):
         self.url = fix_url(maybe_url)
         self.mode = mode
         flags = flags or self.__class__.flags

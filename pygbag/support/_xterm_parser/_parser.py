@@ -125,17 +125,11 @@ class Parser(Generic[T]):
 
                 if sep_index == -1:
                     pos += len(chunk)
-                    if (
-                        _awaiting.max_bytes is not None
-                        and _buffer.tell() > _awaiting.max_bytes
-                    ):
+                    if _awaiting.max_bytes is not None and _buffer.tell() > _awaiting.max_bytes:
                         self._gen.throw(ParseError(f"expected {sep}"))
                 else:
                     sep_index += len(sep)
-                    if (
-                        _awaiting.max_bytes is not None
-                        and sep_index > _awaiting.max_bytes
-                    ):
+                    if _awaiting.max_bytes is not None and sep_index > _awaiting.max_bytes:
                         self._gen.throw(ParseError(f"expected {sep}"))
                     data = _buffer.getvalue()[sep_index:]
                     pos = 0
@@ -154,9 +148,7 @@ if __name__ == "__main__":
     data = "Where there is a Will there is a way!"
 
     class TestParser(Parser[str]):
-        def parse(
-            self, on_token: Callable[[str], None]
-        ) -> Generator[Awaitable, str, None]:
+        def parse(self, on_token: Callable[[str], None]) -> Generator[Awaitable, str, None]:
             while True:
                 data = yield self.read1()
                 if not data:

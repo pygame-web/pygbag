@@ -7,6 +7,18 @@
 
 . ${CONFIG:-$SDKROOT/config}
 
+#
+cp -r pygbag/support/_xterm_parser ${SDKROOT}/prebuilt/emsdk/common/site-packages/
+cp -r pygbag/support/typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
+
+echo "
+
+
+    TODO copy pygbag_*.py
+
+
+"
+
 
 # version independant modules
 cp -rf ${SDKROOT}/prebuilt/emsdk/common/* ${SDKROOT}/prebuilt/emsdk/${PYBUILD}/
@@ -268,20 +280,21 @@ emcc \\
      --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \\
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \\
      -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \\
-     $LDFLAGS -lembind -sERROR_ON_UNDEFINED_SYMBOLS=0
+     $LDFLAGS -lembind
+# -sERROR_ON_UNDEFINED_SYMBOLS=0
 
-echo "
+#echo "
 
-error: undefined symbol: _emval_decref (referenced by root reference (e.g. compiled C/C++ code))
-error: undefined symbol: _emval_delete (referenced by root reference (e.g. compiled C/C++ code))
-error: undefined symbol: _emval_greater_than (referenced by root reference (e.g. compiled C/C++ code))
-error: undefined symbol: _emval_incref (referenced by root reference (e.g. compiled C/C++ code))
-error: undefined symbol: _emval_less_than (referenced by root reference (e.g. compiled C/C++ code))
-error: undefined symbol: _emval_new_cstring (referenced by root reference (e.g. compiled C/C++ code))
-error: undefined symbol: _emval_set_property (referenced by root reference (e.g. compiled C/C++ code))
-error: undefined symbol: _emval_strictly_equals (referenced by root reference (e.g. compiled C/C++ code))
+#error: undefined symbol: _emval_decref (referenced by root reference (e.g. compiled C/C++ code))
+#error: undefined symbol: _emval_delete (referenced by root reference (e.g. compiled C/C++ code))
+#error: undefined symbol: _emval_greater_than (referenced by root reference (e.g. compiled C/C++ code))
+#error: undefined symbol: _emval_incref (referenced by root reference (e.g. compiled C/C++ code))
+#error: undefined symbol: _emval_less_than (referenced by root reference (e.g. compiled C/C++ code))
+#error: undefined symbol: _emval_new_cstring (referenced by root reference (e.g. compiled C/C++ code))
+#error: undefined symbol: _emval_set_property (referenced by root reference (e.g. compiled C/C++ code))
+#error: undefined symbol: _emval_strictly_equals (referenced by root reference (e.g. compiled C/C++ code))
 
-"
+#"
 
 #
 

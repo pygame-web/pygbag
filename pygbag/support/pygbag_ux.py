@@ -1,9 +1,9 @@
-
 # screen pixels (real, hardware)
 WIDTH = 1280  # {{cookiecutter.width}}
 HEIGHT = 720  # {{cookiecutter.height}}
 
-def dim(w,h):
+
+def dim(w, h):
     global WIDTH, HEIGHT
     WIDTH = int(w)
     HEIGHT = int(h)
@@ -13,6 +13,7 @@ def dim(w,h):
 REFX = 1980
 REFY = 1080
 
+
 def u(real, ref, v):
     if abs(v) < 0.9999999:
         result = int((float(real) / 100.0) * (v * 1000))
@@ -21,6 +22,7 @@ def u(real, ref, v):
         return result
     return int((real / ref) * v)
 
+
 def x(*argv):
     global WIDTH, REFX
     acc = 0
@@ -28,12 +30,14 @@ def x(*argv):
         acc += u(WIDTH, REFX, v)
     return acc
 
+
 def y(*argv):
     global HEIGHT, REFY
     acc = 0
     for v in argv:
         acc += u(HEIGHT, REFY, v)
     return acc
+
 
 def r(*argv):
     x = ux(argv[0])
@@ -47,10 +51,10 @@ def r(*argv):
     return ret
 
 
-
 from pathlib import Path
 
 # ====================== pygame
+
 
 def pg_load(fn, resize=None, width=0, height=0, alpha=True):
     import pygame
@@ -59,13 +63,19 @@ def pg_load(fn, resize=None, width=0, height=0, alpha=True):
     if Path(fn).is_file():
         media = pygame.image.load(fn)
     else:
-        media = pygame.image.load( Path(__file__).parent / "offline.png" )
+        media = pygame.image.load(Path(__file__).parent / "offline.png")
 
     if resize:
-        tmp = pygame.transform.smoothscale(media, resize )
+        tmp = pygame.transform.smoothscale(media, resize)
         media = tmp
-    elif (width and height):
-        media = pygame.transform.smoothscale(media, (width,heigh,) )
+    elif width and height:
+        media = pygame.transform.smoothscale(
+            media,
+            (
+                width,
+                heigh,
+            ),
+        )
 
     try:
         if alpha:
@@ -97,6 +107,7 @@ class vpad:
     @classmethod
     def emit(self, axis, value):
         import pygame
+
         self.axis[axis].append(float(value))
         ev = pygame.event.Event(pygame.JOYAXISMOTION)
         pygame.event.post(ev)

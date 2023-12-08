@@ -2,9 +2,7 @@ import re
 from typing import Match, Pattern
 
 
-def camel_to_snake(
-    name: str, _re_snake: Pattern[str] = re.compile("[a-z][A-Z]")
-) -> str:
+def camel_to_snake(name: str, _re_snake: Pattern[str] = re.compile("[a-z][A-Z]")) -> str:
     """Convert name from CamelCase to snake_case.
 
     Args:

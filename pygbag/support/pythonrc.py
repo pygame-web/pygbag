@@ -227,21 +227,21 @@ else:
 
     # env is passed in orig_argv ?ENV1=V1&ENV2=V2#
     for arg in PyConfig["orig_argv"]:
-        if '=' not in arg:
+        if "=" not in arg:
             sys.orig_argv.append(arg)
         else:
-            k,v = arg.split('=',1)
-            os.environ[k]=v
+            k, v = arg.split("=", 1)
+            os.environ[k] = v
 
     home = f"/home/{os.environ.get('USER','web_user')}"
-    if home!="/home/web_user":
+    if home != "/home/web_user":
         # in case user name is not fs compatible
         try:
             os.rename("/home/web_user", home)
         except:
             home = "/home/web_user"
 
-    os.environ["HOME"] = home;
+    os.environ["HOME"] = home
     os.environ["APPDATA"] = home
     del home
 
@@ -436,7 +436,6 @@ class shell:
             yield f"{k}={os.environ[k]}"
         return True
 
-
     @classmethod
     def pwd(cls, *argv):
         print(os.getcwd())
@@ -448,6 +447,7 @@ class shell:
             if arg == "install":
                 continue
             import aio.pep0723
+
             # yield f"attempting to install {arg}"
             await aio.pep0723.pip_install(arg)
 
@@ -723,7 +723,7 @@ ________________________
 
         if not shell.pgzrunning:
             # __main__@stdin has no __file__
-            if hasattr( __import__("__main__") , "__file__"):
+            if hasattr(__import__("__main__"), "__file__"):
                 del __import__("__main__").__file__
             if prompt:
                 cls.runner.prompt()
@@ -895,7 +895,9 @@ ________________________
         else:
             await sub
 
+
 import os
+
 os.shell = shell
 builtins.shell = shell
 # end shell
@@ -1110,9 +1112,7 @@ if not aio.cross.simulator:
 
         from pathlib import Path
 
-        #repodata = "repodata.json"
-
-
+        # repodata = "repodata.json"
 
         def eval(self, source):
             for count, line in enumerate(source.split("\n")):
@@ -1188,15 +1188,19 @@ if not aio.cross.simulator:
             import aio.pep0723
 
             if not len(aio.pep0723.Config.pkg_repolist):
-                print("""
+                print(
+                    """
 1170: pep0723 REPOSITORY MISSING
-""")
+"""
+                )
             else:
-                DBG(f"""
+                DBG(
+                    f"""
 1175: list_imports {len(code)=} {file=} {hint=}")
 {aio.pep0723.Config.pkg_repolist[0]['-CDN-']=}
 
-""")
+"""
+                )
 
             if code is None:
                 if file:
@@ -1249,6 +1253,7 @@ if not aio.cross.simulator:
             if mod in cls.missing_fence:
                 return []
             from aio.pep0723 import Config
+
             for dep in Config.repos[0]["packages"].get(mod, {}).get("depends", []):
                 if dep in cls.ignore:
                     continue
@@ -1319,8 +1324,6 @@ if not aio.cross.simulator:
 
             return wants
 
-
-
     # end TopLevel_async_handler
 
     aio.toplevel.handler = TopLevel_async_handler
@@ -1348,12 +1351,12 @@ except:
 # https://xtermjs.org/docs/api/vtfeatures/
 
 if not aio.cross.simulator:
+
     def ESC(*argv):
         for arg in argv:
             sys.__stdout__.write(chr(0x1B))
             sys.__stdout__.write(arg)
         embed.flush()
-
 
     def CSI(*argv):
         for arg in argv:

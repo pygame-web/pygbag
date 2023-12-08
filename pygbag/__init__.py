@@ -9,7 +9,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 from pathlib import Path
 
-VERSION = "0.8.5"
+VERSION = "0.8.6"
 
 # hack to test git cdn build without upgrading pygbag
 # beware can have side effects when file packager behaviour must change !
@@ -39,8 +39,6 @@ try:
     # aio function implemented only on stackless WaPy
     sched_yield
 except:
-
-
     builtins.sched_yield = lambda: None
 
 import sys, traceback

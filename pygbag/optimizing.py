@@ -4,7 +4,6 @@ from pathlib import Path
 import warnings
 
 
-
 """
 pngquant -f --ext -pygbag.png --quality 40 $(find|grep png$)
 
@@ -29,9 +28,9 @@ https://github.com/scour-project/scour
 """
 
 BAD = {
-    "wav" : "ogg",
-    "bmp" : "png",
-    "mp3" : "ogg",
+    "wav": "ogg",
+    "bmp": "png",
+    "mp3": "ogg",
 }
 
 
@@ -52,6 +51,7 @@ else:
 
         try:
             import black
+
             print("Applying black format")
             os.popen(f'black -t py311 -l 132 "{folder}"').read()
         except ImportError:
@@ -76,7 +76,7 @@ else:
                 if fp.stem.endswith("-pygbag"):
                     continue
 
-# TODO: still issue a warning
+                # TODO: still issue a warning
                 if fp.suffix == ".mp3":
                     ...
 
@@ -96,22 +96,22 @@ else:
             if fp.suffix == ".py":
                 tofix = []
                 for bad in BAD.keys():
-                    with open(fname,"r") as source:
+                    with open(fname, "r") as source:
                         for l in source.readlines():
-                            if l.find(f'.{bad}"')>0:
-                                tofix.append( [bad,BAD[bad]] )
+                            if l.find(f'.{bad}"') > 0:
+                                tofix.append([bad, BAD[bad]])
                                 break
 
                 if len(tofix):
                     fixname = Path(f"{fp.parent}/{fp.stem}-pygbag.py")
                     opt = Path(f"{folder}/{fixname}")
-                    with open(fname,"r", encoding="utf-8") as source:
-                        data = open(fname,"r").read()
+                    with open(fname, "r", encoding="utf-8") as source:
+                        data = open(fname, "r").read()
                         with open(opt, "w", encoding="utf-8") as dest:
                             while len(tofix):
                                 bad, good = tofix.pop(0)
                                 warnings.warn(f"potential {bad.upper()} use in {fname}, prefer .{good} !")
-                                data = data.replace(f'.{bad}"',f'.{good}"')
+                                data = data.replace(f'.{bad}"', f'.{good}"')
                             dest.write(data)
 
                     yield translated(opt)

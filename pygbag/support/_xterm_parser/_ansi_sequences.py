@@ -35,9 +35,7 @@ ANSI_SEQUENCES_KEYS: Mapping[str, Tuple[Keys, ...]] = {
     "\x19": (Keys.ControlY,),  # Control-Y (25)
     "\x1a": (Keys.ControlZ,),  # Control-Z
     "\x1b": (Keys.Escape,),  # Also Control-[
-    "\x1b\x1b": (
-        Keys.Escape,
-    ),  # Windows issues esc esc for a single press of escape key
+    "\x1b\x1b": (Keys.Escape,),  # Windows issues esc esc for a single press of escape key
     "\x9b": (Keys.ShiftEscape,),
     "\x1c": (Keys.ControlBackslash,),  # Both Control-\ (also Ctrl-| )
     "\x1d": (Keys.ControlSquareClose,),  # Control-]
@@ -98,9 +96,7 @@ ANSI_SEQUENCES_KEYS: Mapping[str, Tuple[Keys, ...]] = {
     # Xterm
     "\x1b[1;2P": (Keys.F13,),
     "\x1b[1;2Q": (Keys.F14,),
-    "\x1b[1;2R": (
-        Keys.F15,
-    ),  # Conflicts with CPR response; enabled after https://github.com/Textualize/textual/issues/3440.
+    "\x1b[1;2R": (Keys.F15,),  # Conflicts with CPR response; enabled after https://github.com/Textualize/textual/issues/3440.
     "\x1b[1;2S": (Keys.F16,),
     "\x1b[15;2~": (Keys.F17,),
     "\x1b[17;2~": (Keys.F18,),
@@ -114,9 +110,7 @@ ANSI_SEQUENCES_KEYS: Mapping[str, Tuple[Keys, ...]] = {
     # Control + function keys.
     "\x1b[1;5P": (Keys.ControlF1,),
     "\x1b[1;5Q": (Keys.ControlF2,),
-    "\x1b[1;5R": (
-        Keys.ControlF3,
-    ),  # Conflicts with CPR response; enabled after https://github.com/Textualize/textual/issues/3440.
+    "\x1b[1;5R": (Keys.ControlF3,),  # Conflicts with CPR response; enabled after https://github.com/Textualize/textual/issues/3440.
     "\x1b[1;5S": (Keys.ControlF4,),
     "\x1b[15;5~": (Keys.ControlF5,),
     "\x1b[17;5~": (Keys.ControlF6,),

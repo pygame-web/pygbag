@@ -1,5 +1,6 @@
 import sys
 import asyncio
+
 asyncrun = asyncio.run
 
 from .__init__ import VERSION
@@ -99,14 +100,13 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     # fake host document.window
     import platform as fakehost
 
-
     def truc(*argv, **kw):
         print("truc", argv, kw)
 
     def prompt():
         # FIXME for js style console should be
         # CSI(f"{TTY.LINES+TTY.CONSOLE};1H{prompt}")
-        print('\r>X> ',end='')
+        print("\r>X> ", end="")
 
     fakehost.is_browser = False
     fakehost.async_input = async_input
@@ -116,12 +116,14 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     fakehost.window.get_terminal_console = truc
     fakehost.window.RAW_MODE = 0
     fakehost.window.navigator = window_navigator
-    fakehost.readline = lambda :""
+    fakehost.readline = lambda: ""
     fakehost.prompt = prompt
 
     def set_raw_mode(mode):
         import platform as fakehost
+
         fakehost.window.RAW_MODE = mode
+
     fakehost.window.set_raw_mode = set_raw_mode
     fakehost.window.set_raw_mode(0)
 
@@ -140,10 +142,8 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
         async def process(self):
             ...
 
-
     def patch_platform_system():
-        return 'Emscripten'
-
+        return "Emscripten"
 
     # et = EventTarget()
     class __EMSCRIPTEN__(object):
@@ -152,6 +152,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
         def __init__(self):
             import platform
+
             platform.system = patch_platform_system
             self.platform = platform
 
@@ -200,7 +201,6 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     sys.modules["__EMSCRIPTEN__"] = __EMSCRIPTEN__
     sys.modules["embed"] = __EMSCRIPTEN__
 
-
     print(" =============== pythonrc =================")
     with open(support / "pythonrc.py", "r") as file:
         exec(file.read(), globals(), globals())
@@ -215,9 +215,9 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
         HTML_MARK = '"' * 3 + " # BEGIN -->"
 
-#        @classmethod
-#        async def async_imports(cls, callback, *wanted, **kw):
-#            ...
+        #        @classmethod
+        #        async def async_imports(cls, callback, *wanted, **kw):
+        #            ...
 
         @classmethod
         def list_imports(cls, code=None, file=None, hint=""):
@@ -236,7 +236,6 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
                 self.buffer.insert(0, "#")
             print(f"178: {count} lines queued for async eval")
 
-
         async def async_get_pkg(cls, want, ex, resume):
             print(
                 """
@@ -248,9 +247,9 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     # start async top level machinery and add a console.
     await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
 
-    #ns = vars(__import__(__name__))
+    # ns = vars(__import__(__name__))
 
-    #ns["TopLevel_async_handler"] = TopLevel_async_handler
+    # ns["TopLevel_async_handler"] = TopLevel_async_handler
 
     aio.toplevel.handler = TopLevel_async_handler
 
@@ -273,8 +272,8 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
         print(__name__, "sim repl ready for", sourcefile)
 
-        if sys.path[0]!=cur_dir:
-            sys.path.insert(0,cur_dir)
+        if sys.path[0] != cur_dir:
+            sys.path.insert(0, cur_dir)
 
         await shell.runpy(sourcefile)
         shell.interactive()

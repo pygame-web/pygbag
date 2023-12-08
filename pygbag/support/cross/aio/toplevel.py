@@ -19,7 +19,6 @@ if not __UPY__:
     import code
 
     class AsyncInteractiveConsole(code.InteractiveConsole):
-
         instance = None
         console = None
         # TODO: use PyConfig interactive flag
@@ -58,7 +57,6 @@ if not __UPY__:
             except AttributeError:
                 sys.ps2 = "--- "
 
-
         def runsource(self, source, filename="<stdin>", symbol="single"):
             if len(self.buffer) > 1:
                 symbol = "exec"
@@ -86,7 +84,6 @@ if not __UPY__:
             return False
 
         def runcode(self, code):
-
             if repl:
                 repl.set_ps1()
             self.rv = undefined
@@ -105,11 +102,13 @@ if not __UPY__:
                 want = str(ex).split("'")[1]
                 print("189 : FIXME sync->async->sync import bytecode retry in non interactive")
                 print(f'await aio.pep0723.pip_install("{want}");import {want}')
+
                 async def import_now():
                     nonlocal want
                     await aio.pep0723.pip_install(want)
-                    vars(__import__('__main__'))[want] = __import__(want)
-                self.shell.coro.append( import_now() )
+                    vars(__import__("__main__"))[want] = __import__(want)
+
+                self.shell.coro.append(import_now())
 
             except BaseException as ex:
                 if self.one_liner:
@@ -133,9 +132,11 @@ if not __UPY__:
         def prompt(self, prompt=None):
             if not self.__class__.muted and self.shell.is_interactive:
                 import platform
+
                 # that is the browser one
-                #platform.prompt(prompt or sys.ps1)
-                if repl:repl.prompt()
+                # platform.prompt(prompt or sys.ps1)
+                if repl:
+                    repl.prompt()
 
         async def input_console(self, prompt=">I> "):
             if len(self.buffer):
@@ -154,10 +155,8 @@ if not __UPY__:
                     return maybe
             return None
 
-
         # can be used to mix console and app
         async def interact_step(self, prompt=None):
-
             if aio.exit:
                 return
 
@@ -234,6 +233,7 @@ if not __UPY__:
                 shell=shell,
             )
             import platform
+
             platform.shell = shell
             shell.runner = cls.instance
             del AsyncInteractiveConsole.make_instance
@@ -253,13 +253,12 @@ if not __UPY__:
             """start async import system with optionnal async console"""
             if cls.instance is None:
                 cls.make_instance(shell, ns)
-                #await cls.instance.async_repos()
+                # await cls.instance.async_repos()
 
             if console:
                 cls.start_console(shell, ns=ns)
 
 else:
-
     # TODO upy event driven async repl
 
     class AsyncInteractiveConsole:

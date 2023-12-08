@@ -27,8 +27,8 @@ class FSM(Machine):
 
 def state_refs(*argv):
     global index
-    #tw = textwrap.TextWrapper(width=78)
-    tw=None
+    # tw = textwrap.TextWrapper(width=78)
+    tw = None
     states = []
     maxchapters = len(argv)
     for chapter, component in enumerate(argv):
@@ -41,8 +41,8 @@ def state_refs(*argv):
             if i:
                 if line:
                     if line[0] != ":":
-# markdown eats space at § begin
-# line = line.replace('    ','\u2002\u2002')
+                        # markdown eats space at § begin
+                        # line = line.replace('    ','\u2002\u2002')
                         if tw:
                             lines.extend(tw.wrap(line))
                         else:
@@ -104,7 +104,7 @@ def build(pkg, **kw):
                             continue
                         if rel.find("->") >= 0:
                             trigger, dest = map(str.strip, rel.split("->", 1))
-                            if trigger == '-':
+                            if trigger == "-":
                                 trigger = dest
                             else:
                                 if not trigger:

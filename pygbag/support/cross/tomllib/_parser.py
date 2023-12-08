@@ -60,9 +60,7 @@ def load(fp: BinaryIO, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
     try:
         s = b.decode()
     except AttributeError:
-        raise TypeError(
-            "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`"
-        ) from None
+        raise TypeError("File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`") from None
     return loads(s, parse_float=parse_float)
 
 
@@ -124,9 +122,7 @@ def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # n
         except IndexError:
             break
         if char != "\n":
-            raise suffixed_err(
-                src, pos, "Expected newline or end of document after a statement"
-            )
+            raise suffixed_err(src, pos, "Expected newline or end of document after a statement")
         pos += 1
 
     return out.data.dict
@@ -266,9 +262,7 @@ def skip_comment(src: str, pos: Pos) -> Pos:
     except IndexError:
         char = None
     if char == "#":
-        return skip_until(
-            src, pos + 1, "\n", error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False
-        )
+        return skip_until(src, pos + 1, "\n", error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False)
     return pos
 
 
@@ -320,9 +314,7 @@ def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
     return pos + 2, key
 
 
-def key_value_rule(
-    src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat
-) -> Pos:
+def key_value_rule(src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat) -> Pos:
     pos, key, value = parse_key_value_pair(src, pos, parse_float)
     key_parent, key_stem = key[:-1], key[-1]
     abs_key_parent = header + key_parent
@@ -337,9 +329,7 @@ def key_value_rule(
         out.flags.add_pending(cont_key, Flags.EXPLICIT_NEST)
 
     if out.flags.is_(abs_key_parent, Flags.FROZEN):
-        raise suffixed_err(
-            src, pos, f"Cannot mutate immutable namespace {abs_key_parent}"
-        )
+        raise suffixed_err(src, pos, f"Cannot mutate immutable namespace {abs_key_parent}")
 
     try:
         nest = out.data.get_or_create_nest(abs_key_parent)
@@ -354,9 +344,7 @@ def key_value_rule(
     return pos
 
 
-def parse_key_value_pair(
-    src: str, pos: Pos, parse_float: ParseFloat
-) -> tuple[Pos, Key, Any]:
+def parse_key_value_pair(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, Key, Any]:
     pos, key = parse_key(src, pos)
     try:
         char: str | None = src[pos]
@@ -465,9 +453,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos
         pos = skip_chars(src, pos, TOML_WS)
 
 
-def parse_basic_str_escape(
-    src: str, pos: Pos, *, multiline: bool = False
-) -> tuple[Pos, str]:
+def parse_basic_str_escape(src: str, pos: Pos, *, multiline: bool = False) -> tuple[Pos, str]:
     escape_id = src[pos : pos + 2]
     pos += 2
     if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
@@ -512,9 +498,7 @@ def parse_hex_char(src: str, pos: Pos, hex_len: int) -> tuple[Pos, str]:
 def parse_literal_str(src: str, pos: Pos) -> tuple[Pos, str]:
     pos += 1  # Skip starting apostrophe
     start_pos = pos
-    pos = skip_until(
-        src, pos, "'", error_on=ILLEGAL_LITERAL_STR_CHARS, error_on_eof=True
-    )
+    pos = skip_until(src, pos, "'", error_on=ILLEGAL_LITERAL_STR_CHARS, error_on_eof=True)
     return pos + 1, src[start_pos:pos]  # Skip ending apostrophe
 
 
@@ -581,9 +565,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
         pos += 1
 
 
-def parse_value(  # noqa: C901
-    src: str, pos: Pos, parse_float: ParseFloat
-) -> tuple[Pos, Any]:
+def parse_value(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, Any]:  # noqa: C901
     try:
         char: str | None = src[pos]
     except IndexError:

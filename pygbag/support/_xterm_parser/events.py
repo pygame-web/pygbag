@@ -175,7 +175,6 @@ class MouseCapture(Event, bubble=False):
         self.mouse_position = mouse_position
 
 
-
 class MouseRelease(Event, bubble=False):
     """Mouse has been released.
 
@@ -214,9 +213,7 @@ class Key(InputEvent):
     def __init__(self, key: str, character: str | None) -> None:
         super().__init__()
         self.key = key
-        self.character = (
-            (key if len(key) == 1 else None) if character is None else character
-        )
+        self.character = (key if len(key) == 1 else None) if character is None else character
         self.aliases: list[str] = _get_key_aliases(key)
 
     @property
@@ -345,7 +342,6 @@ class MouseEvent(InputEvent, bubble=True):
             Mouse coordinate.
         """
         return Offset(self.delta_x, self.delta_y)
-
 
     def get_content_offset(self, widget: Widget) -> Offset | None:
         """Get offset within a widget's content area, or None if offset is not in content (i.e. padding or border).
@@ -576,5 +572,3 @@ class Print(Event, bubble=False):
         super().__init__()
         self.text = text
         self.stderr = stderr
-
-

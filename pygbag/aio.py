@@ -12,19 +12,21 @@ if hasattr(os, "uname") and not os.uname().machine.startswith("wasm"):
     from pathlib import Path
 
     try:
-        #import aioconsole, aiohttp
+        # import aioconsole, aiohttp
         import aiohttp
     except Exception as e:
-        print(e,f"""
+        print(
+            e,
+            f"""
 
 pygbag simulator rely on : aiohttp asyncio_socks_server token_util
 please use :
 
     {sys.executable} -m pip install aiohttp asyncio_socks_server token_util
 
-""")
+""",
+        )
         raise SystemExit
-
 
     import aio.pep0723
 
@@ -33,22 +35,22 @@ please use :
     else:
         aio.pep0723.Config.PKG_INDEXES.extend(["https://pygame-web.github.io/archives/repo/"])
 
-
     import pygbag.__main__
-#
-#    async def custom_async_input():
-#        import platform
-#        if platform.window.RAW_MODE:
-## TODO: FIXME: implement embed.os_read and debug focus handler
-#            #return await asyncio.sleep(0)
-#            ...
-#        return await aioconsole.ainput("››› ")
+
+    #
+    #    async def custom_async_input():
+    #        import platform
+    #        if platform.window.RAW_MODE:
+    ## TODO: FIXME: implement embed.os_read and debug focus handler
+    #            #return await asyncio.sleep(0)
+    #            ...
+    #        return await aioconsole.ainput("››› ")
 
     aio.loop.create_task(
         pygbag.__main__.import_site(
             sourcefile=sys.argv[0],
             simulator=True,
-#            async_input=custom_async_input,
+            #            async_input=custom_async_input,
             async_input=None,
             async_pkg=aio.pep0723.check_list(filename=sys.argv[0]),
         )

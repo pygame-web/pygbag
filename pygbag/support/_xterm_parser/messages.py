@@ -24,7 +24,6 @@ class Update(Message, verbose=True):
         super().__init__()
         self.widget = widget
 
-
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Update):
             return self.widget == other.widget

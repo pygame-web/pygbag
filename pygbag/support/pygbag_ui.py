@@ -9,14 +9,13 @@ import sys
 out = sys.__stdout__.write
 
 
-
 import os
+
 # for Rich color output
 os.environ["FORCE_COLOR"] = "1"
 damages = {}
 evpos = {}
 clog = []
-
 
 
 # def ESC(*argv, flush=True):
@@ -116,8 +115,9 @@ from _xterm_parser.events import MouseEvent, Key
 
 buffer_console = []
 
-#import shutil
+# import shutil
 import os
+
 
 class TTY:
     stdin = 0
@@ -129,8 +129,7 @@ class TTY:
     try:
         CONSOLE = os.get_console_size()
     except:
-        CONSOLE = 32-LINES
-
+        CONSOLE = 32 - LINES
 
     echo = True
     console = True
@@ -158,10 +157,9 @@ class TTY:
         if len(self.prompts):
             self.prompts.clear()
             import platform
-            print("\r>>> ",end="")
+
+            print("\r>>> ", end="")
             self.flush()
-
-
 
     @classmethod
     def set_raw(self, state):
@@ -219,7 +217,7 @@ class TTY:
         global clog
         if ev.is_printable:
             if self.echo:
-                print(ev.character,end='')
+                print(ev.character, end="")
                 sys.__stdout__.flush()
             buffer_console.append(ev.character)
 
@@ -231,12 +229,12 @@ class TTY:
             buffer_console.clear()
 
         elif ev.name == "ctrl_d":
-            #aio.exit_now(0)
+            # aio.exit_now(0)
             self.closed = True
         elif ev.name == "ctrl_l":
-            clear(LINES=-1, prompt='>-> ')
+            clear(LINES=-1, prompt=">-> ")
         else:
-            #clog.append(repr(list(ev.__rich_repr__())))
+            # clog.append(repr(list(ev.__rich_repr__())))
             ...
 
     @classmethod
@@ -246,24 +244,24 @@ class TTY:
         # virtual gamepad handler
 
         if not TTY.console:
-            if ev.name in ('space'):
+            if ev.name in ("space"):
                 import pygame
+
                 uev = pygame.event.Event(pygame.USEREVENT + 2)
                 pygame.event.post(uev)
                 return False
-            if ev.name in ('left','right','up','down'):
-                if ev.name == 'left':
+            if ev.name in ("left", "right", "up", "down"):
+                if ev.name == "left":
                     return vpad.emit(vpad.X, -1.0)
 
-                if ev.name == 'right':
+                if ev.name == "right":
                     return vpad.emit(vpad.X, +1.0)
 
-                if ev.name == 'up':
+                if ev.name == "up":
                     return vpad.emit(vpad.Z, +1.0)
 
-                if ev.name == 'down':
+                if ev.name == "down":
                     return vpad.emit(vpad.Z, -1.0)
-
 
         # await input() handler
         if ev.is_printable:
@@ -278,7 +276,7 @@ class TTY:
             self.readline.clear()
             return True
         else:
-            #clog.append(repr(list(ev.__rich_repr__())))
+            # clog.append(repr(list(ev.__rich_repr__())))
             ...
         return False
 
@@ -286,15 +284,15 @@ class TTY:
     def handler_events(self, ev):
         global evpos
 
-        for ez in range(ev.y-1,ev.y+2):
-            if evpos.get(ez,None):
+        for ez in range(ev.y - 1, ev.y + 2):
+            if evpos.get(ez, None):
                 for k in evpos[ez]:
                     if not len(evpos[ez][k]):
                         continue
-                    #clog.append( repr( evpos[ez][k] ) )
+                    # clog.append( repr( evpos[ez][k] ) )
                     for slot in evpos[ez][k]:
-                        xl,xr,tag = slot
-                        if (xl<ev.x) and (ev.x<xr):
+                        xl, xr, tag = slot
+                        if (xl < ev.x) and (ev.x < xr):
                             if ev.button:
                                 self.event_type = "click"
                             else:
@@ -336,7 +334,7 @@ class TTY:
                                 self.handler_console_input(event)
                             else:
                                 rl_complete = self.handler_readline_input(event)
-                                #clog.append( repr(list(event.__rich_repr__())) )
+                                # clog.append( repr(list(event.__rich_repr__())) )
             except OSError:
                 ...
 
@@ -461,7 +459,6 @@ def filter_in(data):
         clog.append(repr(event))
 
 
-
 def filter_out(row, x, y, z):
     global clog, ansi_escape, bname_last, anchor_last
     ev = evpos[z][hash(row)]
@@ -482,24 +479,24 @@ def filter_out(row, x, y, z):
                 xl = x + len_flt - len(bname) - len(trail) - 4
                 xr = x + len_flt - 1
                 ev.append([xl, xr, bname])
-                #clog.append(f"<{len(anchor)=}:{bname=} {ev=}>")
+                # clog.append(f"<{len(anchor)=}:{bname=} {ev=}>")
                 break
 
             anchor_last = len(anchor)
             bname_last = len(bname) + 4
 
-            #clog.append(f"<{len(anchor)=}:{bname=} {ev=}>")
+            # clog.append(f"<{len(anchor)=}:{bname=} {ev=}>")
 
-            ev.append([posx-1, posx, bname])
+            ev.append([posx - 1, posx, bname])
             flt = trail
 
         # FIXME: assuming same size buttons
         # just dividing len_flt by number of buttons
 
         zone = len_flt // len(ev)
-        for i,pos in enumerate(ev):
-            pos[0] = x + i*zone
-            pos[1] = x + (i+1)*zone -1
+        for i, pos in enumerate(ev):
+            pos[0] = x + i * zone
+            pos[1] = x + (i + 1) * zone - 1
 
     return row.replace("<:", "[ ").replace(":>", " ]")
 

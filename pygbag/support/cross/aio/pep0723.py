@@ -11,6 +11,7 @@ from pathlib import Path
 import glob
 
 import re
+
 print(sys.path)
 import tomllib
 
@@ -49,6 +50,7 @@ if sconf["platlib"] not in sys.path:
 PATCHLIST = []
 HISTORY = []
 
+
 class Config:
     READ_722 = False
     READ_723 = True
@@ -59,13 +61,13 @@ class Config:
     REPO_DATA = "repodata.json"
     repos = []
     pkg_repolist = []
-    dev_mode = ".-X.dev." in ".".join(['']+sys.orig_argv+[''])
+    dev_mode = ".-X.dev." in ".".join([""] + sys.orig_argv + [""])
 
     mapping = {
         "pygame": "pygame.base",
         "pygame_ce": "pygame.base",
-        "python_i18n" : "i18n",
-        "pillow" : "PIL",
+        "python_i18n": "i18n",
+        "pillow": "PIL",
     }
 
 
@@ -134,7 +136,6 @@ def read_dependency_block_723x(script):
         return None
 
 
-
 def install(pkg_file, sconf=None):
     global HISTORY
     from installer import install
@@ -169,9 +170,9 @@ def install(pkg_file, sconf=None):
         sys.print_exception(ex)
 
 
-
 async def async_imports_init():
     ...
+
 
 #    see pythonrc
 #            if not len(Config.repos):
@@ -181,7 +182,6 @@ async def async_imports_init():
 #
 #                DBG("1203: FIXME (this is pyodide maintened stuff, use PEP723 asap) referenced packages :", len(cls.repos[0]["packages"]))
 #
-
 
 
 async def async_repos():
@@ -195,7 +195,7 @@ async def async_repos():
             idx = f"{repo}index.json"
         else:
             idx = f"{repo}index-bi.json"
-        async with fopen(idx, "r", encoding='UTF-8') as index:
+        async with fopen(idx, "r", encoding="UTF-8") as index:
             try:
                 data = index.read()
                 if isinstance(data, bytes):
@@ -219,7 +219,8 @@ async def async_repos():
 
     if not aio.cross.simulator:
         import platform
-        print("193:", platform.window.location.href )
+
+        print("193:", platform.window.location.href)
         if platform.window.location.href.startswith("http://localhost:8"):
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = "http://localhost:8000/archives/repo/"
@@ -230,13 +231,15 @@ async def async_repos():
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = "http://192.168.1.66/archives/repo/"
     if repo:
-        print(f"""
+        print(
+            f"""
 
 ===============  REDIRECTION TO DEV HOST {repo['-CDN-']}  ================
 {abitag=}
 {apitag=}
 
-""")
+"""
+        )
 
 
 async def install_pkg(sysconf, wheel_url, wheel_pkg):
@@ -246,6 +249,7 @@ async def install_pkg(sysconf, wheel_url, wheel_pkg):
             target.write(pkg.read())
     install(target_filename, sysconf)
 
+
 def do_patches():
     global PATCHLIST
     # apply any patches
@@ -254,6 +258,7 @@ def do_patches():
         print(f"254: patching {dep}")
         try:
             import platform
+
             platform.patches.pop(dep)()
         except Exception as e:
             sys.print_exception(e)
@@ -315,7 +320,10 @@ async def pip_install(pkg, sysconf={}):
         except:
             print("299: INVALID", pkg, "from", wheel_url)
 
-PYGAME=0
+
+PYGAME = 0
+
+
 async def parse_code(code, env):
     global PATCHLIST, PYGAME
 
@@ -329,7 +337,7 @@ async def parse_code(code, env):
                 continue
             elif pkg not in maybe_missing:
                 # do not change case ( eg PIL )
-                maybe_missing.append(pkg.lower().replace('-','_'))
+                maybe_missing.append(pkg.lower().replace("-", "_"))
 
     if Config.READ_723:
         for req in read_dependency_block_723(code):
@@ -339,7 +347,7 @@ async def parse_code(code, env):
                 continue
             elif pkg not in maybe_missing:
                 # do not change case ( eg PIL )
-                maybe_missing.append(pkg.lower().replace('-','_'))
+                maybe_missing.append(pkg.lower().replace("-", "_"))
 
     still_missing = []
 
@@ -350,8 +358,8 @@ async def parse_code(code, env):
             PATCHLIST.append(dep)
 
         # special case of pygame code in pygbag site-packages
-        if dep == 'pygame.base' and not PYGAME:
-            PYGAME=1
+        if dep == "pygame.base" and not PYGAME:
+            PYGAME = 1
             still_missing.append(dep)
             continue
 
@@ -370,18 +378,16 @@ async def check_list(code=None, filename=None):
     print()
     print("-" * 11, "computing required packages", "-" * 10)
 
-
     # pythonrc is calling aio.pep0723.parse_code not check_list
     # so do patching here
     patchlevel = platform_wasm.todo.patch()
     if patchlevel:
-        print("264:parse_code() patches loaded :", list(patchlevel.keys()) )
-        platform_wasm.todo.patch = lambda :None
+        print("264:parse_code() patches loaded :", list(patchlevel.keys()))
+        platform_wasm.todo.patch = lambda: None
         # and only do that once and for all.
         await async_imports_init()
         await async_repos()
         del async_imports_init, async_repos
-
 
     # mandatory
     importlib.invalidate_caches()
@@ -417,12 +423,12 @@ async def check_list(code=None, filename=None):
 
         for pkg in still_missing:
             di = f"{(env / pkg).as_posix()}-*.dist-info"
-            gg = glob.glob( di)
+            gg = glob.glob(di)
             if gg:
-                print("found in env :", gg[0].rsplit('/',1)[-1])
+                print("found in env :", gg[0].rsplit("/", 1)[-1])
                 continue
 
-            pkg_final = pkg.replace('-','_')
+            pkg_final = pkg.replace("-", "_")
             if (env / pkg_final).is_dir():
                 print("found in env :", pkg)
                 continue
@@ -432,6 +438,7 @@ async def check_list(code=None, filename=None):
     if not aio.cross.simulator:
         import platform
         import asyncio
+
         platform.explore(sconf["platlib"])
         await asyncio.sleep(0)
 
@@ -440,21 +447,7 @@ async def check_list(code=None, filename=None):
     print("-" * 40)
     print()
 
-
     return still_missing
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # aio.pep0723

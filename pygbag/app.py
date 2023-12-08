@@ -68,6 +68,7 @@ else:
 DEFAULT_WIDTH = 1280
 DEFAULT_HEIGHT = 720
 
+
 def set_args(program):
     global DEFAULT_SCRIPT
     import sys
@@ -347,8 +348,8 @@ now packing application ....
         "cdn": args.cdn,
         "proxy": f"http://{args.bind}:{args.port}/",
         "xtermjs": "1",
-        "width" : args.width,
-        "height" : args.height,
+        "width": args.width,
+        "height": args.height,
         "ume_block": args.ume_block,
         "can_close": args.can_close,
         "archive": app_name,

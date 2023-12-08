@@ -21,9 +21,12 @@ IGNORE = """
 /venv
 /ignore
 /ATTIC
-""".strip().split('\n')
+""".strip().split(
+    "\n"
+)
 
-SKIP_EXT= ["pyc", "pyx", "pyd", "pyi", "exe", "log", "DS_Store"]
+SKIP_EXT = ["pyc", "pyx", "pyd", "pyi", "exe", "log", "DS_Store"]
+
 
 def filter(walked):
     global dbg, IGNORE, SKIP_EXT

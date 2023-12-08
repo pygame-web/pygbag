@@ -265,19 +265,19 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
     if loaderhome:
         pdb(f"241: appdir mapped to {loaderhome} by loader")
         ROOTDIR = str(loaderhome)
-#
-#    # simulator won't run javascript for now
-#    if not hasattr(embed, "run_script"):
-#        pdb("246: no js engine")
-#        return False
-#
-#    # do not do stuff if not called properly from our js loader.
-#    if PyConfig.executable is None:
-#        # running in sim
-#        pdb("252: running in simulator")
-#        return False
-#
-#    #sys.executable = PyConfig.executable or "python"
+    #
+    #    # simulator won't run javascript for now
+    #    if not hasattr(embed, "run_script"):
+    #        pdb("246: no js engine")
+    #        return False
+    #
+    #    # do not do stuff if not called properly from our js loader.
+    #    if PyConfig.executable is None:
+    #        # running in sim
+    #        pdb("252: running in simulator")
+    #        return False
+    #
+    #    #sys.executable = PyConfig.executable or "python"
 
     preloadedWasm = "so"
     preloadedImages = "png jpeg jpg gif"
@@ -340,7 +340,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
                     aio.defer(execfile, [f"{ROOTDIR}/{loadermain}"], {})
                 else:
                     pdb(f"no {loadermain} found for {sys.argv[0]} in {ROOTDIR}")
-                #aio.defer(embed.prompt, (), {}, delay=2000)
+                # aio.defer(embed.prompt, (), {}, delay=2000)
 
     # C should unlock aio loop when preload count reach 0.
 
@@ -350,7 +350,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
             global fix_preload_table_apk, ROOTDIR
             pdb("no assets preloaded")
             os.chdir(ROOTDIR)
-            #aio.defer(embed.prompt, (), {})
+            # aio.defer(embed.prompt, (), {})
 
         # unlock embed looper because no preloading
         embed.run()

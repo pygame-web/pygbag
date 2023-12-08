@@ -24,9 +24,7 @@ if TYPE_CHECKING:
     from typing_extensions import TypeAlias
 
 
-SpacingDimensions: TypeAlias = Union[
-    int, Tuple[int], Tuple[int, int], Tuple[int, int, int, int]
-]
+SpacingDimensions: TypeAlias = Union[int, Tuple[int], Tuple[int, int], Tuple[int, int, int, int]]
 """The valid ways in which you can specify spacing."""
 
 T = TypeVar("T", int, float)
@@ -240,9 +238,7 @@ class Size(NamedTuple):
             y: int
             x, y = other
         except Exception:
-            raise TypeError(
-                "Dimensions.__contains__ requires an iterable of two integers"
-            )
+            raise TypeError("Dimensions.__contains__ requires an iterable of two integers")
         width, height = self
         return width > x >= 0 and height > y >= 0
 
@@ -341,9 +337,7 @@ class Region(NamedTuple):
         return cls(x, y, width, height)
 
     @classmethod
-    def get_scroll_to_visible(
-        cls, window_region: Region, region: Region, *, top: bool = False
-    ) -> Offset:
+    def get_scroll_to_visible(cls, window_region: Region, region: Region, *, top: bool = False) -> Offset:
         """Calculate the smallest offset required to translate a window so that it contains
         another region.
 
@@ -367,10 +361,7 @@ class Region(NamedTuple):
         left, top_, right, bottom = region.corners
         delta_x = delta_y = 0
 
-        if not (
-            (window_right > left >= window_left)
-            and (window_right > right >= window_left)
-        ):
+        if not ((window_right > left >= window_left) and (window_right > right >= window_left)):
             # The region does not fit
             # The window needs to scroll on the X axis to bring region in to view
             delta_x = min(
@@ -382,10 +373,7 @@ class Region(NamedTuple):
         if top:
             delta_y = top_ - window_top
 
-        elif not (
-            (window_bottom > top_ >= window_top)
-            and (window_bottom > bottom >= window_top)
-        ):
+        elif not ((window_bottom > top_ >= window_top) and (window_bottom > bottom >= window_top)):
             # The window needs to scroll on the Y axis to bring region in to view
             delta_y = min(
                 top_ - window_top,
@@ -641,12 +629,7 @@ class Region(NamedTuple):
         """
         x1, y1, x2, y2 = self.corners
         ox, oy, ox2, oy2 = other.corners
-        return (
-            (x2 >= ox >= x1)
-            and (y2 >= oy >= y1)
-            and (x2 >= ox2 >= x1)
-            and (y2 >= oy2 >= y1)
-        )
+        return (x2 >= ox >= x1) and (y2 >= oy >= y1) and (x2 >= ox2 >= x1) and (y2 >= oy2 >= y1)
 
     @lru_cache(maxsize=1024)
     def translate(self, offset: tuple[int, int]) -> Region:
@@ -775,9 +758,7 @@ class Region(NamedTuple):
         x1, y1, x2, y2 = self.corners
         ox1, oy1, ox2, oy2 = region.corners
 
-        union_region = self.from_corners(
-            min(x1, ox1), min(y1, oy1), max(x2, ox2), max(y2, oy2)
-        )
+        union_region = self.from_corners(min(x1, ox1), min(y1, oy1), max(x2, ox2), max(y2, oy2))
         return union_region
 
     @lru_cache(maxsize=1024)
@@ -879,9 +860,7 @@ class Region(NamedTuple):
             Region(x, y + cut, width, height - cut),
         )
 
-    def translate_inside(
-        self, container: Region, x_axis: bool = True, y_axis: bool = True
-    ) -> Region:
+    def translate_inside(self, container: Region, x_axis: bool = True, y_axis: bool = True) -> Region:
         """Translate this region, so it fits within a container.
 
         This will ensure that there is as little overlap as possible.
@@ -917,9 +896,7 @@ class Region(NamedTuple):
             height2,
         )
 
-    def inflect(
-        self, x_axis: int = +1, y_axis: int = +1, margin: Spacing | None = None
-    ) -> Region:
+    def inflect(self, x_axis: int = +1, y_axis: int = +1, margin: Spacing | None = None) -> Region:
         """Inflect a region around one or both axis.
 
         The `x_axis` and `y_axis` parameters define which direction to move the region.
@@ -1067,9 +1044,7 @@ class Spacing(NamedTuple):
         if pad_len == 4:
             top, right, bottom, left = cast(Tuple[int, int, int, int], pad)
             return cls(top, right, bottom, left)
-        raise ValueError(
-            f"1, 2 or 4 integers required for spacing properties; {pad_len} given"
-        )
+        raise ValueError(f"1, 2 or 4 integers required for spacing properties; {pad_len} given")
 
     @classmethod
     def vertical(cls, amount: int) -> Spacing:
@@ -1113,18 +1088,14 @@ class Spacing(NamedTuple):
         if isinstance(other, tuple):
             top1, right1, bottom1, left1 = self
             top2, right2, bottom2, left2 = other
-            return Spacing(
-                top1 + top2, right1 + right2, bottom1 + bottom2, left1 + left2
-            )
+            return Spacing(top1 + top2, right1 + right2, bottom1 + bottom2, left1 + left2)
         return NotImplemented
 
     def __sub__(self, other: object) -> Spacing:
         if isinstance(other, tuple):
             top1, right1, bottom1, left1 = self
             top2, right2, bottom2, left2 = other
-            return Spacing(
-                top1 - top2, right1 - right2, bottom1 - bottom2, left1 - left2
-            )
+            return Spacing(top1 - top2, right1 - right2, bottom1 - bottom2, left1 - left2)
         return NotImplemented
 
     def grow_maximum(self, other: Spacing) -> Spacing:

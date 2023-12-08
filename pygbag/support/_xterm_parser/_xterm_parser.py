@@ -15,9 +15,7 @@ from .keys import KEY_NAME_REPLACEMENTS, _character_to_key
 _MAX_SEQUENCE_SEARCH_THRESHOLD = 20
 
 _re_mouse_event = re.compile("^" + re.escape("\x1b[") + r"(<?[\d;]+[mM]|M...)\Z")
-_re_terminal_mode_response = re.compile(
-    "^" + re.escape("\x1b[") + r"\?(?P<mode_id>\d+);(?P<setting_parameter>\d)\$y"
-)
+_re_terminal_mode_response = re.compile("^" + re.escape("\x1b[") + r"\?(?P<mode_id>\d+);(?P<setting_parameter>\d)\$y")
 _re_bracketed_paste_start = re.compile(r"^\x1b\[200~$")
 _re_bracketed_paste_end = re.compile(r"^\x1b\[201~$")
 
@@ -57,9 +55,7 @@ class XTermParser(Parser[events.Event]):
             event_class: type[events.MouseEvent]
 
             if buttons & 64:
-                event_class = (
-                    events.MouseScrollDown if buttons & 1 else events.MouseScrollUp
-                )
+                event_class = events.MouseScrollDown if buttons & 1 else events.MouseScrollUp
                 button = 0
             else:
                 if buttons & 32:
@@ -188,9 +184,7 @@ class XTermParser(Parser[events.Event]):
 
                     self.debug_log(f"sequence={sequence!r}")
 
-                    bracketed_paste_start_match = _re_bracketed_paste_start.match(
-                        sequence
-                    )
+                    bracketed_paste_start_match = _re_bracketed_paste_start.match(sequence)
                     if bracketed_paste_start_match is not None:
                         bracketed_paste = True
                         break
@@ -220,10 +214,7 @@ class XTermParser(Parser[events.Event]):
                         # (i.e. the terminal saying it supports a mode we requested)
                         mode_report_match = _re_terminal_mode_response.match(sequence)
                         if mode_report_match is not None:
-                            if (
-                                mode_report_match["mode_id"] == "2026"
-                                and int(mode_report_match["setting_parameter"]) > 0
-                            ):
+                            if mode_report_match["mode_id"] == "2026" and int(mode_report_match["setting_parameter"]) > 0:
                                 on_token(messages.TerminalSupportsSynchronizedOutput())
                             break
             else:
@@ -231,9 +222,7 @@ class XTermParser(Parser[events.Event]):
                     for event in sequence_to_key_events(character):
                         on_token(event)
 
-    def _sequence_to_key_events(
-        self, sequence: str, _unicode_name=unicodedata.name
-    ) -> Iterable[events.Key]:
+    def _sequence_to_key_events(self, sequence: str, _unicode_name=unicodedata.name) -> Iterable[events.Key]:
         """Map a sequence of code points on to a sequence of keys.
 
         Args:

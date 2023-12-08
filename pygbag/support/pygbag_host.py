@@ -4,7 +4,7 @@ from pathlib import Path
 
 ## ====================== pygame
 
-#def pg_load(fn, alpha=True):
+# def pg_load(fn, alpha=True):
 #    import pygame
 #    from pathlib import Path
 
@@ -23,8 +23,7 @@ from pathlib import Path
 #        return media
 
 
-#======================= network
-
+# ======================= network
 
 
 import pygbag.aio as asyncio
@@ -80,5 +79,6 @@ async def connect():
 # await connect()
 
 if __name__ == "__main__":
+
     async def main():
         asyncio.run(main())
