@@ -9,15 +9,8 @@
 
 #
 cp -r pygbag/support/_xterm_parser ${SDKROOT}/prebuilt/emsdk/common/site-packages/
-cp -r pygbag/support/typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
+cp pygbag/support/pygbag_*.py pygbag/support/typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
 
-echo "
-
-
-    TODO copy pygbag_*.py
-
-
-"
 
 
 # version independant modules
