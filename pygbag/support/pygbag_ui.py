@@ -18,20 +18,6 @@ evpos = {}
 clog = []
 
 
-# def ESC(*argv, flush=True):
-#    for arg in argv:
-#        sys.__stdout__.write(chr(0x1B))
-#        sys.__stdout__.write(arg)
-#    if flush:
-#        sys.stdout.flush()
-
-
-# def CSI(*argv):
-#    for arg in argv:
-#        ESC(f"[{arg}", flush=False)
-#    sys.stdout.flush()
-
-
 # slots = 'x y z t width depth height event'
 # slots = slots.split(' ')
 try:
@@ -320,8 +306,8 @@ class TTY:
                 if payload:
                     for event in parser.feed(payload.decode("utf-8")):
                         if isinstance(event, MouseEvent):
-                            self.L = event.x
-                            self.C = event.y
+                            self.L = event.y
+                            self.C = event.x
                             TTY.console = event.y > TTY.LINES
                             if self.last_state != TTY.console:
                                 self.last_state = TTY.console

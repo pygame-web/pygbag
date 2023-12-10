@@ -6,6 +6,11 @@ import inspect
 DEBUG = True
 NICE = 0.010
 
+perf_index = None
+load_avg = "0.000"
+load_min = "0.000"
+load_max = "0.000"
+
 builtins.aio = sys.modules[__name__]
 
 # try to acquire syslog early
