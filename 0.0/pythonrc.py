@@ -630,33 +630,20 @@ ________________________
     @classmethod
     def uptime(cls, *argv, **env):
         import asyncio, platform
-
-        if platform.is_browser:
-
-            def load_display(ft):
-                avg = sum(ft) / len(ft)
-                try:
-                    platform.window.load_avg.innerText = "{:.4f}".format(avg)
-                    platform.window.load_min.innerText = "{:.4f}".format(min(ft))
-                    platform.window.load_max.innerText = "{:.4f}".format(max(ft))
-                    return True
-                except:
-                    pdb("366:uptime: window.load_* widgets not found")
-                    return False
-
+        if not aio.perf_index:
             async def perf_index():
                 ft = [0.00001] * 60 * 10
                 while not aio.exit:
                     ft.pop(0)
                     ft.append(aio.spent / 0.016666666666666666)
                     if not (aio.ticks % 60):
-                        if not load_display(ft):
-                            break
+                        avg = sum(ft) / len(ft)
+                        aio.load_avg = "{:.4f}".format(avg)
+                        aio.load_min = "{:.4f}".format(min(ft))
+                        aio.load_max = "{:.4f}".format(max(ft))
                     await asyncio.sleep(0)
-
-            aio.create_task(perf_index())
-        else:
-            print(f"last frame : {aio.spent / 0.016666666666666666:.4f}")
+            aio.perf_index = perf_index()
+            aio.create_task(aio.perf_index)
 
     @classmethod
     async def preload_code(cls, code, callback=None, hint=""):
