@@ -557,7 +557,7 @@ static PyMethodDef mod_embed_methods[] = {
 #endif
     {"test", (PyCFunction)embed_test, METH_VARARGS | METH_KEYWORDS, "test"},
 
-    {"webgl", (PyCFunction)embed_webgl, METH_VARARGS | METH_KEYWORDS, "test"},
+    {"webgl", (PyCFunction)embed_webgl, METH_VARARGS | METH_KEYWORDS, "open a canvas as webgl"},
 
     {NULL, NULL, 0, NULL}
 };
@@ -826,6 +826,7 @@ EMSCRIPTEN_KEEPALIVE void egl_test() {
     EGLNativeWindowType dummyWindow = 0;
     EGLConfig config;
 
+
 #if 0
 
     display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -920,19 +921,37 @@ fail:
 #endif // EGLTEST
 
 static PyObject *
-embed_webgl(PyObject *self, PyObject *args, PyObject *kwds)
+embed_webgl(PyObject *self, PyObject *argv, PyObject *kw)
 {
-    // setting up EmscriptenWebGLContextAttributes
-    #if defined(EGLTEST)
-        egl_test();
-    #endif
 
-    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_get_current_context();
-    //EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context("#canvas3d", &attr);
-    //emscripten_webgl_make_context_current(ctx);
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx ;
+    EGLContext context = NULL;
+    EGLSurface surface = NULL;
+    EGLDisplay display = NULL;
+    EGLNativeWindowType dummyWindow = 0;
+    EGLConfig config;
 
-    glClearColor(0.9, 0.5, 0.5, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    char * target = NULL;
+    if (!PyArg_ParseTuple(argv, "|s", &target)) {
+        target = NULL;
+    }
+    EmscriptenWebGLContextAttributes attr;
+    emscripten_webgl_init_context_attributes(&attr);
+    attr.alpha = 0;
+    if (target) {
+        ctx = emscripten_webgl_create_context(target, &attr);
+        setenv("WebGL", target, 1);
+    } else {
+        ctx = emscripten_webgl_create_context("#canvas", &attr);
+    }
+
+    emscripten_webgl_make_context_current(ctx);
+
+    context = (EGLContext)emscripten_webgl_get_current_context();
+
+    display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    puts(glGetString(GL_VERSION));
+
     return Py_BuildValue("i", emscripten_webgl_get_current_context() );
 }
 

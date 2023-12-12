@@ -1,16 +1,14 @@
 #!/bin/bash
 
-
-
-
 . scripts/vendoring.sh
 
 . ${CONFIG:-$SDKROOT/config}
 
 #
-cp -r pygbag/support/_xterm_parser ${SDKROOT}/prebuilt/emsdk/common/site-packages/
-cp pygbag/support/pygbag_*.py pygbag/support/typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
-
+pushd pygbag/support
+cp -r _xterm_parser ${SDKROOT}/prebuilt/emsdk/common/site-packages/
+cp pygbag_*.py readline.py typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
+popd
 
 
 # version independant modules
@@ -21,7 +19,6 @@ export REQUIREMENTS=${SDKROOT}/prebuilt/emsdk/${PYBUILD}/site-packages
 
 # and wasm libraries
 export DYNLOAD=${SDKROOT}/prebuilt/emsdk/${PYBUILD}/lib-dynload
-
 
 
 . $SDKROOT/emsdk/emsdk_env.sh
@@ -274,23 +271,13 @@ emcc \\
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \\
      -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \\
      $LDFLAGS -lembind
+
+# -lfreetype
+
+# --bind -fno-rtti
+
 # -sERROR_ON_UNDEFINED_SYMBOLS=0
-
-#echo "
-
-#error: undefined symbol: _emval_decref (referenced by root reference (e.g. compiled C/C++ code))
-#error: undefined symbol: _emval_delete (referenced by root reference (e.g. compiled C/C++ code))
-#error: undefined symbol: _emval_greater_than (referenced by root reference (e.g. compiled C/C++ code))
-#error: undefined symbol: _emval_incref (referenced by root reference (e.g. compiled C/C++ code))
-#error: undefined symbol: _emval_less_than (referenced by root reference (e.g. compiled C/C++ code))
-#error: undefined symbol: _emval_new_cstring (referenced by root reference (e.g. compiled C/C++ code))
-#error: undefined symbol: _emval_set_property (referenced by root reference (e.g. compiled C/C++ code))
-#error: undefined symbol: _emval_strictly_equals (referenced by root reference (e.g. compiled C/C++ code))
-
-#"
-
-#
-
+# -sGL_ENABLE_GET_PROC_ADDRESS
 
 # --bind -fno-rtti
 

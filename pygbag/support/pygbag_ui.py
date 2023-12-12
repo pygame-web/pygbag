@@ -104,6 +104,8 @@ buffer_console = []
 # import shutil
 import os
 
+import readline
+
 
 class TTY:
     stdin = 0
@@ -122,13 +124,22 @@ class TTY:
 
     prompts = []
 
-    readline = []
+# TODO: multi line editor
+    rl_complete = []
+    rl_instances = []
+    rl_instances.append( readline.readline() )
+    rl_instances[-1].reset()
+    rl_pointer = len(rl_instances)-1
+
+    readline_buffer = []
 
     line = ""
 
     # cursor pos
     L = 1
     C = 1
+
+    raw = b""
 
     event_type = ""
     last_event_type = "load"
@@ -139,13 +150,26 @@ class TTY:
     last_state = False
 
     @classmethod
-    def prompt(self):
-        if len(self.prompts):
-            self.prompts.clear()
-            import platform
+    def get_readline(self):
+        return self.rl_instances[self.rl_pointer]
 
+    @classmethod
+    def prompt(self):
+        if self.raw:
+            rl = self.get_readline()
+            rl.process_bstr(TTY.raw)
+            self.raw=b""
+            print(f"\r>>> {rl.string}\x1b[K\r\x1b[%uC" %  (4+rl.caret), end="")
+            if rl.string and (rl.string[-1]=="\n"):
+                print(end="\r")
+                self.rl_complete.append( rl.string.rstrip("\r\n") )
+                rl.string = ""
+
+        elif len(self.prompts):
+            self.prompts.clear()
             print("\r>>> ", end="")
             self.flush()
+
 
     @classmethod
     def set_raw(self, state):
@@ -251,15 +275,15 @@ class TTY:
 
         # await input() handler
         if ev.is_printable:
-            self.readline.append(ev.character)
+            self.readline_buffer.append(ev.character)
             return False
 
         # validate input()
 
         if ev.name == "enter":
             self.last_list = self.line
-            self.line = "".join(self.readline)
-            self.readline.clear()
+            self.line = "".join(self.readline_buffer)
+            self.readline_buffer.clear()
             return True
         else:
             # clog.append(repr(list(ev.__rich_repr__())))
@@ -317,7 +341,8 @@ class TTY:
 
                         elif isinstance(event, Key):
                             if TTY.console:
-                                self.handler_console_input(event)
+                                #self.handler_console_input(event)
+                                self.raw = payload
                             else:
                                 rl_complete = self.handler_readline_input(event)
                                 # clog.append( repr(list(event.__rich_repr__())) )

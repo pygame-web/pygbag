@@ -1,0 +1,603 @@
+<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js" type=module id="site" data-COLUMNS=132 data-LINES=57 data-CONSOLE=25 data-python="cpython{{cookiecutter.PYBUILD}}" data-os="vtx,fs,snd,gui,fbdev" async defer>#<!--
+
+print("""
+Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
+    Pygbag Version : {{cookiecutter.version}}
+    Template Version : 0.8.5
+    Python  : {{cookiecutter.PYBUILD}}
+    CDN URL : {{cookiecutter.cdn}}
+    Screen  : {{cookiecutter.width}}x{{cookiecutter.height}}
+    Title   : {{cookiecutter.title}}
+    Folder  : {{cookiecutter.directory}}
+    Authors : {{cookiecutter.authors}}
+    SPDX-License-Identifier: {{cookiecutter.spdx}}
+
+""")
+
+import sys
+import platform
+import json
+from pathlib import Path
+
+# import pygbag.aio as asyncio
+
+import aio
+import aio.fetch
+
+if platform.window.location.host.find('localhost')>=0:
+    aio.fetch.FS("""
+http://localhost:8000/pygbag/pygbag/support/
+. ~ .
+├── offline.png
+├── pygbag_app.py
+├── pygbag_fsm.py
+├── pygbag_host.py
+├── pygbag_ui.py
+└── pygbag_ux.py
+""")
+
+
+
+# do not rename, it has a special meaning for asyncio.run()
+async def custom_site():
+    global app
+    await aio.fetch.preload(chdir=False, isolated=True)
+    sys.path.append('/tmp')
+
+
+    import pygbag_app
+    import pygbag_ux as ux
+
+    #import pygbag_fsm
+    fsm = None #pygbag_fsm.build({})
+
+    app = pygbag_app
+    ui = app.ui
+    TTY = app.TTY
+    Tui = app.Tui
+
+
+    ux.dim({{cookiecutter.width}}, {{cookiecutter.height}})
+
+    platform.window.transfer.hidden = true
+    platform.window.canvas.style.visibility = "visible"
+
+    console = app.console.get()
+
+    platform.document.body.style.background = "#555555"
+
+    apk = "{{cookiecutter.archive}}.apk"
+
+    bundle = "{{cookiecutter.archive}}"
+
+    # the C or js loader could do that but be explicit.
+    appdir = Path(f"/data/data/{bundle}") # /data/data/{{cookiecutter.archive}}
+    appdir.mkdir()
+
+
+    # mount apk
+
+    cfg = {
+        "io": "url",
+        "type":"mount",
+        "mount" : {
+            "point" : appdir.as_posix(),
+            "path" : "/",
+        }
+
+    }
+
+    track = platform.window.MM.prepare(apk, json.dumps(cfg))
+
+    marginx = ux.x(.020) # 20%
+    marginy = ux.y(.045) # 45%
+
+
+    async def pv(track, prefix="", suffix="", decimals=1, length=70, fill="X", printEnd="\r"):
+        # Progress Bar Printing Function
+        def print_pg_bar(total, iteration):
+            if iteration > total:
+                iteration = total
+            percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+            filledLength = int(length * iteration // total)
+            bar = fill * filledLength + "-" * (length - filledLength)
+            print(f"\r{prefix} |{bar}| {percent}% {suffix}", end=printEnd)
+
+        # Update Progress Bar
+        while True:
+            if track.pos < 0:
+                raise IOError(404)
+            print_pg_bar(track.len or 100, track.pos or 0)
+            if track.avail:
+                break
+            await asyncio.sleep(0.02)
+
+        # Print New Line on Complete
+        print()
+
+    print('Downloading and mounting assets:')
+    # wait until zip mount + overlayfs is complete
+    #while not track.ready:
+    await pv(track)
+    #await asyncio.sleep(.1)
+
+
+    # preloader will change dir and prepend it to sys.path
+    # but do not run main.py yet.
+    #platform.run_main(PyConfig, loaderhome= appdir / "assets", loadermain=None)
+    assets = appdir / "assets"
+
+    # do wasm streaming compilation on all .so
+    platform.explore(assets)
+
+    # wait preloading complete
+    # that includes images and wasm compilation of bundled modules
+    while platform.preloading>0:
+        platform.preloading = embed.preloading()
+        print(f"Assets to streaming-compile : {platform.preloading}")
+        await asyncio.sleep(.5)
+
+    # unlock async for main.py loop ( 2nd asyncio.run call )
+    embed.run()
+
+    # now that apk is mounted we have access to font cache
+    # but we need to fill __file__ that is not yet set
+    # as default exec mode is REPL from stdin
+    __import__(__name__).__file__ = (assets / "main.py").as_posix()
+
+
+    # test/wait user media interaction
+    if not platform.window.MM.UME:
+
+        # now make a prompt
+        print("Ready to start !")
+
+        print("""
+
+        * Waiting for media user engagement : please click/touch page *
+
+
+    """)
+        while not platform.window.MM.UME:
+            await asyncio.sleep(.1)
+
+    print("mobile.tmpl: top level")
+
+    # start async top level machinery if not started and add a console in any case if requested.
+    await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
+
+    def ui_callback(pkg):
+        print(f"installing {pkg}")
+
+    while not (assets / "main.py").is_file():
+        print("mobile.tmpl: wait for main")
+        await asyncio.sleep(.1)
+
+    print("mobile.tmpl: running main")
+
+    os.chdir(assets)
+    sys.path.append( assets.as_posix())
+
+    import main
+
+    for k,v in vars(main).items():
+        if not k.startswith('_'):
+            globals()[k]=v
+
+
+    def console_display():
+        if len(ui.clog):
+            print()
+            while len(ui.clog):
+                l = ui.clog.pop(0)
+                print(l)
+                try:
+                    platform.window.console.log(l)
+                except:
+                    ...
+
+            TTY.prompts.append(1)
+
+
+
+
+    frames = []
+
+    loop = asyncio.get_event_loop()
+
+
+    try:
+        while not app.TTY.closed:
+            while len(frames):
+                frame = frames.pop(0)
+                if frame:
+                    await frame
+            await asyncio.sleep(app.sleep_delay)
+
+    #        if (last_state != fsm.state):
+    #            app.log(f"{last_state}=>{fsm.state}")
+    #            last_state = fsm.state
+
+            with Tui() as out:
+    #            lbuf = ctx()["io"][0]
+    #            for z,x, row in lbuf:
+    #                out( row, x=x, z=z )
+    #            lbuf.clear()
+
+
+    #            for z,x, row in bufs.values():
+    #                out( row, x=x, z=z )
+    #            bufs.clear()
+
+
+    #            import io
+    #            sio = io.StringIO()
+    #            rich.print(rich.panel.Panel(get_panels(), width=55) , file=sio)
+    #            sio.seek(0)
+    #            out( sio.read(), x=10, z=2, filter = ui.filter_out )
+                out( f"{TTY.COLUMNS}x({TTY.LINES}+{TTY.CONSOLE}):{TTY.console}\
+ fsm={fsm and fsm.state} C={TTY.C} L={TTY.L}\
+ min/avg/max:{aio.load_min} {aio.load_avg} {aio.load_max}\
+  ⏏︎ ■ ▶\
+ {TTY.last_event_type}({TTY.last_event_data})\
+                      ", x=1, z=TTY.LINES)
+
+            if TTY.event_type:
+                if TTY.event_type == "click":
+                    act(TTY.event_data)
+
+            # async readline interface ( await input() )
+            if TTY.input():
+                pass
+
+            # console zone ( only when mouse hovering )
+            elif TTY.console:
+                # readline editing
+                TTY.prompt()
+
+                # exec
+                if len(TTY.rl_complete):
+                    aio.toplevel.handler.instance.buffer.append("\n".join(TTY.rl_complete))
+                    TTY.rl_complete.clear()
+                await aio.toplevel.handler.instance.interact_step('>_> ')
+
+            # app loops only when not in console
+            else:
+                ...
+                #frames.append( tetryscale.pygame.loop() )
+
+            # console zone ( display, always )
+            console_display()
+
+
+    except asyncio.exceptions.CancelledError:
+        print("Cancelled")
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt")
+    finally:
+        TTY.set_raw(0)
+        print("killing tasks, FIXME restart REPL for WASM")
+        aio.exit_now(0)
+
+
+
+    if 0:
+
+        await shell.source(main, callback=ui_callback)
+
+        # if you don't reach that step
+        # your main.py has an infinite sync loop somewhere !
+        print("mobile.tmpl: ready")
+
+        shell.interactive()
+
+asyncio.run( custom_site() )
+
+
+
+
+
+
+
+
+
+
+
+
+# BEGIN BLOCK
+#
+# now this is the html part you can (and should) customize
+# It is not mandatory : pygame-script when it reads the first line (also called
+# shebang ) of above code create absolute minimal widget set
+# required for running with default rules
+#
+# do not alter that comment block it is separating python code from html code
+# =============================================================================
+# --></script><head><!--
+//=============================================================================
+//
+//
+//
+//
+//
+//
+//
+
+    {%- if cookiecutter.comment != "" -%}
+{{cookiecutter.comment}}
+    {% endif %}
+
+--><script type="application/javascript">
+// END BLOCK
+
+
+
+// this dict is available under PyConfig.config from __main__
+
+config = {
+    xtermjs : "{{cookiecutter.xtermjs}}" ,
+    _sdl2 : "canvas",
+    user_canvas : 0,
+    user_canvas_managed : 0,
+    ume_block : {{cookiecutter.ume_block}},
+    can_close : {{cookiecutter.can_close}},
+    archive : "{{cookiecutter.archive}}",
+    gui_debug : 3,
+    cdn : "{{cookiecutter.cdn}}",
+    autorun : {{cookiecutter.autorun}},
+    PYBUILD : "{{cookiecutter.PYBUILD}}"
+}
+
+</script>
+
+    <title>{{cookiecutter.title}}</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="viewport" content="minimal-ui, width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1, user-scalable=no"">
+
+    <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
+
+    <style>
+        #status {
+            display: inline-block;
+            vertical-align: top;
+            margin-top: 20px;
+            margin-left: 30px;
+            font-weight: bold;
+            color: rgb(120, 120, 120);
+        }
+
+        #progress {
+            height: 20px;
+            width: 300px;
+        }
+
+        div.emscripten { text-align: center; }
+        div.emscripten_border { border: 1px solid black; }
+        div.thick_border { border: 4px solid black; }
+
+        /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+        /* average size of droid screen 470dp x 320dp  */
+        canvas.emscripten {
+            border: 0px none;
+            background-color: transparent;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+
+            padding: 0;
+            margin: 0 auto;
+
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        body {
+            font-family: arial;
+            margin: 0;
+            padding: none;
+            background-color: #1a1c1f;
+        }
+
+        .topright{
+           position:absolute;
+           top:0px;
+           right:0px;
+        }
+
+        .bottomright {
+            position:absolute;
+            top: 40%;
+            right: 0px;
+            height: 60%;
+        }
+
+        .center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .framed{
+           position: relative;
+           top: 0px;
+           right: 0px;
+           border: 1px solid white;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div id="transfer" align=center>
+        <div class="emscripten" id="status">Downloading...</div>
+        <div class="emscripten">
+            <progress value="0" max="100" id="progress"></progress>
+        </div>
+    </div>
+
+
+    <canvas class="emscripten" id="canvas"
+width="1px"
+height="1px"
+    oncontextmenu="event.preventDefault()" tabindex=1>
+    </canvas>
+
+    <div id=html></div>
+
+    <div id=crt class=bottomright>
+        <div id=box class=emscripten_border hidden=true>
+        <canvas id=canvas3d class="emscripten"
+width="512px"
+height="512px"
+        oncontextmenu="event.preventDefault()">
+        </canvas>
+
+<iframe id="dlhandler" class="framed" name="dlhandler"
+width="470px" height="90%"
+loading="lazy"
+allowtransparency="true"
+style="z-index: 10; style="background: #FFFFFF;"
+frameborder="1"
+                allowfullscreen="true"
+                webkitallowfullscreen="true"
+                msallowfullscreen="true"
+                mozallowfullscreen="true"
+                sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
+                allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
+                src="{{cookiecutter.cdn}}../../archives/lib/index.html"
+                scrolling="yes">
+</iframe>
+
+
+        </div>
+
+    </div>
+
+
+    <div id="dlg" hidden>
+        <input type="file" id="dlg_multifile" multiple accept="image/*">
+        <label for="dlg_multifile">Select files</label>
+    </div>
+
+    <div id="pyconsole">
+        <div id="terminal" tabIndex=1 align="left"></div>
+    </div>
+
+<script type="application/javascript">
+
+async function custom_onload(debug_hidden) {
+    // this is called before anything python is loaded
+    // make your js customization here
+    console.log(__FILE__, "custom_onload")
+    pyconsole.hidden = debug_hidden
+    box.hidden =  debug_hidden
+}
+
+
+var dlfcn_handle_id = 0
+var dlfcn_handles = {}
+var dlfcn_retval = {}
+
+function dlvoid(hexstack) {
+    //const dlhandler = document.getElementById("dlhandler").contentWindow
+    //window.console.log(`dlhandler.postMessage("${hexstack}")`)
+    dlhandler.postMessage(hexstack, "*")
+}
+
+function * dlcall(callid, hexstack) {
+    //const dlhandler = document.getElementById("dlhandler").contentWindow
+    dlhandler.postMessage(hexstack, "*")
+    while (!dlfcn_retval[callid])
+        yield 0
+    yield dlfcn_retval[callid]
+}
+
+
+function * dlopen(lib) {
+    dlfcn_handle_id += 1
+    const linkid =  lib + "_" + dlfcn_handle_id
+//    const dlhandler = document.getElementById("dlhandler").contentWindow
+
+    console.log("dlopen: opening :", linkid)
+
+// wait for lazy iframe case
+    while (!dlfcn_handles["dlopen"])
+        yield 0
+
+    dlhandler.postMessage("dlopen:"+lib+":"+ linkid , "*")
+    while (!dlfcn_handles[linkid])
+        yield 0
+
+    yield linkid
+}
+
+function from_hex(h) {
+    var s = ''
+    for (var i = 0; i < h.length; i+=2) {
+        s += String.fromCharCode(parseInt(h.substr(i, 2), 16))
+    }
+    return decodeURIComponent(escape(s))
+}
+
+function rx(event) {
+    const rxmsg = ""+event.data
+    const origin = event.origin
+
+    var e = rxmsg.split(':')
+    const rt = e.shift()
+    if (rt == "dlopen") {
+        const serial = e.shift()
+        if (serial =="") {
+            const linkid = e.shift()
+            dlfcn_handles[linkid] = linkid
+        // call returned value
+        } else {
+            dlfcn_retval[serial] = from_hex(e.shift())
+        }
+    } else {
+        console.warn("bus(567)",rxmsg, origin)
+    }
+
+    if (origin) {
+        //console.log("forwarding",rxmsg)
+    }
+}
+
+window.addEventListener("message", rx, false);
+
+function custom_prerun(){
+    // no python main and no (MEMFS + VFS) yet.
+    console.log(__FILE__, "custom_prerun")
+
+}
+
+function custom_postrun(){
+    // python main and no VFS filesystem yet.
+    console.log(__FILE__, "custom_postrun")
+}
+
+function debug() {
+    // allow to gain access to dev tools from js console
+    // but only on desktop. difficult to reach when in iframe
+    python.config.debug = true
+    custom_onload(false)
+    Module.PyRun_SimpleString("shell.uptime()")
+    window_resize()
+}
+
+// Hides mobile browser's address bar when page is done loading.
+window.addEventListener('load', function(e) {
+    setTimeout(function() { window.scrollTo({left:0, top:1080, behaviour :"instant"}) }, 1);
+}, false);
+
+</script>
+
+</body>
+</html>
