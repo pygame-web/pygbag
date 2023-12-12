@@ -1316,6 +1316,66 @@ if not aio.cross.simulator:
     aio.toplevel.handler = TopLevel_async_handler
 
 
+    async def dlopen(pkg):
+        import platform
+        import binascii
+        import json
+
+        dlref = await platform.jsiter( platform.window.dlopen(pkg) )
+        class dlproxy(object):
+            def __init__(self, *argv, **env):
+                self.__dlref = " ".join(map(str, argv))
+                self.__lastc = "__init__"
+                self.__serial = 0
+
+            def __call__(self, callid, fn, *argv, **env):
+                stack : list = [ callid, fn , argv, env ]
+                print(f"{self.__dlref}.{fn}({argv},{env}) {callid=}")
+                jstack : str = binascii.hexlify(json.dumps(stack).encode()).decode("ascii")
+                jshex = f"{self.__dlref}:{jstack}"
+                if not callid:
+                    window.dlvoid(jshex)
+                    return None
+
+                async def rv():
+                    obj = await platform.jsiter(window.dlcall(callid,jshex))
+                    return json.loads(obj)
+                return rv()
+
+
+            def __all(self, *argv, **env):
+                self.__serial += 1
+                return self.__call__(f"C{self.__serial}", self.__lastc, *argv, **env)
+
+            def __nonzero__(self):
+                return 0
+
+            def __nop__(self, other):
+                return 0
+
+            __add__ = __iadd__ = __sub__ = __isub__ = __mul__ = __imul__ = __div__ = __idiv__ = __nop__
+
+            def __getattr__(self, attr):
+                self.__lastc = attr
+                return self.__all
+
+            def iteritems(self):
+                print(self, "iterator")
+                return []
+
+            def __del__(self):
+                pass
+
+            def __repr__(self):
+                return "\ndlproxy: %s" % self.__dlref
+
+            __str__ = __repr__
+
+
+        return dlproxy(dlref)
+
+    builtins.dlopen = dlopen
+
 else:
     pdb("TODO: js simulator")
 
