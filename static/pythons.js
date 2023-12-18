@@ -568,48 +568,59 @@ async function run_pyrc(content) {
     }
 
     python.PyRun_SimpleString(`#!site
+
+__pythonrc__ = "${pyrc_file}"
+
 try:
     next(enumerate([]),None)
     __PKPY__ = False
 except:
+    with open(__pythonrc__, "r") as pythonrc:
+        exec(pythonrc.read(), globals())
     __PKPY__ = True
-import os, sys, json
-PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
-pfx=PyConfig['prefix']
+import os
 def os_path_is_dir(path):
     try:
         os.listdir(str(path))
         return True
     except:
         return False
+
 def os_path_is_file(path):
-    parent, file = str(path).rsplit('/',1)
+    parent, file = str(path).rsplit("/",1)
     try:
         return file in os.listdir(parent)
     except:
         return False
 
-if os_path_is_dir(pfx):
-    sys.path.append(pfx)
-    os.chdir(pfx)
+if not __PKPY__:
 
-del pfx
-__pythonrc__ = "${pyrc_file}"
-try:
-    if os_path_is_file(__pythonrc__):
-        exec(open(__pythonrc__).read(), globals(), globals())
-    else:
-        raise Error("File not found")
-except Exception as e:
-    print(f"602: invalid {__pythonrc__=}")
-    sys.print_exception(e)
+    import sys, json
+    PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
+    pfx=PyConfig["prefix"]
 
-try:
-    import asyncio
-    asyncio.run(import_site("${main_file}"))
-except ImportError:
-    pass
+    if os_path_is_dir(pfx):
+        sys.path.append(pfx)
+        os.chdir(pfx)
+
+    del pfx
+
+    try:
+        if os_path_is_file(__pythonrc__):
+            exec(open(__pythonrc__).read(), globals(), globals())
+        else:
+            raise Error("File not found")
+    except Exception as e:
+        print(f"602: invalid {__pythonrc__=}")
+        sys.print_exception(e)
+
+    try:
+        import asyncio
+        asyncio.run(import_site("${main_file}"))
+    except ImportError:
+        pass
 `)
+
 }
 
 
