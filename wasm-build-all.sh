@@ -45,6 +45,19 @@ do
 done
 
 
+mkdir -p pythons
+if [ -d pythons/pykpocket ]
+then
+    echo pypocket found
+else
+    pushd pythons
+    git clone --no-tags --depth 1 --single-branch --branch pygbag https://github.com/pmp-p/pykpocket
+    popd
+    ./build-pkpy.sh
+fi
+
+
+
 if echo "$@"|grep WAPY
 then
  ./scripts/build-wapy2.sh

@@ -47,19 +47,75 @@ debug:
 
 #include <unistd.h>
 
-#if defined(WAPY)
-//#   include "mpconfigport.h"
-#   include "Python.h"
 
+
+static int preloads = 0;
+static long long loops = 0;
+
+
+struct timeval time_last, time_current, time_lapse;
+
+// crude "files" used for implementing "os level" communications with host.
+
+
+#define FD_MAX 64
+#define FD_BUFFER_MAX 4096
+
+FILE *io_file[FD_MAX];
+char *io_shm[FD_MAX];
+int io_stdin_filenum;
+int io_raw_filenum;
+int io_rcon_filenum;
+
+int wa_panic = 0;
+
+#define wa_break { wa_panic=1;goto panic; }
+
+
+#define IO_RAW 3
+#define IO_RCON 4
+
+/*
+    io_shm is a raw keyboard buffer
+    io_file is the readline/file/socket interface
+*/
+static int embed_readline_bufsize = 0;
+static int embed_readline_cursor = 0;
+
+static int embed_os_read_bufsize = 0;
+static int embed_os_read_cursor = 0;
+
+
+char buf[FD_BUFFER_MAX];
+
+// TODO: store input frame counter + timestamps for all I/O
+// for ascii app record/replay.
+
+
+
+
+
+#if defined(WAPY)
+#   include "Python.h"
 #endif
 
-#include "../build/gen_static.h"
+// ==============================================================================================
+
+#if defined(PKPY)
+#   include "Python.h"
+#else
+#   include "../build/gen_static.h"
+
+
+// ==============================================================================================
+
+
 
 #if PYDK_emsdk
 #   include <emscripten/html5.h>
 #   include <emscripten/key_codes.h>
 #   include "emscripten.h"
-    #define HOST_RETURN(value)  return value
+#   define HOST_RETURN(value)  return value
 
     PyObject *sysmod;
     PyObject *sysdict;
@@ -80,13 +136,8 @@ debug:
 #   pragma message  "  @@@@@@@@@@@ NOT YET ../build/gen_inittab.h @@@@@@@@@@@@"
 #endif
 
-// ==============================================================================================
 
-static int preloads = 0;
-static long long loops = 0;
-
-// ==============================================================================================
-
+// ===== HPY =======
 
 #define HPY_ABI_UNIVERSAL
 #include "hpy.h"
@@ -121,6 +172,11 @@ PyInit__platform(void)
 {
     return (PyObject *)_HPyModuleDef_AsPyInit(&hpy_platform_def);
 }
+
+
+#endif // PKPY
+
+
 
 
 // ==============================================================================================
@@ -614,50 +670,11 @@ type_init_failed:;
 }
 
 
-struct timeval time_last, time_current, time_lapse;
-
-// crude "files" used for implementing "os level" communications with host.
-
-
-#define FD_MAX 64
-#define FD_BUFFER_MAX 4096
-
-FILE *io_file[FD_MAX];
-char *io_shm[FD_MAX];
-int io_stdin_filenum;
-int io_raw_filenum;
-int io_rcon_filenum;
-
-int wa_panic = 0;
-
-#define LOG_V puts
-#define wa_break { wa_panic=1;goto panic; }
-
-
-#define IO_RAW 3
-#define IO_RCON 4
-
-/*
-    io_shm is a raw keyboard buffer
-    io_file is the readline/file/socket interface
-*/
-static int embed_readline_bufsize = 0;
-static int embed_readline_cursor = 0;
-
-static int embed_os_read_bufsize = 0;
-static int embed_os_read_cursor = 0;
-
-
-char buf[FD_BUFFER_MAX];
-
-// TODO: store input frame counter + timestamps for all I/O
-// for ascii app record/replay.
-
 static PyObject *
 embed_readline(PyObject *self, PyObject *_null) {
 #define file io_file[0]
 
-    //char buf[FD_BUFFER_MAX];
+    //global char buf[FD_BUFFER_MAX];
     buf[0]=0;
 
     fseek(file, embed_readline_cursor, SEEK_SET);
@@ -679,7 +696,7 @@ embed_readline(PyObject *self, PyObject *_null) {
 static PyObject *
 embed_os_read(PyObject *self, PyObject *_null) {
 #define file io_file[IO_RAW]
-    //char buf[FD_BUFFER_MAX];
+    //global char buf[FD_BUFFER_MAX];
     buf[0]=0;
 
     fseek(file, embed_os_read_cursor, SEEK_SET);
@@ -737,7 +754,7 @@ main_iteration(void) {
 
     if ( (datalen =  io_file_select(IO_RCON)) ) {
 #       define file io_file[IO_RCON]
-        char buf[FD_BUFFER_MAX];
+        // global char buf[FD_BUFFER_MAX];
         while( fgets(&buf[0], FD_BUFFER_MAX, file) ) {
             if (!lines && (strlen(buf)>1)){
                 silent = ( buf[0] == '#' ) && (buf[1] == '!');
@@ -957,11 +974,12 @@ embed_webgl(PyObject *self, PyObject *argv, PyObject *kw)
 
 PyStatus status;
 
-#if defined(WAPY)
+#if defined(WAPY) || defined(PKPY)
 #define CPY 0
 
-MP_NOINLINE int
+__attribute__((noinline)) int
 main_(int argc, char **argv)
+
 #else
 #define CPY 1
 int
@@ -1025,15 +1043,15 @@ main(int argc, char **argv)
     chdir("/");
 
     if (!mkdir("dev", 0700)) {
-       LOG_V("no 'dev' directory, creating one ...");
+       puts("no 'dev' directory, creating one ...");
     }
 
     if (!mkdir("dev/fd", 0700)) {
-       //LOG_V("no 'dev/fd' directory, creating one ...");
+       //puts("no 'dev/fd' directory, creating one ...");
     }
 
     if (!mkdir("tmp", 0700)) {
-       LOG_V("no 'tmp' directory, creating one ...");
+       puts("no 'tmp' directory, creating one ...");
     }
 
 
@@ -1189,4 +1207,28 @@ int main(int argc, char **argv) {
     return main_(argc, argv);
 }
 #endif // WAPY
+
+#if defined(PKPY)
+int main(int argc, char **argv) {
+    pkpy_init();
+    return main_(argc, argv);
+}
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

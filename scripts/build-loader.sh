@@ -201,7 +201,7 @@ echo CPY_CFLAGS=$CPY_CFLAGS
 
 
 if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $CPY_CFLAGS $CF_SDL $CPOPTS \
- -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden\
+ -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden \
  -I${PYDIR}/internal -I${PYDIR} -I./support -I./src/hpy/hpy/devel/include -DPy_BUILD_CORE\
  -o build/${MODE}.o support/__EMSCRIPTEN__-pymain.c
 then
@@ -261,6 +261,7 @@ emcc \\
  $LOPTS \\
  -D__PYDK__=1 -DNDEBUG \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=4MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
+    -sEXTRA_EXPORTED_RUNTIME_METHODS=FS \\
      $CF_SDL \\
      --use-preload-plugins \\
      $STDLIBFS \\

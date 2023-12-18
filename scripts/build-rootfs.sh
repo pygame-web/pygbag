@@ -14,11 +14,19 @@ echo "
     * packing minimal stdlib for
         PYTHON=$HPY
         FS=$FS
+        PYTHONPYCACHEPREFIX=$PYTHONPYCACHEPREFIX
 "
 
+if echo $PYTHONPYCACHEPREFIX |grep -q $SDKROOT
+then
+    echo    "
+    * cleaning up compiled pyc if any in $PYTHONPYCACHEPREFIX/./$SDKROOT/
+"
+    rm -rf $PYTHONPYCACHEPREFIX/./$SDKROOT/
+fi
 
 
-$HPY -v <<END 2>&1 | tee log |grep py$ > $FS
+$HPY -B -v <<END 2>&1 | tee log |grep py$ > $FS
 from __future__ import annotations
 import sys
 
