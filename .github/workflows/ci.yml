@@ -58,6 +58,10 @@ jobs:
             cd $GITHUB_WORKSPACE
             PYBUILD=3.12 PACKAGES="emsdk hpy pygame" BUILD_STATIC="emsdk hpy" bash ./scripts/build-loader.sh
 
+    - name: build PkPy loader
+      run: |
+            cd $GITHUB_WORKSPACE
+            bash ./scripts/build-pkpy.sh
 
     - name: publishing
       run: |

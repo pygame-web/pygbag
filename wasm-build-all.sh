@@ -44,23 +44,16 @@ do
     ./scripts/build-loader.sh
 done
 
-
-mkdir -p pythons
-if [ -d pythons/pykpocket ]
+if echo "$@"|grep PKPY
 then
-    echo pypocket found
-else
-    pushd pythons
-    git clone --no-tags --depth 1 --single-branch --branch pygbag https://github.com/pmp-p/pykpocket
-    popd
-    ./build-pkpy.sh
+    ./scripts/build-pkpy.sh
 fi
 
 
 
 if echo "$@"|grep WAPY
 then
- ./scripts/build-wapy2.sh
+    ./scripts/build-wapy2.sh
 fi
 
 

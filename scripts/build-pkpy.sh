@@ -1,6 +1,17 @@
 #!/bin/bash
 reset
 
+mkdir -p pythons
+if [ -d pythons/pykpocket ]
+then
+    echo pykpocket found
+else
+    pushd pythons
+    git clone --no-tags --depth 1 --single-branch --branch pygbag https://github.com/pmp-p/pykpocket
+    popd
+fi
+
+
 export CI=${CI:-false}
 
 export STATIC=${STATIC:-true}
