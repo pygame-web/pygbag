@@ -64,13 +64,9 @@ def CSI(*argv):
 
 
 CSI("2J","f")
-with open("/data/data/org.python/assets/pkpy.six","r") as source:
+with open("pkpy.six","r") as source:
     print(source.read())
-print(f"Python {sys.version} pykpocket on Emscripten", '.'.join(map(str, sys._emscripten_info)))
-print(">>> ",end=sys.__eot__)
-
-
-
+print(f"Python {sys.version} PocketPy::pykpocket edition on Emscripten", '.'.join(map(str, sys._emscripten_info)))
 
 
 def new_module(name, code):
@@ -130,9 +126,6 @@ else:
 
     def step():
         global frame
-#        if not frame % 300:
-#            print(frame)
-
         for task in self.tasks:
             if next(task) is StopIteration:
                 self.tasks.remove(task)
@@ -169,10 +162,13 @@ def shelltry(*cmd):
         return False
     return True
 
+
+
+
+
 def main():
-    line = ""
+    line = "\n"
     while line not in ["exit()","quit()"]:
-        line = embed.readline()
         if line:
             line = line.rstrip()
             fail = False
@@ -195,7 +191,12 @@ def main():
                 print()
             print('>>> ',end=sys.__eot__)
         yield 0
+        line = embed.readline()
     print("bye")
 
+
 asyncio.get_running_loop().create_task(main())
+
+
+pkpyrc = 1
 
