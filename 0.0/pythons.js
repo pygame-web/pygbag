@@ -300,30 +300,21 @@ function is_iframe() {
     }
 }
 
+
+// https://emscripten.org/docs/api_reference/Filesystem-API.html
+
 function prerun(VM) {
     console.warn("VM.prerun")
-
-    VM.FS = FS
-
-/*
-    if (window.BrowserFS) {
-        VM.BFS = new BrowserFS.EmscriptenFS()
-        VM.BFS.Buffer = BrowserFS.BFSRequire('buffer').Buffer
-    } else {
-        console.error("VM.prerun","BrowserFS not found")
-    }
-*/
+    // https://github.com/emscripten-core/emscripten/issues/4515
+    // VM.FS = FS
     const sixel_prefix = String.fromCharCode(27)+"Pq"
-
 
     var buffer_stdout = ""
     var buffer_stderr = ""
     var flushed_stdout = false
     var flushed_stderr = false
 
-
     const text_codec = new TextDecoder()
-
 
     function b_utf8(s) {
         var ary = []
@@ -333,11 +324,9 @@ function prerun(VM) {
         return text_codec.decode(  new Uint8Array(ary) )
     }
 
-
     function stdin() {
         return null
     }
-
 
     function stdout(code) {
 
@@ -377,7 +366,6 @@ function prerun(VM) {
             buffer_stdout += String.fromCharCode(code);
     }
 
-
     function stderr(code) {
         var flush = (code == 4)
 
@@ -416,6 +404,27 @@ function prerun(VM) {
     VM.FS.init(stdin, stdout, stderr);
 
 }
+
+
+async function postrun(VM) {
+    console.warn("VM.postrun Begin")
+    window.VM = VM
+    window.python = VM
+    window.py = new bridge(VM)
+
+    var pyrc_url = vm.config.cdn + VM.script.interpreter + "rc.py"
+
+    await fetch(pyrc_url, {})
+        .then( response => checkStatus(response) && response.arrayBuffer() )
+        .then( buffer => run_pyrc(new Uint8Array(buffer)) )
+        .catch(x => {
+            console.error("VM.postrun: error:",x)
+            console.log("VM.postrun:", pyrc_url)
+        })
+
+    console.warn("VM.postrun End")
+}
+
 
 
 const vm = {
@@ -491,7 +500,7 @@ const vm = {
 
         locateFile : function(path, prefix) {
             if (path == "main.data") {
-                const url = (config.cdn || "" )+`python${config.pydigits}/${path}`
+                const url = (config.cdn || "" )+`${vm.script.interpreter}${config.pydigits}/${path}`
                 console.log(__FILE__,"locateData: "+path+' '+prefix, "->", url);
                 return url;
             } else {
@@ -531,19 +540,14 @@ const vm = {
 
         websocket : { "url" : "wss://" },
         preRun : [ prerun ],
-        postRun : [ function (VM) {
-            window.VM = VM
-            window.python = VM
-            window.py = new bridge(VM)
-            setTimeout(custom_postrun, 10)
-        }]
+        postRun : [ postrun ]
 }
 
 
 async function run_pyrc(content) {
-    const pyrc_file = "/data/data/org.python/assets/pythonrc.py"
-    const main_file = "/data/data/org.python/assets/main.py"
-
+    const base = "/data/data/org.python/assets/"
+    const pyrc_file = base + "pythonrc.py"
+    const main_file = base + "main.py"
     vm.FS.writeFile(pyrc_file, content )
 
 // embedded canvas
@@ -564,6 +568,11 @@ async function run_pyrc(content) {
     }
 
     python.PyRun_SimpleString(`#!site
+try:
+    next(enumerate([]),None)
+    __PKPY__ = False
+except:
+    __PKPY__ = True
 import os, sys, json
 PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
 pfx=PyConfig['prefix']
@@ -584,7 +593,6 @@ if os_path_is_dir(pfx):
     sys.path.append(pfx)
     os.chdir(pfx)
 
-print("581: Current Dir :", pfx)
 del pfx
 __pythonrc__ = "${pyrc_file}"
 try:
@@ -593,7 +601,7 @@ try:
     else:
         raise Error("File not found")
 except Exception as e:
-    print(f"579: invalid {__pythonrc__=}")
+    print(f"602: invalid {__pythonrc__=}")
     sys.print_exception(e)
 
 try:
@@ -611,19 +619,6 @@ function store_file(url, local) {
         .then( buffer => vm.FS.writeFile(local, new Uint8Array(buffer)) )
         .catch(x => console.error(x))
 }
-async function custom_postrun() {
-    console.warn("VM.postrun Begin")
-    const pyrc_url = vm.config.cdn + "pythonrc.py"
-    var content = 0
-
-    fetch(pyrc_url, {})
-        .then( response => checkStatus(response) && response.arrayBuffer() )
-        .then( buffer => run_pyrc(new Uint8Array(buffer)) )
-        .catch(x => console.error(x))
-
-    console.warn("VM.postrun End")
-}
-
 
 // ===================== DOM features ====================
 
@@ -2247,10 +2242,11 @@ async function onload() {
 // -->
     }
 
+// TODO: error alert if 404 / timeout
     console.warn("Loading python interpreter from", config.executable)
     jsimport(config.executable)
-
 }
+
 
 function auto_conf(cfg) {
     var url = cfg.url
@@ -2272,12 +2268,8 @@ function auto_conf(cfg) {
     elems = url.rsplit('#',1)
     url = elems.shift()
 
-
-
     elems = url.rsplit('?',1)
     url = elems.shift()
-
-console.warn("TODO: merge/replace location options over script options")
 
     if (url.endsWith(module_name)) {
         url = url + (window.location.search || "?") + ( window.location.hash || "#" )
@@ -2309,9 +2301,12 @@ console.warn("TODO: merge/replace location options over script options")
         console.warn("1601: no inlined code found")
     }
 
-    // resolve python executable, cmdline first then script
+    // resolve python executable cmdline first
+    // TODO: built script override when debug mode (-X dev).
+    // actual: no pygbag override.
+
     const default_version = "3.11"
-    var pystr = "cpython" + default_version
+    var pystr = "python" + default_version
 
     if (vm.cpy_argv.length && (vm.cpy_argv[0].search('py')>=0)) {
         pystr = vm.cpy_argv[0]
@@ -2322,6 +2317,7 @@ console.warn("TODO: merge/replace location options over script options")
         // fallback to cpython
     }
 
+
     if (pystr.search('cpython3')>=0) {
         vm.script.interpreter = "cpython"
         config.PYBUILD = pystr.substr(7) || default_version
@@ -2330,16 +2326,20 @@ console.warn("TODO: merge/replace location options over script options")
             vm.script.interpreter = "python"
             config.PYBUILD = pystr.substr(6) || "3.4"
         } else {
-            if (pystr.search('wapy')>=0) {
-                vm.script.interpreter = "wapy"
-                config.PYBUILD = pystr.substr(4) || "3.4"
+            if (pystr.search('pkpy')>=0) {
+                vm.script.interpreter = "pkpy"
+                config.PYBUILD = pystr.substr(4) || "1.3"
             } else {
-                vm.script.interpreter = config.python || "cpython"
-                config.PYBUILD = pystr.substr(7) || default_version
+                if (pystr.search('wapy')>=0) {
+                    vm.script.interpreter = "wapy"
+                    config.PYBUILD = pystr.substr(4) || "3.4"
+                } else {
+                    vm.script.interpreter = config.python || "python"
+                    config.PYBUILD = pystr.substr(7) || default_version
+                }
             }
         }
     }
-
 
     // running pygbag proxy, lan testing or a module url ?
     if ( (location.hostname === "localhost") || cfg.module) {
@@ -2348,8 +2348,7 @@ console.warn("TODO: merge/replace location options over script options")
 
     config.cdn     = config.cdn || url.split(module_name, 1)[0]  //??=
     config.pydigits =  config.pydigits || config.PYBUILD.replace(".","") //??=
-    config.executable = config.executable || `${config.cdn}python${config.pydigits}/main.js` //??=
-
+    config.executable = config.executable || `${config.cdn}${vm.script.interpreter}${config.pydigits}/main.js` //??=
 
     // resolve arguments
 
@@ -2443,10 +2442,10 @@ config.interactive = config.interactive || (location.search.search("-i")>=0) //?
     console.log('docurl=', document.location.href)
     console.log('srcurl=', url)
     if (!cfg.module) {
-        console.log('data-os=', config.os)
-        console.log('data-python=', config.python)
-        console.log('script: id=', config.id)
-        console.log('code : ' , code.length, ` as ${config.id}.py`)
+        console.log('data-os=', cfg.os)
+        console.log('data-python=', cfg.python)
+        console.log('script: id=', cfg.id)
+        console.log('code : ' , code.length, ` as ${cfg.id}.py`)
     }
     vm.config = config
 }
@@ -2457,7 +2456,6 @@ function auto_start(cfg) {
     if (cfg) {
         console.error("not using python script tags")
         cfg.os = "gui"
-        //config.id = "__main__"
         cfg.module = true
         auto_conf(cfg)
         vm.script.blocks = [ "print(' - Pygbag runtime -')" ]
@@ -2478,18 +2476,13 @@ function auto_start(cfg) {
                     autorun : ""
                 }
 
-                window.addEventListener("load", onload )
                 auto_conf(cfg)
 
-                if (vm.config.autorun)
-                    code = code + `
-    if sys.platform in ('emscripten','wasi'):
-        embed.run()
-`
-
+                // only one script tag for now
                 vm.script.blocks = [ code ]
 
-                // only one script tag for now
+                window.addEventListener("load", onload )
+
                 break
             } else {
                 console.log("script?", script.type, script.id, script.src, script.text )
