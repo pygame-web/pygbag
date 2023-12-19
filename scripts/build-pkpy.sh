@@ -64,7 +64,12 @@ pushd pythons/pykpocket/
 #    fi
 popd
 
+
+
+
 ALWAYS_ASSETS=$(realpath assets/pkpy)
+
+[ -f ${ALWAYS_ASSETS}/readline.py ] || ln ./pygbag/support/readline.py ${ALWAYS_ASSETS}/readline.py
 
 
 mkdir -p $DIST_DIR/pkpy${PYMAJOR}${PYMINOR}
