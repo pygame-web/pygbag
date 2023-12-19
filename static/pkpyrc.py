@@ -95,69 +95,63 @@ import json
 import embed
 
 class ProxyType(object):
-    __callsign : dict = {}
-    __callpath : list = []
+    __callerid : dict = {}
     __serial : int  = 0
     __value = None
+    __return = None
 
-
-    def __init__(self, root, **env):
-        self.__dlref = root #" ".join(map(str, argv))
+    def __init__(self, parent, *callpath, **env):
+        self.__parent = parent
+        self.__callpath = callpath
         if __PKPY__:
-            self.__callsign[id(self)]= root
+            ProxyType.__callerid[id(self)] = self
 
+    # the return value is put in __return for pkpy
     @staticmethod
-    def __store( *argv):
-        self = ProxyType
-
-        #print("__store:",self.__callpath, argv, self.__callsign.get(argv[1],'?!') )
-
-        if not len(self.__callpath):
-            self.__serial = self.__serial + 1
-            self.__callpath.append(f"C{self.__serial}")
-            self.__callpath.append("<?>")
-
-        if argv[1]>0:
-            self.__callpath[1] = self.__callsign[argv[1]]
-
-        if self.__callpath[-1]!=argv[0]:
-            self.__callpath.append(argv[0])
+    def __getproxy(self_id, attr, line):
+        self = ProxyType.__callerid[self_id]
+        print(f"Proxy[{self.__callpath}] +{attr} @{line}")
+        self.__return = self.__class__(self, *self.__callpath, attr )
+        return self.__return
 
 
-    def __call__(self, *argv, **env):
-        self.__callpath[1] = self.__dlref
-        #print("__STORED",self.__callpath, argv)
+    def __call__(self, *arguments, **options):
+        print("__call__",self.__callpath, arguments, options)
 
-        callid = self.__callpath.pop(0)
+        self.__serial = self.__serial + 1
+        callid = f"C{self.__serial}"
+
         fn = '.'.join(self.__callpath)
         stack : list = [ callid, self.__callpath ]
-        if len(argv):
-            stack.extend(argv)
-        if env:
-            stack.append(env)
 
-        print(json.dumps(stack))
-        # reset call stack
-        self.__callpath.clear()
+        if len(arguments):
+            stack.extend(arguments)
+        if options:
+            stack.append(options)
         args = tuple(stack[2:])
-        print(f"CALL: {fn}{args} {callid}")
         embed.jseval(f"{fn}{args}")
 
     def __setattr(self_id, attr, line):
-        self = ProxyType
-        root = self.__callsign.get(self_id)
-        callid = self.__callpath.pop(0)
+        self = ProxyType.__callerid[self_id]
+
+        self.__serial = self.__serial + 1
+        callid = f"C{self.__serial}"
+
         path = '.'.join(self.__callpath)
+
         jsdata = json.dumps(ProxyType.__value)
-        #print(root, self.__callpath, attr, line, jsdata)
-        embed.jseval(f"{path}.{attr}=JSON.parse(`{jsdata}`)")
+        jscmd = f"{path}.{attr}=JSON.parse(`{jsdata}`)"
+        if self.__callpath[0] == 'document':
+            print("__setattr", self.__callpath, attr, line, jsdata)
+            print(jscmd)
+
+        embed.jseval(jscmd)
 
     def __str__(self):
         if len(self.__callpath):
-            descr = '.'.join(self.__callpath[1:])
-        else:
-            descr = self.__dlref
-        return f"[object {descr}]"
+            descr = '.'.join(self.__callpath)
+            #embed.jseval(f"console.warn('req {descr}', {descr} )")
+        return f"[proxy {descr}]"
 
 
     if not __PKPY__:
@@ -174,9 +168,11 @@ class ProxyType(object):
             self.__callpath.append(attr)
             return self
 
-window = ProxyType('window')
-print("window=", window, id(window))
-document = ProxyType('document')
+window = ProxyType(ProxyType, 'window')
+
+
+document = ProxyType(ProxyType, 'document')
+
 
 try:
     import readline
@@ -190,8 +186,6 @@ except:
 ''')
 
 import platform
-print("platform.window.console=", platform.window.console)
-platform.window.console.log(" ---------- PROXY -------------------")
 
 embed.new_module("asyncio", '''
 self = __import__(__name__)
@@ -345,9 +339,23 @@ def main():
     line = "\n"
     tui = Tui()
 
+    import platform
+    from platform import window, document
+
+    print("platform.window.console=", platform.window.console)
+    platform.window.console.log(" ---------- PROXY -------------------")
+
+
+    print("window=", window, id(window))
+    print("document=", document, id(document))
+    print("window.document=", window.document, id(window.document))
+
+
+    window.document.title = f"Frame={asyncio.frame}"
+
     while line not in ["exit()","quit()"]:
-        if not asyncio.frame % 60:
-            window.document.title = f"Frame={asyncio.frame}"
+#        if not asyncio.frame % 60:
+#            window.document.title = f"Frame={asyncio.frame}"
 
         with tui as tui:
             tui(f"Frame={asyncio.frame}\n", x=70,y=1, z=25)
