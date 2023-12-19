@@ -46,7 +46,8 @@ class NodePath:
         self.parent = parent
         self.node = node
         self.pos = pos or [0, 0, 0]
-        self.name = kw.pop("name", "n_{0:03d}".format(NodePath.count, 3))
+        #self.name = kw.pop("name", "n_{0:03d}".format(NodePath.count, 3))
+        self.name = kw.pop("name", "n_{0}".format(str(NodePath.count).zfill(3)))
         self.dirty = False
         self.children = []
         NodePath.count += 1
@@ -119,7 +120,7 @@ class TTY:
     LINES = 25
 
     try:
-        CONSOLE = os.get_console_size()
+        CONSOLE = platform.get_console_size()
     except:
         CONSOLE = 32 - LINES
 
@@ -359,7 +360,7 @@ class TTY:
 
 
 def goto_xz(x, z):
-    CSI("%d;%dH" % (z, x))
+    CSI(f"{z};{x}H")
 
 
 # cleareos ED0          Clear screen from cursor down          ^[[J
@@ -442,7 +443,7 @@ class render(NodePath):
         pos = npos(np)
         x = cls.DX + (cls.IX * pos[0])
         z = cls.DZ + (cls.IZ * pos[2])
-        cls.wr("\x1b[%d;%dH[ %s : %s ]  " % (z, x, np.name, np.node.text))
+        cls.wr(f"\x1b[{z};{x}H[ {np.name}: {np.node.text} ]  ")
 
 
 render = render()
@@ -451,21 +452,21 @@ render = render()
 import sys
 import re
 
-# https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
-ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
 bname_last = 0
 anchor_last = 0
 
 
-from _xterm_parser import XTermParser
-
-
-def more_data() -> bool:
-    return False
-
-
-parser = XTermParser(more_data)
+# https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
+try:
+    ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+    from _xterm_parser import XTermParser
+    def more_data() -> bool:
+        return False
+    parser = XTermParser(more_data)
+    PKPY = False
+except:
+    PKPY = True
 
 
 def filter_in(data):
@@ -479,7 +480,11 @@ def filter_out(row, x, y, z):
     ev = evpos[z][hash(row)]
 
     if row.find(":>") >= 0:
-        flt = ansi_escape.sub("", row)
+        if PKPY:
+            flt = re.sub(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])", "", row)
+        else:
+            flt = ansi_escape.sub("", row)
+
         len_flt = len(flt)
         while flt.find(":>") > 0:
             anchor, trail = flt.split(":>", 1)

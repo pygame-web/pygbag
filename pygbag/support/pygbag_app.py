@@ -37,7 +37,7 @@ class console:
         import os
 
         _, LINES = os.get_terminal_size()
-        CONSOLE = os.get_console_size()
+        CONSOLE = platform.get_console_size()
 
         # split the display
         if sys.platform not in ("emscripten", "wasi") or aio.cross.simulator:
