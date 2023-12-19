@@ -87,6 +87,109 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1, _f
 builtins.compile = compile
 del compile
 
+embed.new_module("platform", '''
+__PKPY__ = True
+__CPY__ = False
+
+import json
+import embed
+
+class ProxyType(object):
+    __callsign : dict = {}
+    __callpath : list = []
+    __serial : int  = 0
+    __value = None
+
+
+    def __init__(self, root, **env):
+        self.__dlref = root #" ".join(map(str, argv))
+        if __PKPY__:
+            self.__callsign[id(self)]= root
+
+    @staticmethod
+    def __store( *argv):
+        self = ProxyType
+
+        #print("__store:",self.__callpath, argv, self.__callsign.get(argv[1],'?!') )
+
+        if not len(self.__callpath):
+            self.__serial = self.__serial + 1
+            self.__callpath.append(f"C{self.__serial}")
+            self.__callpath.append("<?>")
+
+        if argv[1]>0:
+            self.__callpath[1] = self.__callsign[argv[1]]
+
+        if self.__callpath[-1]!=argv[0]:
+            self.__callpath.append(argv[0])
+
+
+    def __call__(self, *argv, **env):
+        self.__callpath[1] = self.__dlref
+        #print("__STORED",self.__callpath, argv)
+
+        callid = self.__callpath.pop(0)
+        fn = '.'.join(self.__callpath)
+        stack : list = [ callid, self.__callpath ]
+        if len(argv):
+            stack.extend(argv)
+        if env:
+            stack.append(env)
+
+        print(json.dumps(stack))
+        # reset call stack
+        self.__callpath.clear()
+        args = tuple(stack[2:])
+        print(f"CALL: {fn}{args} {callid}")
+        embed.jseval(f"{fn}{args}")
+
+    def __setattr(self_id, attr, line):
+        self = ProxyType
+        root = self.__callsign.get(self_id)
+        callid = self.__callpath.pop(0)
+        path = '.'.join(self.__callpath)
+        jsdata = json.dumps(ProxyType.__value)
+        #print(root, self.__callpath, attr, line, jsdata)
+        embed.jseval(f"{path}.{attr}=JSON.parse(`{jsdata}`)")
+
+    def __str__(self):
+        if len(self.__callpath):
+            descr = '.'.join(self.__callpath[1:])
+        else:
+            descr = self.__dlref
+        return f"[object {descr}]"
+
+
+    if not __PKPY__:
+
+        def __all(self, *argv, **env):
+            self.__serial += 1
+            return self.__call__(f"C{self.__serial}", self.__lastc, *argv, **env)
+
+        def __getattr__(self, attr):
+            if not len(self.__callpath):
+                self.__serial = self.__serial + 1
+                self.__callpath.append(f"C{self.__serial}")
+                self.__callpath.append(self.__dlref)
+            self.__callpath.append(attr)
+            return self
+
+window = ProxyType('window')
+print("window=", window, id(window))
+document = ProxyType('document')
+
+
+import readline
+
+
+################################################################################
+################################################################################
+################################################################################
+''')
+
+import platform
+print("platform.window.console=", platform.window.console)
+platform.window.console.log(" ---------- PROXY -------------------")
 
 embed.new_module("asyncio", '''
 self = __import__(__name__)
@@ -164,11 +267,90 @@ def shelltry(*cmd):
 
 
 
+out = sys.__stdout__.write
+damages = {}
+bname_last = 0
+anchor_last = 0
+
+class Tui:
+    # use direct access, it is absolute addressing on raw terminal.
+#    out = out
+    decvssm = False
+
+    # save cursor
+    def __enter__(self):
+        # ESC("7","[?25l","[?69h")
+        #        self.out("\x1b7\x1b[?25l\x1b[?69h")
+        out("\x1b7")
+        #        self.out("\x1b7\x1b[?25l")
+        return self
+
+    # restore cursor
+    def __exit__(self, *tb):
+        # ESC("[?69l","8","[?25h")
+        #        self.out("\x1b[?69l\x1b8\x1b[?25h")
+        out("\x1b8")
+        out(sys.__eot__)
+        #        self.out("\x1b8\x1b[?25h")
+        pass
+
+    def __call__(self, *a, **kw):
+        global bname_last, anchor_last
+
+        x :int = kw.get("x", 1)
+        z :int = kw.get("z", 1)
+
+        #   most term do not deal properly with vt400
+        #            if decvssm:
+        #                CSI(f"{x};{999}s")
+        #                CSI(f"{z};{x}H\r")
+
+        if not isinstance(a[0], str):
+            import rich, io
+
+            sio = io.StringIO()
+            rich.print(*a, file=sio)
+            sio.seek(0)
+            block = sio.read()
+        else:
+            block = " ".join(a)
+
+        # so position line by line
+        filter = kw.get("filter", None)
+
+        bname_last = 0
+        anchor_last = 0
+
+        for row in block.split("\n"):
+            hr_old = damages.get(z, 0)
+            hr = hash(row)
+            if hr != hr_old:
+                damages[z] = hr
+                if filter:
+                    # destroy event list ref by the old line
+                    evpos.setdefault(z, {}).pop(hr_old, None)
+                    evpos[z][hr] = []
+                    row = filter(row, x, 0, z)
+
+                #Tui.out("\x1b[{};{}H{}".format(z, x, row))
+                sys.__stdout__.write(f"\x1b[{z};{x}H{row}")
+
+            z += 1
+
 
 
 def main():
     line = "\n"
+    tui = Tui()
+
     while line not in ["exit()","quit()"]:
+        if not asyncio.frame % 60:
+            window.document.title = f"Frame={asyncio.frame}"
+
+        with tui as tui:
+            tui(f"Frame={asyncio.frame}\n", x=70,y=1, z=25)
+
+
         if line:
             line = line.rstrip()
             fail = False
@@ -194,6 +376,8 @@ def main():
         line = embed.readline()
     print("bye")
 
+
+from platform import window, document
 
 asyncio.get_running_loop().create_task(main())
 
