@@ -46,10 +46,10 @@ class NodePath:
         self.parent = parent
         self.node = node
         self.pos = pos or [0, 0, 0]
-        self.name = kw.pop("name", "n_{0:03d}".format(self.__class__.count, 3))
+        self.name = kw.pop("name", "n_{0:03d}".format(NodePath.count, 3))
         self.dirty = False
         self.children = []
-        self.__class__.count += 1
+        NodePath.count += 1
 
         if parent:  # and self.root!=parent:
             if not self in parent.children:
@@ -97,7 +97,11 @@ def set_text(np, t):
 
 import select
 import os
-from _xterm_parser.events import MouseEvent, Key
+
+try:
+    from _xterm_parser.events import MouseEvent, Key
+except:
+    print("using readline event parser")
 
 buffer_console = []
 
@@ -265,10 +269,10 @@ class TTY:
                     return vpad.emit(vpad.X, -1.0)
 
                 if ev.name == "right":
-                    return vpad.emit(vpad.X, +1.0)
+                    return vpad.emit(vpad.X, 1.0)
 
                 if ev.name == "up":
-                    return vpad.emit(vpad.Z, +1.0)
+                    return vpad.emit(vpad.Z, 1.0)
 
                 if ev.name == "down":
                     return vpad.emit(vpad.Z, -1.0)
@@ -584,15 +588,15 @@ class Tui:
             z += 1
 
 
-async def taskMgr(t=1.0 / 24):
-    import asyncio
-
-    global render
-    while True:
-        if render.dirty:
-            with render:
-                for child in render.children:
-                    render.draw_child(render, child, 0)
-            render.dirty = False
-            # flush_io() #DLE_ETX is sent for emscripten
-        await asyncio.sleep(0)
+#async def taskMgr(t=1.0 / 24):
+#    import asyncio
+#
+#    global render
+#    while True:
+#        if render.dirty:
+#            with render:
+#                for child in render.children:
+#                    render.draw_child(render, child, 0)
+#            render.dirty = False
+#            # flush_io() #DLE_ETX is sent for emscripten
+#        await asyncio.sleep(0)

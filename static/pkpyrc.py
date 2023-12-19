@@ -1,11 +1,35 @@
-print("pkpyrc")
-import sys
-import embed
+
+
 import builtins
-import embed
+def classmethod(fn):
+    def cm_fn(self, *argv,**kw):
+        staticmethod(fn)(self.__class__, *argv, **kw)
+    return cm_fn
+builtins.classmethod = classmethod
+
+
 import os
 # split/rsplit fix from c++
 # os.environ {} is filled from c++
+
+def os_get_terminal_size(fd=0):
+    cols = os.environ.get("COLUMNS", 80)
+    lines = os.environ.get("LINES", 25)
+    try:
+        res = (
+            int(cols),
+            int(lines),
+        )
+    except:
+        res = (
+            80,
+            25,
+        )
+    return os.terminal_size(res)
+
+os.terminal_size = tuple
+os.get_terminal_size = os_get_terminal_size
+
 
 class shell:
     HOME = "/data/data/org.python/assets"
@@ -51,6 +75,16 @@ def print_exception(*argv, **kw):
 sys.print_exception = print_exception
 del print_exception
 
+import embed
+def embed_flush():
+    sys.__stdout__.write(sys.__eot__)
+embed.flush = embed_flush
+del embed_flush
+
+
+
+
+
 
 def ESC(*argv):
     for arg in argv:
@@ -70,7 +104,7 @@ print(f"Python {sys.version} PocketPy::pykpocket edition on Emscripten", '.'.joi
 
 
 def new_module(name, code):
-    if len(code)<80:
+    if len(code)<40:
         with open(code,'r') as source:
             code=source.read()
 
@@ -86,6 +120,7 @@ def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1, _f
     return source
 builtins.compile = compile
 del compile
+
 
 embed.new_module("platform", '''
 __PKPY__ = True
@@ -110,13 +145,13 @@ class ProxyType(object):
     @staticmethod
     def __getproxy(self_id, attr, line):
         self = ProxyType.__callerid[self_id]
-        print(f"Proxy[{self.__callpath}] +{attr} @{line}")
+        #print(f"Proxy[{self.__callpath}] +{attr} @{line}")
         self.__return = self.__class__(self, *self.__callpath, attr )
         return self.__return
 
 
     def __call__(self, *arguments, **options):
-        print("__call__",self.__callpath, arguments, options)
+        #print("__call__",self.__callpath, arguments, options)
 
         self.__serial = self.__serial + 1
         callid = f"C{self.__serial}"
@@ -150,8 +185,17 @@ class ProxyType(object):
     def __str__(self):
         if len(self.__callpath):
             descr = '.'.join(self.__callpath)
-            #embed.jseval(f"console.warn('req {descr}', {descr} )")
-        return f"[proxy {descr}]"
+            if len(self.__callpath)>1:
+                #descr = str(json.loads(embed.jseval(f"{descr}")))
+                descr = str(embed.jseval(f"{descr}"))
+        else:
+            descr = f"[Object {descr}]"
+        #print("__str__", descr)
+        return descr
+
+    def __repr__(self):
+        return f"[ProxyType {'.'.join(self.__callpath)}]"
+
 
 
     if not __PKPY__:
@@ -168,10 +212,8 @@ class ProxyType(object):
             self.__callpath.append(attr)
             return self
 
-window = ProxyType(ProxyType, 'window')
-
-
-document = ProxyType(ProxyType, 'document')
+window = ProxyType("Window", 'window')
+document = ProxyType("Window", 'document')
 
 
 try:
@@ -179,9 +221,6 @@ try:
 except:
     print("readline module not found")
 
-
-################################################################################
-################################################################################
 ################################################################################
 ''')
 
@@ -189,6 +228,10 @@ import platform
 
 embed.new_module("asyncio", '''
 self = __import__(__name__)
+
+class cross:
+    simulator = False
+
 tasks : list = []
 loop : object = None
 
@@ -250,6 +293,20 @@ def run(task, block=None):
 
 import asyncio
 
+builtins.aio = asyncio
+
+
+embed.new_module("select", '''
+class select:
+    ...
+
+
+
+
+###############################################################################
+''')
+
+import select
 
 
 def shelltry(*cmd):
@@ -339,23 +396,20 @@ def main():
     line = "\n"
     tui = Tui()
 
-    import platform
     from platform import window, document
 
-    print("platform.window.console=", platform.window.console)
-    platform.window.console.log(" ---------- PROXY -------------------")
-
-
-    print("window=", window, id(window))
-    print("document=", document, id(document))
-    print("window.document=", window.document, id(window.document))
+#    print("window.console=", repr(window.console))
+#    window.console.log(" ---------- PROXY ---------")
+#    print("window=", window, id(window))
+#    print("document=", document, id(document))
+#    print("window.document=", repr(window.document), id(window.document))
 
 
     window.document.title = f"Frame={asyncio.frame}"
 
     while line not in ["exit()","quit()"]:
-#        if not asyncio.frame % 60:
-#            window.document.title = f"Frame={asyncio.frame}"
+        if not asyncio.frame % 60:
+            window.document.title = f"Frame={asyncio.frame}"
 
         with tui as tui:
             tui(f"Frame={asyncio.frame}\n", x=70,y=1, z=25)
@@ -368,6 +422,9 @@ def main():
                 try:
                     _=eval(line)
                     if _ is not None:
+#                        if instance(_, platform.ProxyType):
+#                            print(repr(_))
+#                        else:
                         print(_)
                 except NameError:
                     fail = shelltry(*line.split(" "))

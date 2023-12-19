@@ -68,8 +68,10 @@ popd
 
 
 ALWAYS_ASSETS=$(realpath assets/pkpy)
-
-[ -f ${ALWAYS_ASSETS}/readline.py ] || ln ./pygbag/support/readline.py ${ALWAYS_ASSETS}/readline.py
+for asset in readline pygbag_ui
+do
+    [ -f ${ALWAYS_ASSETS}/${asset}.py ] || ln ./pygbag/support/${asset}.py ${ALWAYS_ASSETS}/${asset}.py
+done
 
 
 mkdir -p $DIST_DIR/pkpy${PYMAJOR}${PYMINOR}
