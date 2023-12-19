@@ -30,7 +30,6 @@ def os_get_terminal_size(fd=0):
 os.terminal_size = tuple
 os.get_terminal_size = os_get_terminal_size
 
-
 class shell:
     HOME = "/data/data/org.python/assets"
     def ls(path="."):
@@ -83,9 +82,6 @@ del embed_flush
 
 
 
-
-
-
 def ESC(*argv):
     for arg in argv:
         sys.__stdout__.write(chr(0x1B))
@@ -96,11 +92,9 @@ def CSI(*argv):
     for arg in argv:
         ESC(f"[{arg}")
 
+builtins.ESC = ESC
+builtins.CSI = CSI
 
-CSI("2J","f")
-with open("pkpy.six","r") as source:
-    print(source.read())
-print(f"Python {sys.version} PocketPy::pykpocket edition on Emscripten", '.'.join(map(str, sys._emscripten_info)))
 
 
 def new_module(name, code):
@@ -123,8 +117,24 @@ del compile
 
 
 embed.new_module("platform", '''
+__UPY__ = False
 __PKPY__ = True
 __CPY__ = False
+CONSOLE = 25
+
+
+import embed
+stdin_select = embed.stdin_select
+
+import os
+
+def get_console_size(fd=0):
+    global CONSOLE
+    console = os.environ.get("CONSOLE", CONSOLE)
+    try:
+        return int(console)
+    except:
+        return int(CONSOLE)
 
 import json
 import embed
@@ -229,8 +239,34 @@ import platform
 embed.new_module("asyncio", '''
 self = __import__(__name__)
 
+from time import time as time_time
+
+perf_index = None
+enter = time_time()
+spent = 0.00001
+leave = enter + spent
+
+
+load_avg = "0.000"
+load_min = "0.000"
+load_max = "0.000"
+
+started = False
+paused = False
+exit = False
+steps = []
+oneshots = []
+ticks = 0
+protect = []
+last_state = None
+tasks = []
+is_async_ctx = False
+no_exit = True
+
+
 class cross:
     simulator = False
+
 
 tasks : list = []
 loop : object = None
@@ -297,9 +333,13 @@ builtins.aio = asyncio
 
 
 embed.new_module("select", '''
-class select:
-    ...
+import platform
 
+def select(rlist, wlist, xlist, timeout=None):
+    # stdin
+    if not isinstance(rlist, set):
+        if rlist[0] == 0:
+            return [platform.stdin_select()]
 
 
 
@@ -391,10 +431,24 @@ class Tui:
             z += 1
 
 
+from pygbag_ui import TTY, clear
 
 def main():
     line = "\n"
     tui = Tui()
+
+
+
+    _, LINES = os.get_terminal_size()
+    CONSOLE = platform.get_console_size()
+
+    CSI("2J","f")
+    clear(LINES, CONSOLE)
+    with open("pkpy.six","r") as source:
+        print(source.read())
+
+
+    print(f"Python {sys.version} PocketPy::pykpocket edition on Emscripten", '.'.join(map(str, sys._emscripten_info)))
 
     from platform import window, document
 
@@ -409,10 +463,16 @@ def main():
 
     while line not in ["exit()","quit()"]:
         if not asyncio.frame % 60:
-            window.document.title = f"Frame={asyncio.frame}"
+            window.document.title = f""
 
-        with tui as tui:
-            tui(f"Frame={asyncio.frame}\n", x=70,y=1, z=25)
+        with tui as out:
+            fsm=None
+            out( f"""{TTY.COLUMNS}x({TTY.LINES}+{TTY.CONSOLE}):{TTY.console}
+ fsm={fsm and fsm.state} C={TTY.C} L={TTY.L}
+ min/avg/max:{aio.load_min} {aio.load_avg} {aio.load_max}
+  ⏏︎ ■ ▶
+ {TTY.last_event_type}({TTY.last_event_data})  Frame={asyncio.frame}
+                      """.replace("\n",""), x=1, z=TTY.LINES)
 
 
         if line:
