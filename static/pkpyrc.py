@@ -178,8 +178,10 @@ window = ProxyType('window')
 print("window=", window, id(window))
 document = ProxyType('document')
 
-
-import readline
+try:
+    import readline
+except:
+    print("readline module not found")
 
 
 ################################################################################
