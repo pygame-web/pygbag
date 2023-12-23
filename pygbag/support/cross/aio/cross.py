@@ -15,6 +15,7 @@ if not defined("iter_byte"):
     def iter_byte(ba):
         for idx in range(len(ba)):
             yield bytes([ba[idx]])
+
     define("iter_byte", iter_byte)
     del iter_byte
 
@@ -22,6 +23,7 @@ if not defined("iter_byte"):
     def iter_ord(ba):
         for idx in range(len(ba)):
             yield ba[idx]
+
     define("iter_ord", iter_ord)
     del iter_ord
 
@@ -31,7 +33,6 @@ if not defined("iter_byte"):
 # always come down to upy choices because cpython/pkpy syntax can more easily be adapted
 
 if not defined("__UPY__"):
-
     define("__UPY__", hasattr(sys.implementation, "_mpy"))
 
     if not __UPY__:
@@ -45,11 +46,11 @@ if not defined("__UPY__"):
         sys.print_exception = print_exception
         del print_exception
 else:
-    define("const", lambda x:x )
+    define("const", lambda x: x)
 
 # cant mod sys on upy but it does not need flush
 if not __UPY__:
-    sys.__eot__ = chr(4)+chr(10)
+    sys.__eot__ = chr(4) + chr(10)
 
 if not defined("__PKPY__"):
     try:
@@ -59,6 +60,7 @@ if not defined("__PKPY__"):
         import builtins
 
         if not defined("vars"):
+
             def vars(o):
                 return o.__dict__
 
@@ -68,14 +70,16 @@ if not defined("__PKPY__"):
         class __PKPY__:
             cm = {}
             current_class = "?"
+
             def classmethod(fn):
-                def cm_fn(*argv,**kw):
+                def cm_fn(*argv, **kw):
                     cr = __PKPY__.cm[cm_fn]
                     if len(argv):
                         if argv[0].__class__ == cr["cc"]:
                             return fn(argv[0].__class__, *argv[1:], **kw)
                     return fn(cr["cc"], *argv, **kw)
-                __PKPY__.cm[cm_fn] = { "fn" : fn } #, 'cn': current_class}
+
+                __PKPY__.cm[cm_fn] = {"fn": fn}  # , 'cn': current_class}
                 return cm_fn
 
             def classmethods(klass):
@@ -83,8 +87,8 @@ if not defined("__PKPY__"):
                     try:
                         if func in __PKPY__.cm:
                             cr = __PKPY__.cm[func]
-                            #if cr["cn"] == klass.__name__:
-                            cr['cc'] = klass
+                            # if cr["cn"] == klass.__name__:
+                            cr["cc"] = klass
                     except TypeError:
                         continue
                 return klass
@@ -96,9 +100,7 @@ if not defined("__PKPY__"):
 
 # support pkpy methods
 if not defined("classmethods"):
-    define("classmethods", lambda x:x)
-
-
+    define("classmethods", lambda x: x)
 
 
 if not defined("__WASM__"):

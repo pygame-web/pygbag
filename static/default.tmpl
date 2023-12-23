@@ -3,7 +3,7 @@
 print("""
 Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
     Pygbag Version : {{cookiecutter.version}}
-    Template Version : 0.8.3
+    Template Version : 0.8.6
     Python  : {{cookiecutter.PYBUILD}}
     CDN URL : {{cookiecutter.cdn}}
     Screen  : {{cookiecutter.width}}x{{cookiecutter.height}}
@@ -144,7 +144,7 @@ async def custom_site():
     main = appdir / "assets" / "main.py"
 
     # start async top level machinery and add a console.
-    await aio.toplevel.handler.start_toplevel(platform.shell, console=window.python.config.debug)
+    await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
 
     # now that apk is mounted we have access to font cache
     # but we need to fill __file__ that is not yet set

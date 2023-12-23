@@ -13,7 +13,6 @@ evpos = {}
 clog = []
 
 
-
 import select
 import os
 
@@ -47,12 +46,12 @@ class TTY:
 
     prompts = []
 
-# TODO: multi line editor
+    # TODO: multi line editor
     rl_complete = []
     rl_instances = []
-    rl_instances.append( readline.readline() )
+    rl_instances.append(readline.readline())
     rl_instances[-1].reset()
-    rl_pointer = len(rl_instances)-1
+    rl_pointer = len(rl_instances) - 1
 
     readline_buffer = []
 
@@ -75,23 +74,22 @@ class TTY:
     def __init__(*self):
         raise Exception("not for instancing")
 
-
-    #@classmethod
+    # @classmethod
     def get_readline():
-        self=TTY
+        self = TTY
         return self.rl_instances[self.rl_pointer]
 
-    #@classmethod
+    # @classmethod
     def prompt():
         self = TTY
         if self.raw:
             rl = self.get_readline()
             rl.process_bstr(TTY.raw)
-            self.raw=b""
+            self.raw = b""
             print(f"\r>>> {rl.string}\x1b[K\r\x1b[{4+rl.caret}C", end="")
-            if rl.string and (rl.string[-1]=="\n"):
+            if rl.string and (rl.string[-1] == "\n"):
                 print(end="\r")
-                self.rl_complete.append( rl.string.rstrip("\r\n") )
+                self.rl_complete.append(rl.string.rstrip("\r\n"))
                 rl.reset()
                 self.prompts.append(1)
 
@@ -102,8 +100,7 @@ class TTY:
             print("\r>>> ", end=sys.__eot__)
             self.flush()
 
-
-    #@classmethod
+    # @classmethod
     def set_raw(state):
         self = TTY
         import platform
@@ -155,8 +152,8 @@ class TTY:
     else:
         flush = sys.__stdout__.flush
 
-    #@classmethod
-    def handler_console_input( ev):
+    # @classmethod
+    def handler_console_input(ev):
         self = TTY
         global clog
         if ev.is_printable:
@@ -181,9 +178,9 @@ class TTY:
             # clog.append(repr(list(ev.__rich_repr__())))
             ...
 
-    #@classmethod
+    # @classmethod
     def handler_readline_input(ev):
-        self=TTY
+        self = TTY
         global clog
 
         # virtual gamepad handler
@@ -225,7 +222,7 @@ class TTY:
             ...
         return False
 
-    #@classmethod
+    # @classmethod
     def handler_events(ev):
         self = TTY
         global evpos
@@ -246,7 +243,7 @@ class TTY:
                             self.event_data = tag
                             return
 
-    #@classmethod
+    # @classmethod
     def input():
         self = TTY
         global clog, parser, buffer_console
@@ -267,7 +264,6 @@ class TTY:
             try:
                 payload = os.read(self.stdin, 1024)
                 if payload:
-
                     if not parser:
                         self.raw = payload
                         return self.raw.decode()
@@ -285,7 +281,7 @@ class TTY:
 
                         elif isinstance(event, Key):
                             if TTY.console:
-                                #self.handler_console_input(event)
+                                # self.handler_console_input(event)
                                 self.raw = payload
                             else:
                                 rl_complete = self.handler_readline_input(event)
@@ -296,6 +292,8 @@ class TTY:
         if rl_complete:
             return self.line
         return ""
+
+
 classmethods(TTY)
 
 
@@ -338,8 +336,6 @@ def clear(LINES=0, CONSOLE=0, prompt=""):
         CSI("2J")
 
 
-
-
 import sys
 import re
 
@@ -352,13 +348,16 @@ anchor_last = 0
 try:
     ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
     from _xterm_parser import XTermParser
+
     def more_data() -> bool:
         return False
+
     parser = XTermParser(more_data)
     PKPY = False
 except:
     PKPY = True
     parser = False
+
 
 def filter_in(data):
     global parser
@@ -484,20 +483,18 @@ class Tui:
             y += 1
 
 
-
 # https://www.panda3d.org/reference/cxx/coordinateSystem_8h_source.html
 # renderman CS_yup_left,  // Y-Up, Left-handed
 # https://www.evl.uic.edu/ralph/508S98/coordinates.html
-
 
 
 #
 ## slots = 'x y z t width depth height event'
 ## slots = slots.split(' ')
 #
-#X = const(0)
-#Y = const(1)
-#Z = const(2)
+# X = const(0)
+# Y = const(1)
+# Z = const(2)
 #
 ## T = const(3)
 ## W = const(4)
@@ -506,7 +503,7 @@ class Tui:
 ## E = const(7)
 #
 #
-#class NodePath:
+# class NodePath:
 #    root = None
 #    count = 0
 #
@@ -528,23 +525,23 @@ class Tui:
 #                parent.children.append(self)
 #
 #
-#def npos(n):
+# def npos(n):
 #    if isinstance(n, NodePath):
 #        return n.pos
 #    return n
 #
 #
-#def get_x(n):
+# def get_x(n):
 #    return npos(n)[X]
 #
-#def get_y(n):
+# def get_y(n):
 #    return npos(n)[Y]
 #
-#def get_z(n):
+# def get_z(n):
 #    return npos(n)[Z]
 #
 #
-#def set_any(np, v, slot):
+# def set_any(np, v, slot):
 #    global rd
 #    v = int(v)
 #    ov = npos(np)[slot]
@@ -553,17 +550,17 @@ class Tui:
 #        render.dirty = np.dirty = True
 #
 #
-#def set_x(n, v):
+# def set_x(n, v):
 #    set_any(n, v, X)
 #
-#def set_y(n, v):
+# def set_y(n, v):
 #    set_any(n, v, Y)
 #
-#def set_z(n, v):
+# def set_z(n, v):
 #    set_any(n, v, Z)
 #
 #
-#def set_text(np, t):
+# def set_text(np, t):
 #    t = str(t)
 #    ot = np.node.text
 #    if ot != t:
@@ -571,7 +568,7 @@ class Tui:
 #        render.dirty = np.dirty = True
 
 
-#class Node:
+# class Node:
 #    def __init__(self, text=None, **kw):
 #        self.text = text
 #        self.set_filter(lambda x: x)
@@ -584,7 +581,7 @@ class Tui:
 #        return self.flt(self.text)
 #
 #
-#class render(NodePath):
+# class render(NodePath):
 #    DX = const(1)
 #    DZ = const(40)
 #
@@ -618,13 +615,13 @@ class Tui:
 #        z = cls.DZ + (cls.IZ * pos[2])
 #        cls.wr(f"\x1b[{z};{x}H[ {np.name}: {np.node.text} ]  ")
 #
-#classmethods(render)
+# classmethods(render)
 #
 #
-#render = render()
+# render = render()
 
 
-#async def taskMgr(t=1.0 / 24):
+# async def taskMgr(t=1.0 / 24):
 #    import asyncio
 #
 #    global render

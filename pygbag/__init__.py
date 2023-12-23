@@ -9,7 +9,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 from pathlib import Path
 
-VERSION = "0.8.6"
+VERSION = "0.8.7"
 
 # hack to test git cdn build without upgrading pygbag
 # beware can have side effects when file packager behaviour must change !
@@ -52,19 +52,20 @@ if not hasattr(sys, "print_exception"):
     sys.print_exception = print_exception
 
 
-
-
-
 def iter_byte(ba):
     for idx in range(len(ba)):
         yield bytes([ba[idx]])
+
+
 builtins.iter_byte = iter_byte
+
 
 def iter_ord(ba):
     for idx in range(len(ba)):
         yield ba[idx]
-builtins.iter_ord = iter_ord
 
+
+builtins.iter_ord = iter_ord
 
 
 def ESC(*argv, flush=True):

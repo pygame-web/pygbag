@@ -633,7 +633,9 @@ ________________________
     @classmethod
     def uptime(cls, *argv, **env):
         import asyncio, platform
+
         if not aio.perf_index:
+
             async def perf_index():
                 ft = [0.00001] * 60 * 10
                 while not aio.exit:
@@ -645,6 +647,7 @@ ________________________
                         aio.load_min = "{:.4f}".format(min(ft))
                         aio.load_max = "{:.4f}".format(max(ft))
                     await asyncio.sleep(0)
+
             aio.perf_index = perf_index()
             aio.create_task(aio.perf_index)
 
@@ -654,7 +657,7 @@ ________________________
         PyConfig.dev_mode = 1
         DBG(f"655: preload_code({len(code)=} {hint=} {loaderhome=})")
 
-        if loaderhome!='.':
+        if loaderhome != ".":
             os.chdir(loaderhome)
         if not loaderhome in sys.path:
             sys.path.append(loaderhome)
@@ -1323,13 +1326,13 @@ if not aio.cross.simulator:
 
     aio.toplevel.handler = TopLevel_async_handler
 
-
     async def dlopen(pkg):
         import platform
         import binascii
         import json
 
-        dlref = await platform.jsiter( platform.window.dlopen(pkg) )
+        dlref = await platform.jsiter(platform.window.dlopen(pkg))
+
         class dlproxy(object):
             def __init__(self, *argv, **env):
                 self.__dlref = " ".join(map(str, argv))
@@ -1337,19 +1340,19 @@ if not aio.cross.simulator:
                 self.__serial = 0
 
             def __call__(self, callid, fn, *argv, **env):
-                stack : list = [ callid, fn , argv, env ]
+                stack: list = [callid, fn, argv, env]
                 print(f"{self.__dlref}.{fn}({argv},{env}) {callid=}")
-                jstack : str = binascii.hexlify(json.dumps(stack).encode()).decode("ascii")
+                jstack: str = binascii.hexlify(json.dumps(stack).encode()).decode("ascii")
                 jshex = f"{self.__dlref}:{jstack}"
                 if not callid:
                     window.dlvoid(jshex)
                     return None
 
                 async def rv():
-                    obj = await platform.jsiter(window.dlcall(callid,jshex))
+                    obj = await platform.jsiter(window.dlcall(callid, jshex))
                     return json.loads(obj)
-                return rv()
 
+                return rv()
 
             def __all(self, *argv, **env):
                 self.__serial += 1
@@ -1378,7 +1381,6 @@ if not aio.cross.simulator:
                 return "\ndlproxy: %s" % self.__dlref
 
             __str__ = __repr__
-
 
         return dlproxy(dlref)
 

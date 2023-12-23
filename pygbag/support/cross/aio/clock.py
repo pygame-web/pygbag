@@ -3,6 +3,7 @@ import time
 import asyncio
 import os
 
+
 class tui:
     # use direct access, it is absolute addressing on raw terminal.
     if 0:

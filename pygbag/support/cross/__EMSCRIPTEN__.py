@@ -315,8 +315,8 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
     import aio
 
     if PyConfig.interactive:
-        #import aio.clock
-        #aio.clock.start(x=80)
+        # import aio.clock
+        # aio.clock.start(x=80)
 
         # org.python REPL no preload !
         preload = sys.argv[0] != "org.python"

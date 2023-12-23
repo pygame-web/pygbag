@@ -258,7 +258,7 @@ class Mouse(History):
             self.esc_seq = f"{str(self.esc_seq)} {ord(char)}"
             self.mouse[0] = ord(char) - 32
         elif l == 1:  # C
-            #self.esc_seq = "%s %c" % (self.esc_seq, ch)
+            # self.esc_seq = "%s %c" % (self.esc_seq, ch)
             self.esc_seq = f"{str(self.esc_seq)} {ch}"
         elif l == 2:
             self.esc_seq = f"{str(self.esc_seq)} {ord(char)}"
@@ -564,7 +564,7 @@ class readline(Mouse):
 
         if DEBUG:
             self.log(
-                "process_char '%c' 0x%02x - Action %-20s caret = %2d line = %s esc_seq = '%s' (before)" \
+                "process_char '%c' 0x%02x - Action %-20s caret = %2d line = %s esc_seq = '%s' (before)"
                 % (printable(char), ord(char), action.__name__, self.caret, repr(self.line), self.esc_seq)
             )
         try:
@@ -573,7 +573,7 @@ class readline(Mouse):
             result = None
             self.log(
                 e,
-                "process_char '%c' 0x%02x - Action %-20s caret = %2d line = %s esc_seq = '%s' (after)" \
+                "process_char '%c' 0x%02x - Action %-20s caret = %2d line = %s esc_seq = '%s' (after)"
                 % (printable(char), ord(char), action.__name__, self.caret, repr(self.line), self.esc_seq),
             )
 
@@ -645,9 +645,9 @@ class readline(Mouse):
         # self.log("move_cursor_to_col(%d)" % col)
         if col < self.cursor_col:
             cols = self.cursor_col - col
-#            if cols <= 4:
-#                self.write("\b\b\b\b"[:cols])
-#            else:
+            #            if cols <= 4:
+            #                self.write("\b\b\b\b"[:cols])
+            #            else:
             self.write("\x1b[%uD" % cols)
             self.cursor_col -= cols
         elif col > self.cursor_col:
