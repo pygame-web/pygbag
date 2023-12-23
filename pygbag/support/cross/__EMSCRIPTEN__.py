@@ -306,7 +306,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
             pdb(f"{ROOTDIR=}")
             pdb(f"{os.getcwd()=}")
 
-        print(f"284: assets found :", preloading)
+        print(f"309: assets found :", preloading)
         if not preloading:
             embed.run()
 
@@ -315,9 +315,8 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
     import aio
 
     if PyConfig.interactive:
-        import aio.clock
-
-        aio.clock.start(x=80)
+        #import aio.clock
+        #aio.clock.start(x=80)
 
         # org.python REPL no preload !
         preload = sys.argv[0] != "org.python"
@@ -361,7 +360,7 @@ def run_main(PyConfig, loaderhome=None, loadermain="main.py"):
         aio.started = True
         aio.create_task(EventTarget.process())
     else:
-        print("341: EventTarget delayed by loader")
+        print("364: EventTarget delayed by loader")
 
 
 # ===============================================================================================

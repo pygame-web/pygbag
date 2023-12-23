@@ -2,7 +2,7 @@
 reset
 
 mkdir -p pythons
-if [ -d pythons/pykpocket ]
+if [ -f pythons/pykpocket/pykpocket_main.gen ]
 then
     echo pykpocket found
 else
@@ -29,41 +29,25 @@ export MODE=main
 pushd pythons/pykpocket/
     rm pymain
     python3 scripts/multiline_parser.py pyque-pocket.cpp > pykpocket.gen
-    python3 scripts/multiline_parser.py pyque-pocket_begin.cpp > pykpocket_begin.gen
+    python3 scripts/multiline_parser.py pp_modules.cpp > pykpocket_modules.gen
     python3 scripts/multiline_parser.py pyque-pocket_main.cpp > pykpocket_main.gen
 
-#    pushd ../pykpocket.native
-#    rm libpocketpy.*
-#    if make && (echo 'print(42)' | ./main)
-#    then
-#        popd
+    mkdir -p ../pykpocket.html
 
-#        if clang++ -DPYDK -std=c++17 -O1 -fPIC -fexceptions -Iinclude -o pymain pykpocket_main.cpp ../pykpocket.native/libpocketpy.a
-#        then
-#            if ./pymain
-#            then
-                mkdir -p ../pykpocket.js ../pykpocket.html
+    pushd ../pykpocket.html
+    . /opt/python-wasm-sdk/wasm32-*-emscripten-shell.sh
 
-                pushd ../pykpocket.html
-                . /opt/python-wasm-sdk/wasm32-*-emscripten-shell.sh
+    if [ -f Makefile ]
+    then
+        echo cmake already ran
+        rm libpocketpy.a
+    else
+        emcmake cmake ../pykpocket -DTARGET=html -DCMAKE_EXECUTABLE_SUFFIX=html
+    fi
+    emmake make
+    popd
 
-                if [ -f Makefile ]
-                then
-                    echo cmake already ran
-                    rm libpocketpy.a
-                else
-                    emcmake cmake ../pykpocket -DTARGET=html -DCMAKE_EXECUTABLE_SUFFIX=html
-                fi
-                emmake make
-                popd
-
-#            fi
-#        fi
-#    else
-#        popd
-#    fi
 popd
-
 
 
 

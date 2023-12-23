@@ -224,9 +224,9 @@ async def async_repos():
         if platform.window.location.href.startswith("http://localhost:8"):
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = "http://localhost:8000/archives/repo/"
-        elif platform.window.location.href.startswith("https://pmp-p.ddns.net/pygbag"):
+        elif platform.window.location.href.startswith("http://p-p.mywire.org/pygbag"):
             for idx, repo in enumerate(Config.pkg_repolist):
-                repo["-CDN-"] = "https://pmp-p.ddns.net/archives/repo/"
+                repo["-CDN-"] = "http://p-p.mywire.org/archives/repo/"
         elif platform.window.location.href.startswith("http://192.168.1.66/pygbag"):
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = "http://192.168.1.66/archives/repo/"

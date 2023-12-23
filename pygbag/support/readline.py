@@ -237,13 +237,13 @@ class Mouse(History):
         ch = chr(ord(char))
 
         if l == 0:  # @AB => button
-            self.esc_seq = "%s" % ch
+            self.esc_seq = str(ch)
             self.mouse[0] = ord(char) - 32
         elif l == 1:
             self.mouse[1] = ord(char) - 32
-            self.esc_seq = "%s %s" % (self.esc_seq, ord(char))
+            self.esc_seq = f"{str(self.esc_seq)} {ord(char)}"
         elif l == 2:
-            self.esc_seq = "%s %s" % (self.esc_seq, ord(char))
+            self.esc_seq = f"{str(self.esc_seq)} {ord(char)}"
             self.mouse[2] = ord(char) - 32
             self.state = self.ESEQ_NONE
             self.touch = True
@@ -255,17 +255,19 @@ class Mouse(History):
         ch = chr(ord(char))
 
         if l == 0:  # @AB => button
-            self.esc_seq = "%s" % ch
+            self.esc_seq = f"{str(self.esc_seq)} {ord(char)}"
             self.mouse[0] = ord(char) - 32
         elif l == 1:  # C
-            self.esc_seq = "%s %c" % (self.esc_seq, ch)
+            #self.esc_seq = "%s %c" % (self.esc_seq, ch)
+            self.esc_seq = f"{str(self.esc_seq)} {ch}"
         elif l == 2:
+            self.esc_seq = f"{str(self.esc_seq)} {ord(char)}"
             self.mouse[1] = ord(char) - 32
-            self.esc_seq = "%s %s" % (self.esc_seq, ord(char))
         elif l == 3:  # C
-            self.esc_seq = "%s %c" % (self.esc_seq, ch)
+            # self.esc_seq = "%s %c" % (self.esc_seq, ch)
+            self.esc_seq = f"{str(self.esc_seq)} {ch}"
         elif l == 4:
-            self.esc_seq = "%s %s" % (self.esc_seq, ord(char))
+            self.esc_seq = f"{str(self.esc_seq)} {ord(char)}"
             self.mouse[2] = ord(char) - 32
             self.state = self.ESEQ_NONE
         self.mread += char
@@ -471,7 +473,7 @@ class readline(Mouse):
 
     def csi_typed_char(self, char):
         """Unrecognized ESC [ sequence."""
-        if char >= b"0" and char <= b"9":
+        if char[0] >= 0 and char[0] <= 9:
             self.esc_seq = chr(ord(char))
             self.state = self.ESEQ_CSI_DIGIT
         else:
@@ -528,9 +530,9 @@ class readline(Mouse):
     def typed_char(self, char):
         """Handles regular characters."""
         if self.overwrite:
-            self.line = self.line[: self.caret] + chr(ord(char)) + self.line[self.caret + 1 :]
+            self.line = self.line[: self.caret] + chr(char[0]) + self.line[self.caret + 1 :]
         else:
-            self.line = self.line[: self.caret] + chr(ord(char)) + self.line[self.caret :]
+            self.line = self.line[: self.caret] + chr(char[0]) + self.line[self.caret :]
         # self.log("typed_char: len(self.line) = %d" % len(self.line))
         self.invalidate(self.caret, len(self.line))
         self.caret += 1
@@ -547,8 +549,8 @@ class readline(Mouse):
 
     def process_bstr(self, bstring):
         """Calls process_char for each character in the string."""
-        for byte in bstring:
-            self.process_char(bytes((byte,)))
+        for byte in iter_byte(bstring):
+            self.process_char(byte)
 
     def process_char(self, char):
         """Processes a single character of input."""

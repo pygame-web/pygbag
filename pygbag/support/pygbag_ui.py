@@ -1,13 +1,8 @@
 import asyncio
 import sys
 
-# https://www.panda3d.org/reference/cxx/coordinateSystem_8h_source.html
-# renderman CS_yup_left,  // Y-Up, Left-handed
-# https://www.evl.uic.edu/ralph/508S98/coordinates.html
-
 
 out = sys.__stdout__.write
-
 
 import os
 
@@ -17,83 +12,6 @@ damages = {}
 evpos = {}
 clog = []
 
-
-# slots = 'x y z t width depth height event'
-# slots = slots.split(' ')
-try:
-    const
-except:
-    const = lambda x: x
-
-X = const(0)
-# Y = const(1)
-Z = const(2)
-# T = const(3)
-# W = const(4)
-# D = const(5)
-# H = const(6)
-# E = const(7)
-
-
-class NodePath:
-    root = None
-    count = 0
-
-    def __init__(self, parent, node, pos=None, **kw):
-        if parent:
-            assert isinstance(parent, NodePath)
-        # FIXME: self.parent = weakref.ref(parent) <= no weakref yet in micropython
-        self.parent = parent
-        self.node = node
-        self.pos = pos or [0, 0, 0]
-        #self.name = kw.pop("name", "n_{0:03d}".format(NodePath.count, 3))
-        self.name = kw.pop("name", "n_{0}".format(str(NodePath.count).zfill(3)))
-        self.dirty = False
-        self.children = []
-        NodePath.count += 1
-
-        if parent:  # and self.root!=parent:
-            if not self in parent.children:
-                parent.children.append(self)
-
-
-def npos(n):
-    if isinstance(n, NodePath):
-        return n.pos
-    return n
-
-
-def get_x(n):
-    return npos(n)[X]
-
-
-def get_z(n):
-    return npos(n)[Z]
-
-
-def set_any(np, v, slot):
-    global rd
-    v = int(v)
-    ov = npos(np)[slot]
-    npos(np)[slot] = v
-    if isinstance(np, NodePath) and v != ov:
-        render.dirty = np.dirty = True
-
-
-def set_x(n, v):
-    set_any(n, v, X)
-
-
-def set_z(n, v):
-    set_any(n, v, Z)
-
-
-def set_text(np, t):
-    t = str(t)
-    ot = np.node.text
-    if ot != t:
-        np.node.text = t
-        render.dirty = np.dirty = True
 
 
 import select
@@ -154,30 +72,40 @@ class TTY:
 
     last_state = False
 
-    @classmethod
-    def get_readline(self):
+    def __init__(*self):
+        raise Exception("not for instancing")
+
+
+    #@classmethod
+    def get_readline():
+        self=TTY
         return self.rl_instances[self.rl_pointer]
 
-    @classmethod
-    def prompt(self):
+    #@classmethod
+    def prompt():
+        self = TTY
         if self.raw:
             rl = self.get_readline()
             rl.process_bstr(TTY.raw)
             self.raw=b""
-            print(f"\r>>> {rl.string}\x1b[K\r\x1b[%uC" %  (4+rl.caret), end="")
+            print(f"\r>>> {rl.string}\x1b[K\r\x1b[{4+rl.caret}C", end="")
             if rl.string and (rl.string[-1]=="\n"):
                 print(end="\r")
                 self.rl_complete.append( rl.string.rstrip("\r\n") )
-                rl.string = ""
+                rl.reset()
+                self.prompts.append(1)
 
-        elif len(self.prompts):
+    def do_prompt(force=False):
+        self = TTY
+        if len(self.prompts) or force:
             self.prompts.clear()
-            print("\r>>> ", end="")
+            print("\r>>> ", end=sys.__eot__)
             self.flush()
 
 
-    @classmethod
-    def set_raw(self, state):
+    #@classmethod
+    def set_raw(state):
+        self = TTY
         import platform
         import termios, tty
 
@@ -227,8 +155,9 @@ class TTY:
     else:
         flush = sys.__stdout__.flush
 
-    @classmethod
-    def handler_console_input(self, ev):
+    #@classmethod
+    def handler_console_input( ev):
+        self = TTY
         global clog
         if ev.is_printable:
             if self.echo:
@@ -252,8 +181,9 @@ class TTY:
             # clog.append(repr(list(ev.__rich_repr__())))
             ...
 
-    @classmethod
-    def handler_readline_input(self, ev):
+    #@classmethod
+    def handler_readline_input(ev):
+        self=TTY
         global clog
 
         # virtual gamepad handler
@@ -295,8 +225,9 @@ class TTY:
             ...
         return False
 
-    @classmethod
-    def handler_events(self, ev):
+    #@classmethod
+    def handler_events(ev):
+        self = TTY
         global evpos
 
         for ez in range(ev.y - 1, ev.y + 2):
@@ -315,8 +246,9 @@ class TTY:
                             self.event_data = tag
                             return
 
-    @classmethod
-    def input(self):
+    #@classmethod
+    def input():
+        self = TTY
         global clog, parser, buffer_console
         rl_complete = False
         if self.event_type:
@@ -329,10 +261,17 @@ class TTY:
         self.event_data = ""
         self.state_changed = False
 
+        self.raw = ""
+
         if select.select([self.stdin], [], [], 0)[0]:
             try:
                 payload = os.read(self.stdin, 1024)
                 if payload:
+
+                    if not parser:
+                        self.raw = payload
+                        return self.raw.decode()
+
                     for event in parser.feed(payload.decode("utf-8")):
                         if isinstance(event, MouseEvent):
                             self.L = event.y
@@ -357,10 +296,11 @@ class TTY:
         if rl_complete:
             return self.line
         return ""
+classmethods(TTY)
 
 
-def goto_xz(x, z):
-    CSI(f"{z};{x}H")
+def goto_xy(x, y):
+    CSI(f"{y};{x}H")
 
 
 # cleareos ED0          Clear screen from cursor down          ^[[J
@@ -383,11 +323,11 @@ def clear(LINES=0, CONSOLE=0, prompt=""):
             if x > TTY.LINES:
                 break
 
-        goto_xz(1, TTY.LINES + 1)
+        goto_xy(1, TTY.LINES + 1)
         CSI("0J", "1J", f"{TTY.LINES+1};{TTY.LINES+TTY.CONSOLE}r", f"{TTY.LINES+TTY.CONSOLE-1};1H{prompt}")
 
     elif CONSOLE < 0:
-        goto_xz(1, TTY.LINES + 1)
+        goto_xy(1, TTY.LINES + 1)
         CSI(f"0J", f"{TTY.LINES+1};1H{prompt}")
     else:
         # damage whole screen
@@ -398,55 +338,6 @@ def clear(LINES=0, CONSOLE=0, prompt=""):
         CSI("2J")
 
 
-class Node:
-    def __init__(self, text=None, **kw):
-        self.text = text
-        self.set_filter(lambda x: x)
-        self.clip = False
-
-    def set_filter(self, flt):
-        self.flt = flt
-
-    def filter(self, np):
-        return self.flt(self.text)
-
-
-class render(NodePath):
-    DX = const(1)
-    DZ = const(40)
-
-    IX = const(1)
-    IZ = const(-1)
-
-    # wr0 = '\x1b%d\x1b[?25%s'
-    # wr = sys.stdout.write
-    @classmethod
-    def wr(cls, data):
-        print(data, end="")
-
-    def __init__(self):
-        self.__class__.root = self
-        self.dirty = False
-        NodePath.__init__(self, None, self)
-
-    def __enter__(self):
-        # self.wr(self.wr0 % ( 7 , 'l' ) )
-        self.wr("\x1b7\x1b[?25l")
-        return self
-
-    def __exit__(self, *tb):
-        # self.wr( self.wr0 % ( 8, 'h' ) )
-        self.wr("\x1b8\x1b[?25h")
-
-    @classmethod
-    def draw_child(cls, parent, np, lvl):
-        pos = npos(np)
-        x = cls.DX + (cls.IX * pos[0])
-        z = cls.DZ + (cls.IZ * pos[2])
-        cls.wr(f"\x1b[{z};{x}H[ {np.name}: {np.node.text} ]  ")
-
-
-render = render()
 
 
 import sys
@@ -467,7 +358,7 @@ try:
     PKPY = False
 except:
     PKPY = True
-
+    parser = False
 
 def filter_in(data):
     global parser
@@ -477,7 +368,7 @@ def filter_in(data):
 
 def filter_out(row, x, y, z):
     global clog, ansi_escape, bname_last, anchor_last
-    ev = evpos[z][hash(row)]
+    ev = evpos[y][hash(row)]
 
     if row.find(":>") >= 0:
         if PKPY:
@@ -554,7 +445,7 @@ class Tui:
         global bname_last, anchor_last
 
         x = kw.get("x", 1)
-        z = kw.get("z", 1)
+        y = kw.get("y", 1)
 
         #   most term do not deal properly with vt400
         #            if decvssm:
@@ -578,19 +469,159 @@ class Tui:
         anchor_last = 0
 
         for row in block.split("\n"):
-            hr_old = damages.get(z, 0)
+            hr_old = damages.get(y, 0)
             hr = hash(row)
             if hr != hr_old:
-                damages[z] = hr
+                damages[y] = hr
                 if filter:
                     # destroy event list ref by the old line
-                    evpos.setdefault(z, {}).pop(hr_old, None)
-                    evpos[z][hr] = []
-                    row = filter(row, x, 0, z)
+                    evpos.setdefault(y, {}).pop(hr_old, None)
+                    evpos[y][hr] = []
+                    row = filter(row, x, y, 0)
 
-                self.out("\x1b[{};{}H{}".format(z, x, row))
+                self.out("\x1b[{};{}H{}".format(y, x, row))
 
-            z += 1
+            y += 1
+
+
+
+# https://www.panda3d.org/reference/cxx/coordinateSystem_8h_source.html
+# renderman CS_yup_left,  // Y-Up, Left-handed
+# https://www.evl.uic.edu/ralph/508S98/coordinates.html
+
+
+
+#
+## slots = 'x y z t width depth height event'
+## slots = slots.split(' ')
+#
+#X = const(0)
+#Y = const(1)
+#Z = const(2)
+#
+## T = const(3)
+## W = const(4)
+## D = const(5)
+## H = const(6)
+## E = const(7)
+#
+#
+#class NodePath:
+#    root = None
+#    count = 0
+#
+#    def __init__(self, parent, node, pos=None, **kw):
+#        if parent:
+#            assert isinstance(parent, NodePath)
+#        # FIXME: self.parent = weakref.ref(parent) <= no weakref yet in micropython
+#        self.parent = parent
+#        self.node = node
+#        self.pos = pos or [0, 0, 0]
+#        #self.name = kw.pop("name", "n_{0:03d}".format(NodePath.count, 3))
+#        self.name = kw.pop("name", "n_{0}".format(str(NodePath.count).zfill(3)))
+#        self.dirty = False
+#        self.children = []
+#        NodePath.count += 1
+#
+#        if parent:  # and self.root!=parent:
+#            if not self in parent.children:
+#                parent.children.append(self)
+#
+#
+#def npos(n):
+#    if isinstance(n, NodePath):
+#        return n.pos
+#    return n
+#
+#
+#def get_x(n):
+#    return npos(n)[X]
+#
+#def get_y(n):
+#    return npos(n)[Y]
+#
+#def get_z(n):
+#    return npos(n)[Z]
+#
+#
+#def set_any(np, v, slot):
+#    global rd
+#    v = int(v)
+#    ov = npos(np)[slot]
+#    npos(np)[slot] = v
+#    if isinstance(np, NodePath) and v != ov:
+#        render.dirty = np.dirty = True
+#
+#
+#def set_x(n, v):
+#    set_any(n, v, X)
+#
+#def set_y(n, v):
+#    set_any(n, v, Y)
+#
+#def set_z(n, v):
+#    set_any(n, v, Z)
+#
+#
+#def set_text(np, t):
+#    t = str(t)
+#    ot = np.node.text
+#    if ot != t:
+#        np.node.text = t
+#        render.dirty = np.dirty = True
+
+
+#class Node:
+#    def __init__(self, text=None, **kw):
+#        self.text = text
+#        self.set_filter(lambda x: x)
+#        self.clip = False
+#
+#    def set_filter(self, flt):
+#        self.flt = flt
+#
+#    def filter(self, np):
+#        return self.flt(self.text)
+#
+#
+#class render(NodePath):
+#    DX = const(1)
+#    DZ = const(40)
+#
+#    IX = const(1)
+#    IZ = const(-1)
+#
+#    # wr0 = '\x1b%d\x1b[?25%s'
+#    # wr = sys.stdout.write
+#    @classmethod
+#    def wr(cls, data):
+#        print(data, end="")
+#
+#    def __init__(self):
+#        self.__class__.root = self
+#        self.dirty = False
+#        NodePath.__init__(self, None, self)
+#
+#    def __enter__(self):
+#        # self.wr(self.wr0 % ( 7 , 'l' ) )
+#        self.wr("\x1b7\x1b[?25l")
+#        return self
+#
+#    def __exit__(self, *tb):
+#        # self.wr( self.wr0 % ( 8, 'h' ) )
+#        self.wr("\x1b8\x1b[?25h")
+#
+#    @classmethod
+#    def draw_child(cls, parent, np, lvl):
+#        pos = npos(np)
+#        x = cls.DX + (cls.IX * pos[0])
+#        z = cls.DZ + (cls.IZ * pos[2])
+#        cls.wr(f"\x1b[{z};{x}H[ {np.name}: {np.node.text} ]  ")
+#
+#classmethods(render)
+#
+#
+#render = render()
 
 
 #async def taskMgr(t=1.0 / 24):

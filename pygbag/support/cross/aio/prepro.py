@@ -4,7 +4,6 @@ DEBUG = False
 
 defines = {}
 
-
 def defined(plat):
     try:
         return eval(plat) or True

@@ -1210,8 +1210,7 @@ int main(int argc, char **argv) {
 
 #if defined(PKPY)
 int main(int argc, char **argv) {
-    pkpy_init();
-    return main_(argc, argv);
+    pkpy_init()    return main_(argc, argv);
 }
 #endif
 

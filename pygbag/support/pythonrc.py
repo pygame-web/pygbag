@@ -29,6 +29,9 @@ if not defined("undefined"):
         def __bool__(self):
             return False
 
+        def __len__(self):
+            return 0
+
         def __repr__(self):
             return "∅"
 
@@ -646,10 +649,15 @@ ________________________
             aio.create_task(aio.perf_index)
 
     @classmethod
-    async def preload_code(cls, code, callback=None, hint=""):
+    async def preload_code(cls, code, callback=None, loaderhome=".", hint=""):
         # get a relevant list of modules likely to be imported
         PyConfig.dev_mode = 1
-        DBG(f"632: preload_code({len(code)=} {hint=}")
+        DBG(f"655: preload_code({len(code)=} {hint=} {loaderhome=})")
+
+        if loaderhome!='.':
+            os.chdir(loaderhome)
+        if not loaderhome in sys.path:
+            sys.path.append(loaderhome)
 
         import aio
         import aio.pep0723

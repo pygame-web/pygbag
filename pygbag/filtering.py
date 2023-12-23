@@ -20,6 +20,7 @@ IGNORE = """
 /build
 /venv
 /ignore
+/static
 /ATTIC
 """.strip().split(
     "\n"

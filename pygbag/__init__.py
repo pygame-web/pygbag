@@ -52,6 +52,21 @@ if not hasattr(sys, "print_exception"):
     sys.print_exception = print_exception
 
 
+
+
+
+def iter_byte(ba):
+    for idx in range(len(ba)):
+        yield bytes([ba[idx]])
+builtins.iter_byte = iter_byte
+
+def iter_ord(ba):
+    for idx in range(len(ba)):
+        yield ba[idx]
+builtins.iter_ord = iter_ord
+
+
+
 def ESC(*argv, flush=True):
     for arg in argv:
         sys.__stdout__.write(chr(0x1B))
