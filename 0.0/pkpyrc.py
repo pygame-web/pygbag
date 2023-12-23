@@ -1,16 +1,94 @@
+import embed
+import builtins
+
+#=========================== builtins ===============================
 
 
 import builtins
-def classmethod(fn):
-    def cm_fn(self, *argv,**kw):
-        staticmethod(fn)(self.__class__, *argv, **kw)
-    return cm_fn
-builtins.classmethod = classmethod
+builtins.iter_next = next
+def next(it, default=0xdeadbeef):
+    itrv = iter_next(it)
+    if itrv == StopIteration:
+        if default == 0xdeadbeef:
+            raise itrv
+        return default
+    return itrv
 
+builtins.next = next
+
+#====================================================================
+
+
+# rely on vars
+class __PKPY__:
+    cm = {}
+    current_class = "?"
+
+    print = print
+
+    def classmethod(fn):
+        def cm_fn(*argv,**kw):
+            cr = __PKPY__.cm[cm_fn]
+            if len(argv):
+                if argv[0].__class__ == cr["cc"]:
+                    return fn(argv[0].__class__, *argv[1:], **kw)
+            return fn(cr["cc"], *argv, **kw)
+        __PKPY__.cm[cm_fn] = { "fn" : fn } #, 'cn': current_class}
+        return cm_fn
+
+    def classmethods(klass):
+        for fn, func in vars(klass).items():
+            try:
+                if func in __PKPY__.cm:
+                    cr = __PKPY__.cm[func]
+                    #if cr["cn"] == klass.__name__:
+                    cr['cc'] = klass
+            except TypeError:
+                continue
+        return klass
+
+builtins.classmethod = __PKPY__.classmethod
+builtins.classmethods = __PKPY__.classmethods
+
+builtins.__PKPY__ = __PKPY__
+
+
+
+
+class Sentinel(object):
+
+    def __len__(self):
+        return 0
+
+    def __bool__(self):
+        return False
+
+    def __repr__(self):
+        return "∅"
+
+    def __nonzero__(self):
+        return 0
+
+    def __call__(self, *argv, **kw):
+        if len(argv) and argv[0] is self:
+            return True
+        print("Null Pointer Exception")
+
+builtins.undefined = Sentinel()
+del Sentinel
+
+
+#=========================== os ===============================
 
 import os
 # split/rsplit fix from c++
 # os.environ {} is filled from c++
+
+def os_read(fd, sz):
+    return embed.os_read()
+os.read = os_read
+del os_read
+
 
 def os_get_terminal_size(fd=0):
     cols = os.environ.get("COLUMNS", 80)
@@ -29,6 +107,8 @@ def os_get_terminal_size(fd=0):
 
 os.terminal_size = tuple
 os.get_terminal_size = os_get_terminal_size
+del os_get_terminal_size
+
 
 class shell:
     HOME = "/data/data/org.python/assets"
@@ -45,19 +125,8 @@ class shell:
 shell.cd()
 
 
-if 0:
-    __next__ = next
-    def next(it, default=0xdeadbeef):
-        itrv = __next__(it)
-        if itrv == StopIteration:
-            if default == 0xdeadbeef:
-                raise itrv
-            return default
-        return itrv
 
-    __import__('builtins').next = next
-
-
+#=========================== sys ===============================
 
 import sys
 sys.modules = []
@@ -101,7 +170,8 @@ def new_module(name, code):
     if len(code)<40:
         with open(code,'r') as source:
             code=source.read()
-
+    else:
+        code = code.replace('\\\n','')
     embed._new_module(name, code)
     return __import__(name)
 
@@ -116,9 +186,60 @@ builtins.compile = compile
 del compile
 
 
+
+
+
+
+#=========================== io ===============================
+
+import io
+class StringIO:
+    counter = 0
+    def __init__(self, initial_value='', newline='\n'):
+        self.__class__.counter = 1+ self.__class__.counter
+        file = f"/tmp/io_{str(self.__class__.counter).zfill(5)}.tmp"
+        mode='w+'
+        closefd=True
+        opener=None
+        self.fio = open(file,mode)
+
+    def seek(self, p):
+        self.fio.seek(p)
+        #self.fio.rewind()
+
+    def write(self, s):
+        self.fio.write(s)
+
+    def read(self): #, size=-1):
+        return self.fio.read()
+
+    def close(self):
+        self.fio.close()
+
+io.StringIO = StringIO
+del StringIO
+
+
+
+def print(*argv,**kw):
+    if 'file' in kw:
+        #TODO __PKPY__.print('file=',        kw.pop('file'))
+        ...
+        return
+    return __PKPY__.print(*argv, **kw)
+
+builtins.print = print
+
+
+
+
+
+#=======================  platform ==================================
+
+
+
 embed.new_module("platform", '''
 __UPY__ = False
-__PKPY__ = True
 __CPY__ = False
 CONSOLE = 25
 
@@ -138,6 +259,7 @@ def get_console_size(fd=0):
 
 import json
 import embed
+
 
 class ProxyType(object):
     __callerid : dict = {}
@@ -186,9 +308,9 @@ class ProxyType(object):
 
         jsdata = json.dumps(ProxyType.__value)
         jscmd = f"{path}.{attr}=JSON.parse(`{jsdata}`)"
-        if self.__callpath[0] == 'document':
-            print("__setattr", self.__callpath, attr, line, jsdata)
-            print(jscmd)
+#        if self.__callpath[0] == 'document':
+#            print("__setattr", self.__callpath, attr, line, jsdata)
+#            print(jscmd)
 
         embed.jseval(jscmd)
 
@@ -235,6 +357,8 @@ except:
 ''')
 
 import platform
+
+
 
 embed.new_module("asyncio", '''
 self = __import__(__name__)
@@ -289,23 +413,18 @@ if 0:
         frame : int = 0
         while tasks:
             for task in self.tasks:
-                if next(task) is StopIteration:
+                if iter_next(task) is StopIteration:
                     self.tasks.remove(task)
                 frame += 1
                 yield frame
 
-    def step():
-        for task in self.tasks:
-            itrv = next(task, 0xfeedc0de)
-            if itrv == 0xfeedc0de:
-                self.tasks.remove(task)
 else:
-    frame : int = 0
+    frame : int = 0 #390540
 
     def step():
         global frame
         for task in self.tasks:
-            if next(task) is StopIteration:
+            if iter_next(task) is StopIteration:
                 self.tasks.remove(task)
         frame += 1
 
@@ -330,6 +449,52 @@ def run(task, block=None):
 import asyncio
 
 builtins.aio = asyncio
+
+
+aio.prepro = embed.new_module("aio.prepro", '''
+import builtins
+defines = {}
+
+def defined(plat):
+    try:
+        return eval(plat) or True
+    except:
+        return False
+
+
+def define(tag, value):
+    global defines, DEBUG
+    if DEBUG:
+        import inspect
+
+        lf = inspect.currentframe().f_back
+        fn = inspect.getframeinfo(lf).filename.rsplit("/assets/", 1)[-1]
+        ln = lf.f_lineno
+        info = f"{fn}:{ln}"
+        defines.setdefault(tag, info)
+    else:
+        info = "?:?"
+
+    redef = defined(tag)
+    if redef:
+        if redef is value:
+            pdb(f"INFO: {tag} redefined from {defines.get(tag)} at {info}")
+            pass
+        else:
+            pdb(f"""WARNING: {tag} was already defined
+    previous {defines.get(tag)} value {redef}
+    new {info} value {value}
+
+"""
+            )
+
+    setattr(builtins, tag, value)
+
+
+builtins.define = define
+builtins.defined = defined
+''')
+
 
 
 embed.new_module("select", '''
@@ -431,7 +596,14 @@ class Tui:
             z += 1
 
 
-from pygbag_ui import TTY, clear
+
+
+
+
+platform.document.body.style.background = "#555555"
+
+
+from pygbag_ui import TTY, clear, goto_xy
 
 def main():
     line = "\n"
@@ -452,28 +624,41 @@ def main():
 
     from platform import window, document
 
-#    print("window.console=", repr(window.console))
-#    window.console.log(" ---------- PROXY ---------")
-#    print("window=", window, id(window))
-#    print("document=", document, id(document))
-#    print("window.document=", repr(window.document), id(window.document))
+    window.set_raw_mode(1)
 
+    raw : int = 0
 
-    window.document.title = f"Frame={asyncio.frame}"
+    goto_xy(1, TTY.LINES + TTY.CONSOLE )
+
+    TTY.do_prompt(force=True)
+
 
     while line not in ["exit()","quit()"]:
+
+        if not line:
+            if select.select([TTY.stdin], [], [], 0)[0]:
+                TTY.raw = os.read(TTY.stdin, 1024)
+            TTY.prompt()
+
+            # result from readline line by line
+            if TTY.rl_complete:
+                line = TTY.rl_complete.pop(0)
+
         if not asyncio.frame % 60:
-            window.document.title = f""
+            document.title = f"Frame={asyncio.frame}"
 
         with tui as out:
             fsm=None
-            out( f"""{TTY.COLUMNS}x({TTY.LINES}+{TTY.CONSOLE}):{TTY.console}
- fsm={fsm and fsm.state} C={TTY.C} L={TTY.L}
- min/avg/max:{aio.load_min} {aio.load_avg} {aio.load_max}
-  ⏏︎ ■ ▶
- {TTY.last_event_type}({TTY.last_event_data})  Frame={asyncio.frame}
-                      """.replace("\n",""), x=1, z=TTY.LINES)
+            out( f"""{TTY.COLUMNS}x({TTY.LINES}+{TTY.CONSOLE}):{TTY.console}\
+ fsm={fsm and fsm.state} C={TTY.C} L={TTY.L}\
+ min/avg/max:{aio.load_min} {aio.load_avg} {aio.load_max}\
+  ⏏︎ ■ ▶\
+ {TTY.last_event_type}({TTY.last_event_data})  Frame={asyncio.frame}\
+                      """, x=1, z=TTY.LINES)
 
+        # line is either
+        # - embed.readline (input/external readline)
+        # - console (raw tty/py readline emulation)
 
         if line:
             line = line.rstrip()
@@ -497,10 +682,12 @@ def main():
                         sys.print_exception()
                 if fail:
                     sys.print_exception()
-                print()
-            print('>>> ',end=sys.__eot__)
+                    print()
+            TTY.do_prompt()
         yield 0
         line = embed.readline()
+        raw = embed.stdin_select()
+
     print("bye")
 
 

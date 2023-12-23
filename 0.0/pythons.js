@@ -573,11 +573,11 @@ __pythonrc__ = "${pyrc_file}"
 
 try:
     next(enumerate([]),None)
-    __PKPY__ = False
+    PKPY = False
 except:
     with open(__pythonrc__, "r") as pythonrc:
-        exec(pythonrc.read(), globals())
-    __PKPY__ = True
+        exec(pythonrc.read().replace(chr(92)+chr(10),""), globals())
+    PKPY = True
 import os
 def os_path_is_dir(path):
     try:
@@ -593,7 +593,7 @@ def os_path_is_file(path):
     except:
         return False
 
-if not __PKPY__:
+if not PKPY:
 
     import sys, json
     PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
@@ -619,6 +619,7 @@ if not __PKPY__:
         asyncio.run(import_site("${main_file}"))
     except ImportError:
         pass
+del PKPY
 `)
 
 }
