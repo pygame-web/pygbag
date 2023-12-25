@@ -2335,8 +2335,8 @@ function auto_conf(cfg) {
         config.PYBUILD = pystr.substr(7) || default_version
     } else {
         if (pystr.search('python3')>=0) {
-            vm.script.interpreter = "python"
-            config.PYBUILD = pystr.substr(6) || "3.4"
+            vm.script.interpreter = "cpython"
+            config.PYBUILD = pystr.substr(6) || default_version
         } else {
             if (pystr.search('pkpy')>=0) {
                 vm.script.interpreter = "pkpy"
@@ -2346,7 +2346,7 @@ function auto_conf(cfg) {
                     vm.script.interpreter = "wapy"
                     config.PYBUILD = pystr.substr(4) || "3.4"
                 } else {
-                    vm.script.interpreter = config.python || "python"
+                    vm.script.interpreter = config.python || "cpython"
                     config.PYBUILD = pystr.substr(7) || default_version
                 }
             }
