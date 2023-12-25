@@ -11,6 +11,8 @@ cp pygbag_*.py readline.py typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common
 popd
 
 
+DISTRO=cpython
+
 # version independant modules
 cp -rf ${SDKROOT}/prebuilt/emsdk/common/* ${SDKROOT}/prebuilt/emsdk/${PYBUILD}/
 
@@ -41,9 +43,9 @@ EMPIC=/opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-em
 SUPPORT_FS=""
 
 
-mkdir -p $DIST_DIR/python${PYMAJOR}${PYMINOR}
+mkdir -p $DIST_DIR/${DISTRO}${PYMAJOR}${PYMINOR}
 
-rm $DIST_DIR/python${PYMAJOR}${PYMINOR}/main.* 2>/dev/null
+rm $DIST_DIR/${DISTRO}${PYMAJOR}${PYMINOR}/main.* 2>/dev/null
 
 # git does not keep empty dirs
 mkdir -p tests/assets tests/code
@@ -270,7 +272,7 @@ emcc \\
      $PATCH_FS \\
      --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \\
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \\
-     -o ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \\
+     -o ${DIST_DIR}/${DISTRO}${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \\
      $LDFLAGS -lembind
 
 # -lfreetype
@@ -308,11 +310,11 @@ END
         if $USECP
         then
             cp -R static/* ${DIST_DIR}/
-            cp pygbag/support/pythonrc.py ${DIST_DIR}/pythonrc.py
+            cp pygbag/support/cpythonrc.py ${DIST_DIR}/cpythonrc.py
             # for simulator
-            cp pygbag/support/pythonrc.py ${SDKROOT}/support/
+            cp pygbag/support/cpythonrc.py ${SDKROOT}/support/
         else
-            [ -f ${DIST_DIR}/pythonrc.py ] || ln pygbag/support/pythonrc.py ${DIST_DIR}/pythonrc.py
+            [ -f ${DIST_DIR}/cpythonrc.py ] || ln pygbag/support/cpythonrc.py ${DIST_DIR}/cpythonrc.py
             pushd static
             for fn in *
             do
@@ -334,7 +336,7 @@ END
 #"
 #        sed -i 's/_glfwSetWindowContentScaleCallback_sig=iii/_glfwSetWindowContentScaleCallback_sig="iii"/g' \
 #         ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js
-        du -hs ${DIST_DIR}/python*
+        du -hs ${DIST_DIR}/*
     else
         echo "pymain+loader linking failed"
         exit 178
