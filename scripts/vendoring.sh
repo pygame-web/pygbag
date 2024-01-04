@@ -5,7 +5,7 @@ export VENDOR=${VENDOR:-pygbag}
 export PACKAGES=${PACKAGES:-emsdk hpy pygame}
 
 export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
-export SDK_VERSION=${SDK_VERSION:-3.1.51.1bi}
+export SDK_VERSION=${SDK_VERSION:-3.1.52.0bi}
 export CYTHON=${CYTHON:-Cython-3.0.1-py2.py3-none-any.whl}
 export PYBUILD=${PYBUILD:-3.11}
 export LC_ALL=C

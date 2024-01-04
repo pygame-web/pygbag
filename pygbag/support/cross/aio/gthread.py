@@ -101,7 +101,7 @@ class Thread:
         self.name = name
         self.slice = 0
         self.last = aio.rtclock()
-
+        self.native_id = id(self)
         if target:
             if hasattr(target, "run"):
                 if name is None:
@@ -112,14 +112,14 @@ class Thread:
 
             if name is None:
                 try:
-                    self.name = "%s-%s" % (self.run.__name__, id(self))
+                    self.name = "%s-%s" % (self.run.__name__, self.native_id)
                 except:
                     pass
         else:
             target = self
 
         if self.name is None:
-            self.name = "%s-%s" % (self.__class__.__name__, id(self))
+            self.name = "%s-%s" % (self.__class__.__name__, self.native_id)
         self.status = None
 
     async def wrap(self):

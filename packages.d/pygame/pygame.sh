@@ -74,6 +74,23 @@ then
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
 
     patch -p1 << END
+diff --git a/buildconfig/Setup.Emscripten.SDL2.in b/buildconfig/Setup.Emscripten.SDL2.in
+index 0bd60a30..e74effe9 100644
+--- a/buildconfig/Setup.Emscripten.SDL2.in
++++ b/buildconfig/Setup.Emscripten.SDL2.in
+@@ -6,7 +6,8 @@
+ #MIXER = -lSDL2_mixer
+ #SCRAP =
+ #FREETYPE = -lfreetype -lharfbuzz
+-
++PNG= -lpng
++JPEG= -ljpeg
+ DEBUG =
+
+ # these can build alone and object files merged with ar
+END
+
+    patch -p1 << END
 diff --git a/src_c/static.c b/src_c/static.c
 index 03cc7c61..a00a51a7 100644
 --- a/src_c/static.c

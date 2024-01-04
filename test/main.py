@@ -90,13 +90,17 @@ async def main():
     # Green threads are ordered at runtime unlike system threads.
 
     # erase and fill
-    Thread(target=color_background, args=[win]).start()
+    t1=Thread(target=color_background, args=[win])
+    t1.start()
 
     # 1st object to draw
-    Thread(target=moving_png, args=[win]).start()
+    t2=Thread(target=moving_png, args=[win])
+    t2.start()
 
     # 2nd
-    Thread(target=moving_bmp, args=[win]).start()
+    (t3:=Thread(target=moving_bmp, args=[win])).start()
+
+    print( t1.native_id , t2.native_id , t3.native_id)
 
     while True:
         if count >= 0:

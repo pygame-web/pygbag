@@ -255,6 +255,7 @@ then
     " 1>&2
 
 #  -std=gnu99 -std=c++23
+# EXTRA_EXPORTED_RUNTIME_METHODS => EXPORTED_RUNTIME_METHODS after 3.1.52
 
     cat > final_link.sh <<END
 #!/bin/bash
@@ -263,7 +264,7 @@ emcc \\
  $LOPTS \\
  -D__PYDK__=1 -DNDEBUG \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=4MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
-    -sEXTRA_EXPORTED_RUNTIME_METHODS=FS \\
+    -sEXPORTED_RUNTIME_METHODS=FS \\
      $CF_SDL \\
      --use-preload-plugins \\
      $STDLIBFS \\
