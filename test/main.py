@@ -1,16 +1,54 @@
+# this test is only for pygbag internals
+# to learn about pygbag, go to https://pygame-web.github.io instead.
+
+# Green threads are ordered at runtime unlike system threads.
+# they may be usefull for ECS and porting software to async web.
+
+# on native, this test show how threading model can be toxic for drawing.
+# do not use this code :
+#   hardware threads are better used for I/O, neural net, pipelines
+
+
+import builtins
+
 # fixme should be auto
-try:
+if __import__("os").uname().machine.startswith("wasm"):
     import aio.gthread as threading
-except:
-    ...
+
+else:
+    # native case
+
+    import asyncio as aio
+    aio.exit = False
+    aio.frame = 1.0/60
+    aio.sync = False
+
+    # because threading target= does not handle generators
+    def synchronized(f):
+        def run(*argv,**kw):
+            global Native
+            gen = f(*argv,**kw)
+            while True:
+                deadline = time.time()+aio.frame
+                if next(gen) is StopIteration:
+                    return
+                alarm = deadline - time.time()
+                if alarm>0:
+                    time.sleep(alarm)
+        return run
+
 
 import asyncio
 import pygame
-
+import time
 
 pygame.init()
 
 import module
+
+print()
+print(f"{aio=} {aio.sync=}")
+print()
 
 
 def new_screen(title):
@@ -23,30 +61,53 @@ def new_screen(title):
 from threading import Thread
 
 
-# still bugs in that thread model
 class Moving_svg(Thread):
-    async def run(self):
-        global count, screen
-        bmp = pygame.image.load("img/tiger.svg")
-        way = 1
-        while await self:
-            decal = abs(count) % 100
-            if not decal:
-                way = -way
-            screen.blit(bmp, (50 + (way * decal), 50 + (-way * decal)))
+
+    def __init__(self):
+        super().__init__()
+        print(f"{self.native_id=} {self.ident=} {self.is_alive()=}")
+        self.surf = pygame.image.load("img/tiger.svg")
+        self.way = 1
+        self.auth = False
+
+    def loop(self):
+        decal = abs(count) % 100
+        if not decal:
+            self.way = -self.way
+        self.win.blit(self.surf, (50 + (self.way * decal), 50 + (-self.way * decal)))
+
+
+    @synchronized
+    def run(self):
+        print(f"{self.native_id=} {self.ident=} {self.is_alive()=}")
+        while self:
+            if self.auth:
+                self.loop()
+                self.auth = False
+            yield aio
 
 
 # ok model
+moving_svg = None
 
-
+@synchronized
 def color_background(win):
+    global moving_svg, count
     while not aio.exit:
-        win.fill((count % 50, count % 50, count % 50))
+        if 1:
+            if moving_svg:
+                if not moving_svg.auth:
+                    win.fill((count % 50, count % 50, count % 50))
+                    moving_svg.auth = True
+            else:
+                win.fill((count % 50, count % 50, count % 50))
         yield aio
 
 
+@synchronized
 def moving_bmp(win):
     global count
+    print("moving_bmp started")
     bmp = pygame.image.load_basic("img/pygc.bmp")
     way = 1
     while not aio.exit:
@@ -57,9 +118,10 @@ def moving_bmp(win):
         win.blit(bmp, (50 + (way * decal), 50 + (-way * decal)))
         yield aio
 
-
+@synchronized
 def moving_png(win):
     global count
+    print("moving_png started")
     try:
         png = pygame.image.load("img/pygc.png")
     except:
@@ -77,7 +139,7 @@ def moving_png(win):
 
 
 async def main():
-    global count, bmp
+    global count, bmp, moving_svg
 
     # using the whole display.
     win = new_screen("TEST")
@@ -87,20 +149,31 @@ async def main():
     # still bugs in that thread model
     # mbmp = Moving_bmp()
 
-    # Green threads are ordered at runtime unlike system threads.
 
     # erase and fill
-    t1=Thread(target=color_background, args=[win])
-    t1.start()
+    (t1:=Thread(target=color_background, args=[win])).start()
+
+
+
+    moving_svg = Moving_svg()
+    moving_svg.win = win
+    print(f"{moving_svg.native_id=} {moving_svg.ident=} {moving_svg.is_alive()=}")
+    moving_svg.start()
+
 
     # 1st object to draw
-    t2=Thread(target=moving_png, args=[win])
+    t2=Thread(target=moving_bmp, args=[win])
     t2.start()
 
     # 2nd
-    (t3:=Thread(target=moving_bmp, args=[win])).start()
+
+    t3=Thread(target=moving_png, args=[win])
+    t3.start()
+
 
     print( t1.native_id , t2.native_id , t3.native_id)
+
+
 
     while True:
         if count >= 0:
@@ -112,10 +185,19 @@ async def main():
 """
             )
 
+#        if moving_svg and moving_svg.native_id:
+#            moving_svg.loop()
+
         pygame.display.update()
+
+        if not aio.sync:
+            time.sleep(aio.frame) # frametime idle
+
         await asyncio.sleep(0)
 
+
         if count < -60 * 30:  # about * seconds
+            print("exit game loop")
             break
 
         count = count - 1

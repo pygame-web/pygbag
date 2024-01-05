@@ -105,7 +105,7 @@ if not defined("classmethods"):
 
 if not defined("__WASM__"):
     try:
-        # that sym cannot be overloaded in the simulator
+        # that sym cannot is not overloaded in the simulator
         if __import__("os").uname().machine.startswith("wasm"):
             import __WASM__
         else:

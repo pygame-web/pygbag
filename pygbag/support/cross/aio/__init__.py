@@ -11,6 +11,8 @@ load_avg = "0.000"
 load_min = "0.000"
 load_max = "0.000"
 
+frame = 1.0/60
+
 builtins.aio = sys.modules[__name__]
 
 # try to acquire syslog early
@@ -137,6 +139,10 @@ def overloaded(i, *attrs):
 
 define("overloaded", overloaded)
 del overloaded
+
+# by default no thread support.
+sync = True
+builtins.synchronized = lambda f:f
 
 
 started = False

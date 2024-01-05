@@ -101,7 +101,8 @@ class Thread:
         self.name = name
         self.slice = 0
         self.last = aio.rtclock()
-        self.native_id = id(self)
+        self.native_id = None
+        self.ident = None
         if target:
             if hasattr(target, "run"):
                 if name is None:
@@ -170,11 +171,13 @@ class Thread:
         if self.run:
             if not inspect.iscoroutinefunction(self.run):
                 self.status = True
-                aio.create_task(self.wrap())
+                thr = self.wrap()
             else:
                 coro = self.run(*self.args, **self.kwargs)
-                pdb("168:", self.name, "starting", coro)
-                aio.create_task(self.runner(coro))
+                pdb("177:", self.name, "starting", coro)
+                thr = self.runner(coro)
+            self.ident = self.native_id = id(self)
+            aio.create_task(thr)
             aio.pstab[self.name].append(self)
 
         return self
