@@ -421,7 +421,7 @@ frameborder="1"
     <script type="application/javascript">
 
     async function custom_onload(debug_hidden) {
-        // this is called before anythinh python is loaded
+        // this is called before anything python is loaded
         // make your js customization here
         console.log(__FILE__, "custom_onload")
 
@@ -430,6 +430,13 @@ frameborder="1"
         transfer.hidden = debug_hidden
         info.hidden = debug_hidden
         box.hidden =  debug_hidden
+
+        // prevent ff horizontal scroll
+        window.addEventListener("keydown", function(e) {
+            if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+        }, false);
     }
 
     function custom_prerun(){
