@@ -316,9 +316,15 @@ class shell:
     def pg_init(cls):
         import pygame
 
+        screen = None
         if pygame.display.get_init():
-            return pygame.display.get_surface()
-        screen = pygame.display.set_mode([cls.screen_width, cls.screen_height])
+            screen = pygame.display.get_surface()
+        else:
+            pygame.init()
+            pygame.display.get_init()
+
+        if not screen:
+            screen = pygame.display.set_mode([cls.screen_width, cls.screen_height])
         return screen
 
     @classmethod

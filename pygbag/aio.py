@@ -15,14 +15,15 @@ if hasattr(os, "uname") and not os.uname().machine.startswith("wasm"):
         # import aioconsole, aiohttp
         import aiohttp
     except Exception as e:
+        pkglist = "aiohttp asyncio_socks_server token_utils"
         print(
             e,
             f"""
 
-pygbag simulator rely on : aiohttp asyncio_socks_server token_util
+pygbag simulator rely on : {pkglist}
 please use :
 
-    {sys.executable} -m pip install aiohttp asyncio_socks_server token_util
+    {sys.executable} -m pip install {pkglist}
 
 """,
         )
@@ -64,7 +65,7 @@ please use :
     aio.started = True
 
     while not aio.exit:
-        next = time.time() + 0.0155
+        next = time.time() + 0.016
         try:
             aio.loop._run_once()
         except KeyboardInterrupt:
@@ -73,8 +74,8 @@ please use :
         dt = next - time.time()
         if dt < 0:
             past = int(-dt * 1000)
-            # do not spam for <4 ms late (50Hz vs 60Hz)
-            if past > 4:
+            # do not spam for <5 ms late (50Hz vs 60Hz)
+            if past > 5:
                 print(f"\raio: violation frame is {past} ms late")
             # too late do not sleep at all
         else:

@@ -202,7 +202,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
     sys.modules["embed"] = __EMSCRIPTEN__
 
     print(" =============== pythonrc =================")
-    with open(support / "pythonrc.py", "r") as file:
+    with open(support / "cpythonrc.py", "r") as file:
         exec(file.read(), globals(), globals())
 
     print(" =============== /pythonrc =================")

@@ -81,7 +81,29 @@ if hasattr(sys, "_emscripten_info"):
         sys.print_exception(e)
         pdb(__file__, ":47 no browser/emscripten modules yet", e)
 
-    def ffi(arg):
+    AnimatedFrames = None
+
+    def requestAnimationFrame(fn):
+        global AnimatedFrames
+        if AnimatedFrames is None:
+            import asyncio
+
+            AnimatedFrames = []
+
+            async def main():
+                while not aio.exit:
+                    if len(AnimatedFrames):
+                        AnimatedFrames.pop(0)(timestamp=0.0)
+                    await asyncio.sleep(0)
+
+            asyncio.run(main())
+
+        AnimatedFrames.append(fn)
+
+    # just a workaround until bridge support js "options" from **kw
+    def ffi(arg=0xDEADBEEF, **kw):
+        if arg is 0xDEADBEEF:
+            return window.JSON.parse(json.dumps(kw))
         return window.JSON.parse(json.dumps(arg))
 
     async def jsiter(iterator):

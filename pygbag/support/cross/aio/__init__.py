@@ -11,7 +11,7 @@ load_avg = "0.000"
 load_min = "0.000"
 load_max = "0.000"
 
-frame = 1.0/60
+frame = 1.0 / 60
 
 builtins.aio = sys.modules[__name__]
 
@@ -142,7 +142,7 @@ del overloaded
 
 # by default no thread support.
 sync = True
-builtins.synchronized = lambda f:f
+builtins.synchronized = lambda f: f
 
 
 started = False
