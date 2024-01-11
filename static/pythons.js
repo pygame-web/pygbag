@@ -907,57 +907,71 @@ console.log(" @@@@@@@@@@@@@@@@@@@@@@ 3D CANVAS @@@@@@@@@@@@@@@@@@@@@@")
 
 // file transfer (upload)
 
+
+
+
+function readFileAsArrayBuffer(file, success, error) {
+    const fr = new FileReader();
+    fr.addEventListener('error', error, false);
+    if (fr.readAsBinaryString) {
+        fr.addEventListener('load', function () {
+            var string = this.resultString != null ? this.resultString : this.result;
+            var result = new Uint8Array(string.length);
+            for (var i = 0; i < string.length; i++) {
+                result[i] = string.charCodeAt(i);
+            }
+            success(result.buffer);
+        }, false);
+        return fr.readAsBinaryString(file);
+    } else {
+        fr.addEventListener('load', function () {
+            success(this.result);
+        }, false);
+        return fr.readAsArrayBuffer(file);
+    }
+}
+
+function transfer_uploads(files, use_names){
+    //global uploaded_file_count = 0
+    function transfer_file(frec) {
+        return (data) => {
+            let pydata = JSON.stringify(frec)
+            console.warn("UPLOAD", pydata, frec.text );
+            python.FS.writeFile(frec.text, new Int8Array(data) )
+            queue_event("upload", pydata )
+        }
+    }
+    for (var i=0;i<files.length;i++) {
+        uploaded_file_count++;
+        let file = files[i]
+        var datapath
+        if (use_names){
+            datapath = `/tmp/${file.name}`
+            //console.log(file.name, file.type, "to", datapath)
+        } else {
+            datapath = `/tmp/upload-${uploaded_file_count}`
+        }
+
+        let frec = {}
+            frec["name"] = file.name
+            frec["size"] = file.size
+            frec["mimetype"] = file.type
+            frec["text"] = datapath
+
+        readFileAsArrayBuffer(file, transfer_file(frec), console.error )
+    }
+
+}
+window.transfer_uploads = transfer_uploads
+window.uploaded_file_count = 0
+
 async function feat_fs(debug_hidden) {
-    var uploaded_file_count = 0
 
     if (!window.BrowserFS) {
         await import_browserfs()
     }
 
-    function readFileAsArrayBuffer(file, success, error) {
-        var fr = new FileReader();
-        fr.addEventListener('error', error, false);
-        if (fr.readAsBinaryString) {
-            fr.addEventListener('load', function () {
-                var string = this.resultString != null ? this.resultString : this.result;
-                var result = new Uint8Array(string.length);
-                for (var i = 0; i < string.length; i++) {
-                    result[i] = string.charCodeAt(i);
-                }
-                success(result.buffer);
-            }, false);
-            return fr.readAsBinaryString(file);
-        } else {
-            fr.addEventListener('load', function () {
-                success(this.result);
-            }, false);
-            return fr.readAsArrayBuffer(file);
-        }
-    }
 
-    async function transfer_uploads(){
-        //let reader = new FileReader();
-
-        for (var i=0;i<dlg_multifile.files.length;i++) {
-            let file = dlg_multifile.files[i]
-            const datapath = `/tmp/upload-${uploaded_file_count}`
-            var frec = {}
-                frec["name"] = file.name
-                frec["size"] = file.size
-                frec["mimetype"] = file.type
-                frec["text"] = datapath
-
-            function file_done(data) {
-                const pydata = JSON.stringify(frec)
-                console.warn("UPLOAD", pydata );
-                python.FS.writeFile(datapath, new Int8Array(data) )
-                queue_event("upload", pydata )
-            }
-            readFileAsArrayBuffer(file, file_done, console.error )
-            uploaded_file_count++;
-        }
-
-    }
     var dlg_multifile = document.getElementById("dlg_multifile")
     if (!dlg_multifile) {
         dlg_multifile = document.createElement('input')
@@ -967,7 +981,12 @@ async function feat_fs(debug_hidden) {
         dlg_multifile.hidden = debug_hidden
         document.body.appendChild(dlg_multifile)
     }
-    dlg_multifile.addEventListener("change", transfer_uploads );
+
+    function dlg_multifile_transfer_uploads(){
+        return transfer_uploads(dlg_multifile.files, false)
+    }
+
+    dlg_multifile.addEventListener("change", dlg_multifile_transfer_uploads );
 
 }
 

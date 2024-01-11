@@ -7,7 +7,8 @@
 #
 pushd pygbag/support
 cp -r _xterm_parser ${SDKROOT}/prebuilt/emsdk/common/site-packages/
-cp pygbag_*.py readline.py typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
+#cp pygbag_*.py readline.py typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
+cp typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
 popd
 
 
@@ -50,9 +51,16 @@ rm $DIST_DIR/${DISTRO}${PYMAJOR}${PYMINOR}/main.* 2>/dev/null
 # git does not keep empty dirs
 mkdir -p tests/assets tests/code
 
-ALWAYS_ASSETS=$(realpath tests/assets)
+
 ALWAYS_CODE=$(realpath tests/code)
 
+#ALWAYS_ASSETS=$(realpath tests/assets)
+ALWAYS_ASSETS=$(realpath assets/cpython)
+
+for asset in readline pyodide pygbag_app pygbag_fsm pygbag_host pygbag_ui pygbag_ux
+do
+    [ -f ${ALWAYS_ASSETS}/${asset}.py ] || ln ./pygbag/support/${asset}.py ${ALWAYS_ASSETS}/${asset}.py
+done
 
 
 # crosstools, aio and simulator most likely from pygbag

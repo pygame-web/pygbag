@@ -694,7 +694,15 @@ ________________________
 
             # auto import plumbing to avoid rely too much on import error
             maybe_wanted = list(TopLevel_async_handler.list_imports(code, file=None, hint=hint))
-            DBG(f"635: {maybe_wanted=}")
+            DBG(f"635: {maybe_wanted=} known failed {aio.pep0723.hint_failed=}")
+
+            # FIXME use an hybrid wheel
+            if 'pyodide' in aio.pep0723.hint_failed:
+                if 'zengl' in maybe_wanted:
+                    maybe_wanted.remove('zengl')
+                    maybe_wanted.appedn('beautifulsoup4')
+
+
             for dep in maybe_wanted:
                 if not dep in deps:
                     deps.append(dep)
@@ -1237,6 +1245,8 @@ if not aio.cross.simulator:
                         DBG(f"1187: {repo['-CDN-']=} does not provide {want=}")
                     else:
                         print("1189: no pkg repository available")
+                    if not want in aio.pep0723.hint_failed:
+                        aio.pep0723.hint_failed.append(want)
 
         # TODO: re order repo on failures
         # TODO: try to download from pypi with

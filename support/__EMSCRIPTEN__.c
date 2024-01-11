@@ -1006,6 +1006,8 @@ main(int argc, char **argv)
     setenv("TERMINFO", "/usr/share/terminfo", 0);
     setenv("COLUMNS","132", 0);
     setenv("LINES","30", 0);
+    setenv("PYGBAG","1", 1);
+
 //    setenv("PYTHONINTMAXSTRDIGITS", "0", 0);
     setenv("LANG", "en_US.UTF-8", 0);
 

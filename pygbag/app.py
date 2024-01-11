@@ -26,6 +26,10 @@ from . import web
 devmode = "--dev" in sys.argv
 
 DEFAULT_SCRIPT = "main.py"
+DEFAULT_CONSOLE = 25
+DEFAULT_LINES = 57
+DEFAULT_COLUMNS = 132
+
 CACHE_ROOT = Path("build")
 CACHE_PATH = CACHE_ROOT / "web-cache"
 CACHE_VERSION = CACHE_ROOT / "version.txt"
@@ -197,6 +201,12 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
     )
 
     parser.add_argument(
+        "--PYBUILD",
+        default="3.11",
+        help="Specify python version [default:%s]" % "3.11",
+    )
+
+    parser.add_argument(
         "--width",
         default=DEFAULT_WIDTH,
         help="framebuffer width [default:%d]" % DEFAULT_WIDTH,
@@ -205,13 +215,25 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
     parser.add_argument(
         "--height",
         default=DEFAULT_HEIGHT,
-        help="framebuffer width [default:%d]" % DEFAULT_HEIGHT,
+        help=f"framebuffer width [default:{DEFAULT_HEIGHT}]",
     )
 
     parser.add_argument(
-        "--PYBUILD",
-        default="3.11",
-        help="Specify python version [default:%s]" % "3.11",
+        "--COLUMNS",
+        default=DEFAULT_COLUMNS,
+        help=f"terminal columns [default:{DEFAULT_COLUMNS}]",
+    )
+
+    parser.add_argument(
+        "--LINES",
+        default=DEFAULT_LINES,
+        help=f"terminal lines [default:{DEFAULT_LINES}]",
+    )
+
+    parser.add_argument(
+        "--CONSOLE",
+        default=DEFAULT_CONSOLE,
+        help=f"console lines ( adds up to terminal lines ) [default:{DEFAULT_CONSOLE}]",
     )
 
     parser.add_argument(
@@ -361,7 +383,11 @@ now packing application ....
         "spdx": "cookiecutter.spdx",
         "version": VERSION,
         "PYBUILD": args.PYBUILD,
+        "COLUMNS" : args.COLUMNS,
+        "LINES" : args.LINES,
+        "CONSOLE" : args.CONSOLE,
     }
+
 
     pygbag.config = CC
 

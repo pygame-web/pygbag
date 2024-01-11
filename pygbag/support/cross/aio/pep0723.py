@@ -50,6 +50,8 @@ if sconf["platlib"] not in sys.path:
 PATCHLIST = []
 HISTORY = []
 
+hint_failed = []
+
 
 class Config:
     READ_722 = False

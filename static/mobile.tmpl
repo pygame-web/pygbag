@@ -1,4 +1,4 @@
-<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js" type=module id="site" data-COLUMNS=132 data-LINES=57 data-CONSOLE=25 data-python="python{{cookiecutter.PYBUILD}}" data-os="vtx,fs,snd,gui,fbdev" async defer>#<!--
+<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js" type=module id="site" data-COLUMNS={{cookiecutter.COLUMNS}} data-LINES={{cookiecutter.LINES}} data-CONSOLE={{cookiecutter.CONSOLE}} data-python="python{{cookiecutter.PYBUILD}}" data-os="vtx,fs,snd,gui,fbdev" async defer>#<!--
 
 print("""
 Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
@@ -24,17 +24,17 @@ from pathlib import Path
 import aio
 import aio.fetch
 
-if platform.window.location.host.find('localhost')>=0:
-    aio.fetch.FS("""
-http://localhost:8000/pygbag/pygbag/support/
-. ~ .
-├── offline.png
-├── pygbag_app.py
-├── pygbag_fsm.py
-├── pygbag_host.py
-├── pygbag_ui.py
-└── pygbag_ux.py
-""")
+#if platform.window.location.host.find('localhost')>=0:
+#    aio.fetch.FS("""
+#http://localhost:8000/pygbag/pygbag/support/
+#. ~ .
+#├── offline.png
+#├── pygbag_app.py
+#├── pygbag_fsm.py
+#├── pygbag_host.py
+#├── pygbag_ui.py
+#└── pygbag_ux.py
+#""")
 
 
 
@@ -61,6 +61,9 @@ async def custom_site():
 
     platform.window.transfer.hidden = true
     platform.window.canvas.style.visibility = "visible"
+
+
+
 
     console = app.console.get()
 
@@ -179,32 +182,21 @@ async def custom_site():
     embed.run()
 
 
-    frames = []
+
 
     loop = asyncio.get_event_loop()
 
 
-    print("mobile.tmpl: running main")
+    # mypyc/hpy require modules.
+    print("mobile.tmpl: running main ( as a __main__ module")
 
+    # get symbols of "main" for REPL "__main__"
     import main
 
     for k,v in vars(main).items():
         if not k.startswith('_'):
             globals()[k]=v
 
-    # get symbols of "main" for REPL "__main__"
-
-#    if 0:
-
-#        await shell.source(main, callback=ui_callback)
-
-#        # if you don't reach that step
-#        # your main.py has an infinite sync loop somewhere !
-#        print("mobile.tmpl: ready")
-
-#        shell.interactive()
-    # start async top level repl machinery if not started
-    # add a console in any case when requested.
 
     def console_display():
         if len(ui.clog):
@@ -219,17 +211,34 @@ async def custom_site():
 
             TTY.prompts.append(1)
 
+
+    # this tty is program normal flow
+    ui.goto_xy(1,1)
+
+    # so save is done here
+    ESC("7")
+
+    ui.goto_xy(1, app.TTY.LINES + app.TTY.CONSOLE)
+    print(">>> ", end=sys.__eot__)
+
+
     try:
         while not app.TTY.closed:
+            ESC("8")
+            while len(platform.frames):
+                frame = platform.frames.pop(0)
+                # should not be used at all or PTY context required
+#                if inspect.iscoroutinefunction(frame):
+#                    await frame(timestamp=0.0)
+#                else:
+                frame(timestamp=0.0)
+            ESC("7")
 
-            while len(frames):
-                frame = frames.pop(0)
-                if frame:
-                    await frame
             await asyncio.sleep(app.sleep_delay)
 
             if not PyConfig.interactive:
                 continue
+
 
     #        if (last_state != fsm.state):
     #            app.log(f"{last_state}=>{fsm.state}")
@@ -270,6 +279,8 @@ async def custom_site():
             # console zone ( only when mouse hovering )
             elif TTY.console:
                 # readline editing
+                # console prompt  zone #todo pos cursor readline
+                ui.goto_xy(5, app.TTY.LINES + app.TTY.CONSOLE)
 
                 TTY.prompt()
 
@@ -284,7 +295,7 @@ async def custom_site():
                 ...
                 #frames.append( tetryscale.pygame.loop() )
 
-            # console zone ( display, always )
+            # console zone ( display, always, force scroll by display on last line )
             console_display()
 
 
@@ -350,7 +361,7 @@ config = {
     ume_block : {{cookiecutter.ume_block}},
     can_close : {{cookiecutter.can_close}},
     archive : "{{cookiecutter.archive}}",
-    gui_debug : 3,
+    gui_debug : 1.5,
     cdn : "{{cookiecutter.cdn}}",
     autorun : {{cookiecutter.autorun}},
     PYBUILD : "{{cookiecutter.PYBUILD}}"
@@ -405,6 +416,17 @@ config = {
             right: 0;
         }
 
+        canvas.moved {
+            border: 0px none;
+            background-color: transparent;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+
+            padding: 0;
+            margin: 0 auto;
+        }
+
         body {
             font-family: arial;
             margin: 0;
@@ -418,11 +440,16 @@ config = {
            right:0px;
         }
 
+        .rightpane{
+            position:absolute;
+            left : 50%;
+        }
+
         .bottomright {
             position:absolute;
-            top: 40%;
+            top: 70%;
             right: 0px;
-            height: 60%;
+            height: 30%;
         }
 
         .center {
@@ -433,7 +460,7 @@ config = {
 
         .framed{
            position: relative;
-           top: 0px;
+           top: 00px;
            right: 0px;
            border: 1px solid white;
         }
@@ -441,7 +468,8 @@ config = {
 
 </head>
 
-<body>
+<body id=body>
+
 
     <div id="transfer" align=center>
         <div class="emscripten" id="status">Downloading...</div>
@@ -454,13 +482,17 @@ config = {
     <canvas class="emscripten" id="canvas"
 width="1px"
 height="1px"
-    oncontextmenu="event.preventDefault()" tabindex=1>
+    oncontextmenu="event.preventDefault()" tabindex=0>
     </canvas>
+
 
     <div id=html></div>
 
+
     <div id=crt class=bottomright>
+
         <div id=box class=emscripten_border hidden=true>
+
         <canvas id=canvas3d class="emscripten"
 width="512px"
 height="512px"
@@ -468,7 +500,7 @@ height="512px"
         </canvas>
 
 <iframe id="dlhandler" class="framed" name="dlhandler"
-width="470px" height="90%"
+width="470px" height="95%"
 loading="lazy"
 allowtransparency="true"
 style="z-index: 10; style="background: #FFFFFF;"
@@ -495,10 +527,56 @@ frameborder="1"
     </div>
 
     <div id="pyconsole">
-        <div id="terminal" tabIndex=1 align="left"></div>
+        <div id="terminal" tabIndex=1 align="left"
+            ondrag="dragHandler(event);"
+            ondrop="dropHandler(event);"
+            ondragover="dragOverHandler(event);">
+        </div>
     </div>
 
 <script type="application/javascript">
+
+var dragged = null;
+function dragHandler(event) {
+    dragged = event.target;
+}
+function dropHandler(ev) {
+
+    // prevent default action (open as a link for some elements)
+    ev.preventDefault();
+
+    // Loop through the dropped items and log their data
+    filelist = []
+
+    for (const item of ev.dataTransfer.items) {
+
+        if (item.kind === "file") {
+            filelist.push(item.getAsFile())
+            continue;
+        }
+
+        //if (item.kind === "string" && item.type.match(/^text\/plain/)) {
+        //if (item.kind === "string" && item.type.match(/^text\/html/)) {
+        //if (item.kind === "string" && item.type.match(/^text\/uri-list/)) {
+        console.log('?',file.name, item.type )
+    }
+
+    console.log("dropHandler", filelist.length)
+    if (filelist.length)
+        transfer_uploads(filelist, true)
+    dragged = null;
+}
+
+function dragOverHandler(event) {
+    if (!dragged) {
+        dragged = event.target;
+        console.log("dragOverHandler", event.dataTransfer)
+    }
+    event.preventDefault();
+
+}
+
+
 
 async function custom_onload(debug_hidden) {
     // this is called before anything python is loaded

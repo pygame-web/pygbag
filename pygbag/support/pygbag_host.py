@@ -2,27 +2,6 @@ import sys
 import pygbag
 from pathlib import Path
 
-## ====================== pygame
-
-# def pg_load(fn, alpha=True):
-#    import pygame
-#    from pathlib import Path
-
-#    if Path(fn).is_file():
-#        media = pygame.image.load(fn)
-#    else:
-#        media = pygame.image.load( Path(__file__).parent / "offline.png" )
-
-#    try:
-#        if alpha:
-#            return media.convert_alpha()
-#        else:
-#            return media.convert()
-#    # offscreen case
-#    except:
-#        return media
-
-
 # ======================= network
 
 
