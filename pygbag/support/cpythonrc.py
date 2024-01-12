@@ -698,10 +698,9 @@ ________________________
 
             # FIXME use an hybrid wheel
             if 'pyodide' in aio.pep0723.hint_failed:
-                if 'zengl' in maybe_wanted:
-                    maybe_wanted.remove('zengl')
-                    maybe_wanted.appedn('beautifulsoup4')
-
+                if '_zengl' in maybe_wanted:
+                    maybe_wanted.remove('_zengl')
+                maybe_wanted.append('beautifulsoup4')
 
             for dep in maybe_wanted:
                 if not dep in deps:

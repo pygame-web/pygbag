@@ -666,7 +666,7 @@ Function_call(Function *self, PyObject *args, PyObject *kwargs) {
         try {
           var arg_values = [];
           for (var i = 0; i < $2; ++i) {
-            var arg_handle = getValue($3+i*4, 'i32');
+            var arg_handle = getValue($3+i*4, "i32");
             arg_handles.push(arg_handle);
             arg_values.push(Emval.toValue(arg_handle));
           }
@@ -893,7 +893,7 @@ static EM_VAL py_to_emval(PyObject *val) {
           }
           var argv = _malloc(argc * 4);
           for (var i = 0; i < argc; ++i) {
-            setValue(argv+i*4, Emval.toHandle(arguments[i]), 'i32');
+            setValue(argv+i*4, Emval.toHandle(arguments[i]), "i32");
           }
           var result = __py_call($1, $2, Emval.toHandle(this), argc, argv);
           return Emval.toValue(result);
