@@ -212,7 +212,7 @@ echo CPY_CFLAGS=$CPY_CFLAGS
 
 if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $CPY_CFLAGS $CF_SDL $CPOPTS \
  -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden \
- -I${PYDIR}/internal -I${PYDIR} -I./support -I./src/hpy/hpy/devel/include -DPy_BUILD_CORE\
+ -I${PYDIR}/internal -I${PYDIR} -I./support -I./external/hpy/hpy/devel/include -DPy_BUILD_CORE\
  -o build/${MODE}.o support/__EMSCRIPTEN__-pymain.c
 then
     STDLIBFS="--preload-file build/stdlib-rootfs/python${PYBUILD}@/usr/lib/python${PYBUILD}"

@@ -8,7 +8,7 @@ export CONFIG=${CONFIG:-$SDKROOT/config}
 
 echo "
 
-    * building HPy for ${CIVER}, PYBUILD=$PYBUILD => CPython${PYMAJOR}.${PYMINOR}
+    * building _ctypes for ${CIVER}, PYBUILD=$PYBUILD => CPython${PYMAJOR}.${PYMINOR}
             PYBUILD=$PYBUILD
             EMFLAVOUR=$EMFLAVOUR
             SDKROOT=$SDKROOT

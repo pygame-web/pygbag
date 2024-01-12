@@ -1,1 +1,1 @@
-recursive-include pygbag/support *
+recursive-include src/pygbag/support *

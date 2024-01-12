@@ -48,8 +48,8 @@ else
     fi
 fi
 
-mkdir -p src
-pushd $(pwd)/src
+mkdir -p external
+pushd $(pwd)/external
 
 
 echo "

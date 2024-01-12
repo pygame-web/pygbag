@@ -19,8 +19,8 @@ echo "
 
 
 
-mkdir -p src
-pushd $(pwd)/src
+mkdir -p external
+pushd $(pwd)/external
 
 if [ -d hpy ]
 then
@@ -55,7 +55,7 @@ popd
 
 #mkdir -p build/hpy
 
-pushd src/hpy
+pushd external/hpy
 
 # build for host simulator
 ${HPY} setup.py install
