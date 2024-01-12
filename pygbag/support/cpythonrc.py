@@ -217,6 +217,10 @@ if PyConfig is None:
     print(" - running in wasm simulator - ")
     aio.cross.simulator = True
 else:
+
+    # for the various emulations/tools provided
+    sys.path.append('/data/data/org.python/assets')
+
     PyConfig["pkg_repolist"] = []
 
     aio.cross.simulator = False
@@ -698,6 +702,7 @@ ________________________
 
             # FIXME use an hybrid wheel
             if 'pyodide' in aio.pep0723.hint_failed:
+
                 for no_need in ('_zengl','pyodide','beautifulsoup4'):
                     if no_need in maybe_wanted:
                         maybe_wanted.remove(no_need)

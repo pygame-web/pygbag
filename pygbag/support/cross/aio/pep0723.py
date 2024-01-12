@@ -48,7 +48,8 @@ if sconf["platlib"] not in sys.path:
     sys.path.append(sconf["platlib"])
 
 PATCHLIST = []
-HISTORY = []
+# fast skip list
+HISTORY = ["pyodide"]
 
 hint_failed = []
 
