@@ -5,7 +5,10 @@
 . ${CONFIG:-$SDKROOT/config}
 
 #
-pushd pygbag/support
+
+ln -s $(pwd)/src/pygbag $(pwd)/pygbag
+
+pushd src/pygbag/support
 cp -r _xterm_parser ${SDKROOT}/prebuilt/emsdk/common/site-packages/
 #cp pygbag_*.py readline.py typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
 cp typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
@@ -59,14 +62,14 @@ ALWAYS_ASSETS=$(realpath assets/cpython)
 
 for asset in readline pyodide pygbag_app pygbag_fsm pygbag_host pygbag_ui pygbag_ux
 do
-    [ -f ${ALWAYS_ASSETS}/${asset}.py ] || ln ./pygbag/support/${asset}.py ${ALWAYS_ASSETS}/${asset}.py
+    [ -f ${ALWAYS_ASSETS}/${asset}.py ] || ln ./src/pygbag/support/${asset}.py ${ALWAYS_ASSETS}/${asset}.py
 done
 
 
 # crosstools, aio and simulator most likely from pygbag
-if [ -d pygbag/support/cross ]
+if [ -d src/pygbag/support/cross ]
 then
-    CROSS=$(realpath pygbag/support/cross)
+    CROSS=$(realpath src/pygbag/support/cross)
     SUPPORT_FS="$SUPPORT_FS --preload-file ${CROSS}@/data/data/org.python/assets/site-packages"
 else
     echo "
@@ -319,11 +322,11 @@ END
         if $USECP
         then
             cp -R static/* ${DIST_DIR}/
-            cp pygbag/support/cpythonrc.py ${DIST_DIR}/cpythonrc.py
+            cp src/pygbag/support/cpythonrc.py ${DIST_DIR}/cpythonrc.py
             # for simulator
-            cp pygbag/support/cpythonrc.py ${SDKROOT}/support/
+            cp src/pygbag/support/cpythonrc.py ${SDKROOT}/support/
         else
-            [ -f ${DIST_DIR}/cpythonrc.py ] || ln pygbag/support/cpythonrc.py ${DIST_DIR}/cpythonrc.py
+            [ -f ${DIST_DIR}/cpythonrc.py ] || ln src/pygbag/support/cpythonrc.py ${DIST_DIR}/cpythonrc.py
             pushd static
             for fn in *
             do
