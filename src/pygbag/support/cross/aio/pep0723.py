@@ -421,6 +421,8 @@ async def check_list(code=None, filename=None):
 
             if len(hit):
                 print("found on pygbag repo and installed to env :", hit)
+                if hit not in HISTORY:
+                    HISTORY.append(hit)
             else:
                 still_missing.append(pkg)
 
