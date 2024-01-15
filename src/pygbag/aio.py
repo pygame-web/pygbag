@@ -23,7 +23,7 @@ if hasattr(os, "uname") and not os.uname().machine.startswith("wasm"):
 pygbag simulator rely on : {pkglist}
 please use :
 
-    {sys.executable} -m pip install {pkglist}
+    MULTIDICT_NO_EXTENSIONS=1 {sys.executable} -m pip install {pkglist}
 
 """,
         )
