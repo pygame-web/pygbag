@@ -189,6 +189,12 @@ then
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-parentheses-equality"
     EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unknown-pragmas"
 
+
+    # FIXME 3.13
+    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-deprecated-declarations"
+
+
+
     export EMCC_CFLAGS="$EMCC_CFLAGS -DHAVE_STDARG_PROTOTYPES -DBUILD_STATIC -ferror-limit=1 -fpic"
 
     export CC=emcc

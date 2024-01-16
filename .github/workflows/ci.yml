@@ -12,7 +12,7 @@ jobs:
         BUILD_STATIC: emsdk _ctypes hpy
         STATIC: false
         BUILDS: 3.11 3.12
-        CYTHON: Cython-3.0.6-py2.py3-none-any.whl
+        CYTHON: Cython-3.0.8-py2.py3-none-any.whl
         LD_VENDOR: -sUSE_GLFW=3
 
     steps:

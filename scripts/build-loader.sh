@@ -44,6 +44,13 @@ echo "
 
 EMPIC=/opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic
 
+if echo -n $PYBUILD|grep -q 13$
+then
+    MIMALLOC="-I/opt/python-wasm-sdk/emsdk/upstream/emscripten/system/lib/mimalloc/include"
+else
+    MIMALLOC=""
+fi
+
 SUPPORT_FS=""
 
 
@@ -213,7 +220,7 @@ echo CPY_CFLAGS=$CPY_CFLAGS
 
 
 
-if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $CPY_CFLAGS $CF_SDL $CPOPTS \
+if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $MIMALLOC $CPY_CFLAGS $CF_SDL $CPOPTS \
  -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden \
  -I${PYDIR}/internal -I${PYDIR} -I./support -I./external/hpy/hpy/devel/include -DPy_BUILD_CORE\
  -o build/${MODE}.o support/__EMSCRIPTEN__-pymain.c
@@ -240,8 +247,12 @@ then
     if  echo $PYBUILD|grep -q 3.12
     then
         LINKPYTHON="Hacl_Hash_SHA2 $LINKPYTHON"
+    else
+        if  echo $PYBUILD|grep -q 3.13
+        then
+            LINKPYTHON="Hacl_Hash_SHA2 $LINKPYTHON"
+        fi
     fi
-
 
     for lib in $LINKPYTHON
     do
