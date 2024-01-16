@@ -337,7 +337,14 @@ def clear(LINES=0, CONSOLE=0, prompt=""):
 
 
 import sys
-import re
+try:
+    import re
+    ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+except:
+    class ansi_escape:
+        def sub(self, sb, line):
+            return line
+    ansi_escape = ansi_escape()
 
 
 bname_last = 0
@@ -346,7 +353,6 @@ anchor_last = 0
 
 # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
 try:
-    ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
     from _xterm_parser import XTermParser
 
     def more_data() -> bool:

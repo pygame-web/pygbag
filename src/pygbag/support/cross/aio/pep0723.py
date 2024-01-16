@@ -107,7 +107,7 @@ def read_dependency_block_723(code):
     content = []
     for line in code.split("\n"):
         if not has_block:
-            if line.strip() == "# /// pyproject":
+            if line.strip() in ["# /// pyproject","# /// script"]:
                 has_block = True
             continue
 

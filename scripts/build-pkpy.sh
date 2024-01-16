@@ -1,8 +1,10 @@
 #!/bin/bash
 reset
 
+PW=$(realpath patchwork/pykpocket)
+
 mkdir -p pythons
-if [ -f pythons/pykpocket/pykpocket_main.gen ]
+if [ -f pythons/pykpocket/format.sh ]
 then
     echo pykpocket found
 else
@@ -16,8 +18,8 @@ export CI=${CI:-false}
 
 export STATIC=${STATIC:-true}
 
-export BUILDS=1.3
-export PYBUILD=1.3
+export BUILDS=1.4
+export PYBUILD=1.4
 export MODE=main
 
 
@@ -28,9 +30,11 @@ export MODE=main
 
 pushd pythons/pykpocket/
     rm pymain
-    python3 scripts/multiline_parser.py pyque-pocket.cpp > pykpocket.gen
-    python3 scripts/multiline_parser.py pp_modules.cpp > pykpocket_modules.gen
-    python3 scripts/multiline_parser.py pyque-pocket_main.cpp > pykpocket_main.gen
+    python3 $PW/multiline_parser.py $PW/pyque-pocket.cpp > pykpocket.gen
+    python3 $PW/multiline_parser.py $PW/pp_modules.cpp > pykpocket_modules.gen
+    python3 $PW/multiline_parser.py $PW/pyque-pocket_main.cpp > pykpocket_main.cpp
+    cp $PW/pygbag.h ./
+    cp $PW/pymain.c ./
 
     mkdir -p ../pykpocket.html
 

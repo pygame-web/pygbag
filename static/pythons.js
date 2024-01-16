@@ -578,6 +578,7 @@ except:
     with open(__pythonrc__, "r") as pythonrc:
         exec(pythonrc.read().replace(chr(92)+chr(10),""), globals())
     PKPY = True
+
 import os
 def os_path_is_dir(path):
     try:
@@ -593,11 +594,12 @@ def os_path_is_file(path):
     except:
         return False
 
+import sys, json
+PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
+pfx=PyConfig["prefix"]
+
 if not PKPY:
 
-    import sys, json
-    PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
-    pfx=PyConfig["prefix"]
 
     if os_path_is_dir(pfx):
         sys.path.append(pfx)
@@ -2356,7 +2358,7 @@ function auto_conf(cfg) {
         } else {
             if (pystr.search('pkpy')>=0) {
                 vm.script.interpreter = "pkpy"
-                config.PYBUILD = pystr.substr(4) || "1.3"
+                config.PYBUILD = pystr.substr(4) || "1.4"
             } else {
                 if (pystr.search('wapy')>=0) {
                     vm.script.interpreter = "wapy"
