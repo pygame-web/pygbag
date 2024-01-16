@@ -129,6 +129,7 @@ shell.cd()
 #=========================== sys ===============================
 
 import sys
+sys.path = []
 sys.modules = []
 sys.orig_argv = []
 sys.argv = []
@@ -601,6 +602,7 @@ class Tui:
 
 
 platform.document.body.style.background = "#555555"
+platform.window.document.body.style.background = "#000000"
 
 
 from pygbag_ui import TTY, clear, goto_xy
