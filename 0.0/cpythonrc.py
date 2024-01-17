@@ -1463,18 +1463,21 @@ import aio.recycle
 # DO NOT ADD ANYTHING FROM HERE OR APP RECYCLING WILL TRASH IT
 
 #
-
-LOCK = False
+try:
+    LOCK
+except:
+    import builtins
+    builtins.LOCK = False
 
 
 async def import_site(__file__, run=True):
-    global LOCK
-    if LOCK:
-        print("1728: import_site IS NOT RE ENTRANT")
+    import builtins
+    if builtins.LOCK:
+        platform.window.console.error("1473: import_site IS NOT RE ENTRANT")
         return
+    builtins.LOCK = True
 
     try:
-        LOCK = True
         from pathlib import Path
 
         embed = False

@@ -37,6 +37,11 @@ import aio.fetch
 #""")
 
 import asyncio
+import builtins
+try:
+    re_entered
+except:
+    builtins.re_entered = False
 
 # do not rename, it has a special meaning for asyncio.run()
 async def custom_site():
@@ -44,6 +49,13 @@ async def custom_site():
     await aio.fetch.preload(chdir=False, isolated=True)
     sys.path.append('/tmp')
 
+# TODO remove later
+    if re_entered:
+        platform.window.console.warn("        @@@@@@@@@@@@@@@@ ERROR @@@@@@@@@@@@@@          ")
+        return
+
+    builtins.re_entered = True
+    platform.window.console.warn("        @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@          ")
 
     import pygbag_app
     import pygbag_ux as ux
@@ -64,7 +76,6 @@ async def custom_site():
 
 
 
-
     console = app.console.get()
 
     platform.document.body.style.background = "#555555"
@@ -75,7 +86,7 @@ async def custom_site():
 
     # the C or js loader could do that but be explicit.
     appdir = Path(f"/data/data/{bundle}") # /data/data/{{cookiecutter.archive}}
-    appdir.mkdir()
+    appdir.mkdir() #parents=True, exist_ok=True)
 
 
     # mount apk
@@ -178,17 +189,16 @@ async def custom_site():
         while not platform.window.MM.UME:
             await asyncio.sleep(.1)
 
+
     # unlock async for main.py loop ( 2nd asyncio.run call )
     embed.run()
-
-
 
 
     loop = asyncio.get_event_loop()
 
 
     # mypyc/hpy require modules.
-    print("mobile.tmpl: running main ( as a __main__ module")
+    print("mobile.tmpl: running 'main' as a module", __name__, __file__, os.getcwd(), sys.modules.get('main','ok'))
 
     # get symbols of "main" for REPL "__main__"
     import main
@@ -309,12 +319,8 @@ async def custom_site():
         aio.exit_now(0)
 
 
-
+platform.window.console.warn("        **************************************         ")
 asyncio.run( custom_site() )
-
-
-
-
 
 
 

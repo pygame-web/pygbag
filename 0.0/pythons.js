@@ -547,7 +547,7 @@ const vm = {
 async function run_pyrc(content) {
     const base = "/data/data/org.python/assets/"
     const pyrc_file = base + "pythonrc.py"
-    const main_file = base + "main.py"
+    const main_file = base + "__main__.py"
     vm.FS.writeFile(pyrc_file, content )
 
 // embedded canvas
