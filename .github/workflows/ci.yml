@@ -8,8 +8,8 @@ jobs:
     env:
         SDK_VERSION: 3.1.52.2bi
         SYS_PYTHON: /usr/bin/python3
-        PACKAGES: emsdk hpy _ctypes pygame
-        BUILD_STATIC: emsdk _ctypes hpy
+        PACKAGES: emsdk hpy pygame
+        BUILD_STATIC: emsdk hpy
         STATIC: false
         BUILDS: 3.11 3.12 3.13
         CYTHON: Cython-3.0.8-py2.py3-none-any.whl
