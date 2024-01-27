@@ -121,9 +121,10 @@ def read_dependency_block_723(code):
     struct = tomllib.loads("\n".join(content))
 
     print(json.dumps(struct, sort_keys=True, indent=4))
-
-    project = struct.get("project", {"dependencies": []})
-    for dep in project.get("dependencies", []):
+    if struct.get("project", None):
+        struct = struct.get("project", {"dependencies": []})
+    deps = struct.get("dependencies", [])
+    for dep in deps:
         yield dep
 
 

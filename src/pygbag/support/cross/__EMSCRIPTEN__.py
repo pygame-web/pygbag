@@ -160,6 +160,10 @@ def init_platform(embed):
 
 # ========================================== DOM EVENTS ===============
 
+# TODO: get that from browser
+frametime = 1.0 / 60
+
+
 if is_browser:
     # implement "js.new"
 
