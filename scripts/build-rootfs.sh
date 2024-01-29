@@ -174,7 +174,7 @@ import imghdr
 # pep722
 import pyparsing
 import packaging.requirements
-import installer
+#import installer
 
 try:
     import imp
