@@ -17,7 +17,7 @@ except:
 
 
 import sys
-
+import ssl
 
 # https://stackoverflow.com/questions/42098126/mac-osx-python-ssl-sslerror-ssl-certificate-verify-failed-certificate-verify
 def fixcert():

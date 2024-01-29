@@ -1363,18 +1363,21 @@ if not aio.cross.simulator:
 
             def __call__(self, callid, fn, *argv, **env):
                 stack: list = [callid, fn, argv, env]
-                print(f"{self.__dlref}.{fn}({argv},{env}) {callid=}")
                 jstack: str = binascii.hexlify(json.dumps(stack).encode()).decode("ascii")
                 jshex = f"{self.__dlref}:{jstack}"
                 if not callid:
                     window.dlvoid(jshex)
                     return None
 
+                print(f"{self.__dlref}.{fn}({argv},{env}) {callid=}")
                 async def rv():
                     obj = await platform.jsiter(window.dlcall(callid, jshex))
                     return json.loads(obj)
 
                 return rv()
+
+            def thread(self, fn, *argv, **env):
+                return self.__call__("", fn, *argv, **env)
 
             def __all(self, *argv, **env):
                 self.__serial += 1

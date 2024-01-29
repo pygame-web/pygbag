@@ -17,6 +17,12 @@ from datetime import datetime
 
 from .__init__ import VERSION
 
+if '--no_ssl_check' in sys.argv:
+    import ssl
+    # ssl loop for local server testing.
+    ssl._create_default_https_context = ssl._create_unverified_context
+    sys.argv.remove("--no_ssl_check")
+
 import pygbag
 
 from . import pack
@@ -41,6 +47,7 @@ cdn_version = ".".join(cdn_dot)
 del cdn_dot
 
 AUTO_REBUILD = True
+
 
 if devmode:
     sys.argv.remove("--dev")
