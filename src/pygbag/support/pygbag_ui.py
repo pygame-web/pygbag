@@ -294,9 +294,6 @@ class TTY:
         return ""
 
 
-classmethods(TTY)
-
-
 def goto_xy(x, y):
     CSI(f"{y};{x}H")
 
@@ -620,8 +617,6 @@ class Tui:
 #        x = cls.DX + (cls.IX * pos[0])
 #        z = cls.DZ + (cls.IZ * pos[2])
 #        cls.wr(f"\x1b[{z};{x}H[ {np.name}: {np.node.text} ]  ")
-#
-# classmethods(render)
 #
 #
 # render = render()

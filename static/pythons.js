@@ -572,12 +572,13 @@ async function run_pyrc(content) {
 __pythonrc__ = "${pyrc_file}"
 
 try:
-    next(enumerate([]),None)
-    PKPY = False
+    __PKPY__
 except:
+    __PKPY__ = False
+
+if __PKPY__:
     with open(__pythonrc__, "r") as pythonrc:
         exec(pythonrc.read().replace(chr(92)+chr(10),""), globals())
-    PKPY = True
 
 import os
 def os_path_is_dir(path):
@@ -598,8 +599,7 @@ import sys, json
 PyConfig = json.loads("""${JSON.stringify(python.PyConfig)}""")
 pfx=PyConfig["prefix"]
 
-if not PKPY:
-
+if not __PKPY__:
 
     if os_path_is_dir(pfx):
         sys.path.append(pfx)
@@ -613,7 +613,7 @@ if not PKPY:
         else:
             raise Error("File not found")
     except Exception as e:
-        print(f"602: invalid {__pythonrc__=}")
+        print(f"616: invalid rcfile {__pythonrc__}")
         sys.print_exception(e)
 
     try:
@@ -621,7 +621,6 @@ if not PKPY:
         asyncio.run(import_site("${main_file}"))
     except ImportError:
         pass
-del PKPY
 `)
 
 }

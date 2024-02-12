@@ -52,57 +52,6 @@ else:
 if not __UPY__:
     sys.__eot__ = chr(4) + chr(10)
 
-if not defined("__PKPY__"):
-    try:
-        vars
-        __PKPY__ = None
-    except:
-        import builtins
-
-        if not defined("vars"):
-
-            def vars(o):
-                return o.__dict__
-
-            define("vars", vars)
-        del vars
-
-        class __PKPY__:
-            cm = {}
-            current_class = "?"
-
-            def classmethod(fn):
-                def cm_fn(*argv, **kw):
-                    cr = __PKPY__.cm[cm_fn]
-                    if len(argv):
-                        if argv[0].__class__ == cr["cc"]:
-                            return fn(argv[0].__class__, *argv[1:], **kw)
-                    return fn(cr["cc"], *argv, **kw)
-
-                __PKPY__.cm[cm_fn] = {"fn": fn}  # , 'cn': current_class}
-                return cm_fn
-
-            def classmethods(klass):
-                for fn, func in vars(klass).items():
-                    try:
-                        if func in __PKPY__.cm:
-                            cr = __PKPY__.cm[func]
-                            # if cr["cn"] == klass.__name__:
-                            cr["cc"] = klass
-                    except TypeError:
-                        continue
-                return klass
-
-        define("classmethod", __PKPY__.classmethod)
-        define("classmethods", __PKPY__.classmethods)
-
-    define("__PKPY__", __PKPY__)
-
-# support pkpy methods
-if not defined("classmethods"):
-    define("classmethods", lambda x: x)
-
-
 if not defined("__WASM__"):
     try:
         # that sym cannot is not overloaded in the simulator

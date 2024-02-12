@@ -36,19 +36,31 @@ pushd pythons/pykpocket/
     cp $PW/pygbag.h ./
     cp $PW/pymain.c ./
 
+
+    mkdir -p ../pykpocket.native
+    pushd ../pykpocket.native
+    emcmake cmake ../pykpocket
+    make -j 6
+    if clang++ -DPYDK -std=c++17 -O0 -g3 -fPIC -fexceptions -Iinclude -o pymain ../pykpocket/pykpocket_main.cpp ../pykpocket.native/libpocketpy.a
+    then
+        if ./pymain
+        then
+            echo OK
+        else
+            exit 49
+        fi
+    fi
+    popd
+
+
     mkdir -p ../pykpocket.html
 
     pushd ../pykpocket.html
     . /opt/python-wasm-sdk/wasm32-*-emscripten-shell.sh
 
-    if [ -f Makefile ]
-    then
-        echo cmake already ran
-        rm libpocketpy.a
-    else
-        emcmake cmake ../pykpocket -DTARGET=html -DCMAKE_EXECUTABLE_SUFFIX=html
-    fi
-    emmake make
+    rm libpocketpy.a
+    emcmake cmake ../pykpocket -DTARGET=html -DCMAKE_EXECUTABLE_SUFFIX=html
+    emmake make -j 6
     popd
 
 popd

@@ -26,7 +26,7 @@ IGNORE = """
     "\n"
 )
 
-SKIP_EXT = ["pyc", "pyx", "pyd", "pyi", "exe", "log", "DS_Store"]
+SKIP_EXT = ["pyc", "pyx", "pyd", "pyi", "exe", "log", "blend", "DS_Store"]
 
 
 def filter(walked):

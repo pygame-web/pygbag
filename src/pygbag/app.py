@@ -4,7 +4,7 @@ import sys
 # rmtree msg on win32
 import warnings
 
-# import os
+import os
 import argparse
 
 
@@ -19,8 +19,9 @@ from .__init__ import VERSION
 
 if '--no_ssl_check' in sys.argv:
     import ssl
-    # ssl loop for local server testing.
+    # ssl local server testing.
     ssl._create_default_https_context = ssl._create_unverified_context
+    #os.environ["REQUESTS_CA_BUNDLE"]="/etc/ssl/certs/ca-bundle.crt"
     sys.argv.remove("--no_ssl_check")
 
 import pygbag

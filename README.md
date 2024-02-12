@@ -8,6 +8,9 @@ Community Documentation : [https://pygame-web.github.io](https://pygame-web.gith
 
 Runs python code directly in modern web browsers, including mobile versions.
 
+
+Quick Start:
+
 "your.app.folder" must contain a main.py and its loop must be async aware eg:
 
 ```py
