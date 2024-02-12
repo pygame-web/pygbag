@@ -1,86 +1,10 @@
 import embed
 import builtins
 
-#=========================== builtins ===============================
-
-
-import builtins
-builtins.iter_next = next
-def next(it, default=0xdeadbeef):
-    itrv = iter_next(it)
-    if itrv == StopIteration:
-        if default == 0xdeadbeef:
-            raise itrv
-        return default
-    return itrv
-
-builtins.next = next
-
-#====================================================================
-
-
-# rely on vars
-class __PKPY__:
-    cm = {}
-    current_class = "?"
-
-    print = print
-
-    def classmethod(fn):
-        def cm_fn(*argv,**kw):
-            cr = __PKPY__.cm[cm_fn]
-            if len(argv):
-                if argv[0].__class__ == cr["cc"]:
-                    return fn(argv[0].__class__, *argv[1:], **kw)
-            return fn(cr["cc"], *argv, **kw)
-        __PKPY__.cm[cm_fn] = { "fn" : fn } #, 'cn': current_class}
-        return cm_fn
-
-    def classmethods(klass):
-        for fn, func in vars(klass).items():
-            try:
-                if func in __PKPY__.cm:
-                    cr = __PKPY__.cm[func]
-                    #if cr["cn"] == klass.__name__:
-                    cr['cc'] = klass
-            except TypeError:
-                continue
-        return klass
-
-builtins.classmethod = __PKPY__.classmethod
-builtins.classmethods = __PKPY__.classmethods
-
-builtins.__PKPY__ = __PKPY__
-
-
-
-
-class Sentinel(object):
-
-    def __len__(self):
-        return 0
-
-    def __bool__(self):
-        return False
-
-    def __repr__(self):
-        return "∅"
-
-    def __nonzero__(self):
-        return 0
-
-    def __call__(self, *argv, **kw):
-        if len(argv) and argv[0] is self:
-            return True
-        print("Null Pointer Exception")
-
-builtins.undefined = Sentinel()
-del Sentinel
-
 
 #=========================== os ===============================
 
-import os
+# import os
 # split/rsplit fix from c++
 # os.environ {} is filled from c++
 
@@ -220,28 +144,13 @@ class StringIO:
 io.StringIO = StringIO
 del StringIO
 
-
-
-def print(*argv,**kw):
-    if 'file' in kw:
-        #TODO __PKPY__.print('file=',        kw.pop('file'))
-        ...
-        return
-    return __PKPY__.print(*argv, **kw)
-
-builtins.print = print
-
-
-
-
-
 #=======================  platform ==================================
 
 
 
 embed.new_module("platform", '''
-__UPY__ = False
-__CPY__ = False
+#__UPY__ = False
+#__CPY__ = False
 CONSOLE = 25
 
 
@@ -262,35 +171,28 @@ import json
 import embed
 
 
+
 class ProxyType(object):
-    __callerid : dict = {}
-    __serial : int  = 0
-    __value = None
-    __return = None
 
     def __init__(self, parent, *callpath, **env):
+        self.__name = callpath[0]
         self.__parent = parent
         self.__callpath = callpath
-        if __PKPY__:
-            ProxyType.__callerid[id(self)] = self
+        self.__return = None
+        self.__value = None
 
-    # the return value is put in __return for pkpy
-    @staticmethod
-    def __getproxy(self_id, attr, line):
-        self = ProxyType.__callerid[self_id]
-        #print(f"Proxy[{self.__callpath}] +{attr} @{line}")
-        self.__return = self.__class__(self, *self.__callpath, attr )
-        return self.__return
+        #print(f"Registered proxy : {parent}.{'.'.join(callpath)}")
+        VM.callerid[id(self)] = self
 
 
     def __call__(self, *arguments, **options):
-        #print("__call__",self.__callpath, arguments, options)
+        # print("__call__",self.__callpath, arguments, options)
 
-        self.__serial = self.__serial + 1
-        callid = f"C{self.__serial}"
+        VM.serial = VM.serial + 1
+        callid = f"C{VM.serial}"
 
-        fn = '.'.join(self.__callpath)
-        stack : list = [ callid, self.__callpath ]
+        fn = ".".join(self.__callpath)
+        stack: list = [callid, self.__callpath]
 
         if len(arguments):
             stack.extend(arguments)
@@ -299,54 +201,49 @@ class ProxyType(object):
         args = tuple(stack[2:])
         embed.jseval(f"{fn}{args}")
 
-    def __setattr(self_id, attr, line):
-        self = ProxyType.__callerid[self_id]
-
-        self.__serial = self.__serial + 1
-        callid = f"C{self.__serial}"
-
-        path = '.'.join(self.__callpath)
-
-        jsdata = json.dumps(ProxyType.__value)
+    def __setattr(self, self_id, attr, line):
+        #print(self,"__setattr", self_id, attr, line, self.__value)
+        VM.serial = VM.serial + 1
+        callid = f"C{VM.serial}"
+        path = ".".join(self.__callpath)
+        jsdata = json.dumps(self.__value)
         jscmd = f"{path}.{attr}=JSON.parse(`{jsdata}`)"
 #        if self.__callpath[0] == 'document':
 #            print("__setattr", self.__callpath, attr, line, jsdata)
 #            print(jscmd)
-
         embed.jseval(jscmd)
 
     def __str__(self):
         if len(self.__callpath):
-            descr = '.'.join(self.__callpath)
-            if len(self.__callpath)>1:
-                #descr = str(json.loads(embed.jseval(f"{descr}")))
+            descr = ".".join(self.__callpath)
+            if len(self.__callpath) > 1:
                 descr = str(embed.jseval(f"{descr}"))
         else:
             descr = f"[Object {descr}]"
-        #print("__str__", descr)
         return descr
 
     def __repr__(self):
-        return f"[ProxyType {'.'.join(self.__callpath)}]"
+        return f"[ProxyType {self.__parent}.{'.'.join(self.__callpath)}]"
+
+#    if not __PKPY__:
+
+#        def __all(self, *argv, **env):
+#            VM.serial += 1
+#            return self.__call__(f"C{VM.serial}", self.__lastc, *argv, **env)
+
+#        def __getattr__(self, attr):
+#            if not len(self.__callpath):
+#                VM.serial = VM.serial + 1
+#                self.__callpath.append(f"C{VM.serial}")
+#                self.__callpath.append(self.__dlref)
+#            self.__callpath.append(attr)
+#            return self
+
+VM.ProxyType = ProxyType
 
 
-
-    if not __PKPY__:
-
-        def __all(self, *argv, **env):
-            self.__serial += 1
-            return self.__call__(f"C{self.__serial}", self.__lastc, *argv, **env)
-
-        def __getattr__(self, attr):
-            if not len(self.__callpath):
-                self.__serial = self.__serial + 1
-                self.__callpath.append(f"C{self.__serial}")
-                self.__callpath.append(self.__dlref)
-            self.__callpath.append(attr)
-            return self
-
-window = ProxyType("Window", 'window')
-document = ProxyType("Window", 'document')
+window = ProxyType("Window", "window")
+document = ProxyType("Window", "document")
 
 
 try:
@@ -599,10 +496,11 @@ class Tui:
 
 
 
+from platform import window, document
 
 
-platform.document.body.style.background = "#555555"
-platform.window.document.body.style.background = "#000000"
+document.body.style.background = "#555555"
+window.document.body.style.background = "#000000"
 
 
 from pygbag_ui import TTY, clear, goto_xy
@@ -693,7 +591,6 @@ def main():
     print("bye")
 
 
-from platform import window, document
 
 asyncio.get_running_loop().create_task(main())
 
