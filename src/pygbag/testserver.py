@@ -58,6 +58,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
         self.send_header("access-control-allow-origin", "*")
         self.send_header("cross-origin-resource-policy:", "cross-origin")
         self.send_header("cross-origin-opener-policy", "cross-origin")
+        # allow local threads
+        self.send_header("origin-agent-cluster", "?1")
 
         # not valid for Atomics
         # self.send_header("cross-origin-embedder-policy", "unsafe-none")

@@ -14,6 +14,27 @@
 
 #include "pocketpy/pocketpy.h"
 
+
+#if defined(__wii__)
+#pragma message "    ---------- wii ex -------------- "
+#include "/opt/devkitpro/hotfix/wii_sys.h"
+#endif
+
+#if defined(__wasi__)
+#pragma message "    ---------- wasi ex -------------- "
+extern "C" {
+void *
+__cxa_allocate_exception(size_t thrown_size) {
+    puts("__cxa_allocate_exception");
+    return NULL;
+}
+
+void __cxa_throw(void *thrown_exception, void *tinfo, void (*dest)(void *)) {
+
+}
+
+}
+#endif
 using namespace pkpy;
 
 /*
@@ -249,7 +270,10 @@ extern "C" {
 
         setenv("PYGLET_HEADLESS", "1", 1);
 
+#if defined(__wasi__) || defined(__wii__)
+#else
         umask(18);              // 0022
+#endif
 #if defined(__EMSCRIPTEN__)
         chdir("/");
         setenv("TMP", "/tmp", 0);
