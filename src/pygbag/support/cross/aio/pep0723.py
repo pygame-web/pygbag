@@ -303,7 +303,7 @@ async def pip_install(pkg, sysconf={}):
                 if html:
                     for line in html.readlines():
                         if line.find("href=") > 0:
-                            if line.find("-py3-none-any.whl") > 0:
+                            if line.find("py3-none-any.whl") > 0:
                                 wheel_url = line.split('"', 2)[1]
                 else:
                     print("283: ERROR: cannot find package :", pkg)

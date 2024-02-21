@@ -1036,16 +1036,20 @@ async function feat_vtx(debug_hidden) {
         document.body.appendChild(terminal)
     }
 
+    const cols = get_terminal_cols()
+    const cons = get_terminal_console()
     const { WasmTerminal } = await import("./vtx.js")
-    const lines = get_terminal_lines() + get_terminal_console()  // including virtual get_terminal_console()
+    const lines = get_terminal_lines() + cons  // including virtual get_terminal_console()
     const py = window.document.body.clientHeight
     var fntsize = Math.floor(py/lines) - 1
 
+    if (lines<=33)
+        fntsize = fntsize - 5
 
-    console.warn("fnt:",window.document.body.clientHeight ,"/", lines,"=", fntsize)
+    console.warn("fnt:",window.document.body.clientHeight ,"/", lines,"=", fntsize, " Cols:", cols, "Cons:", cons)
     vm.vt = new WasmTerminal(
         "terminal",
-        get_terminal_cols(),
+        cols,
         lines,
         fntsize,
         config.fbdev,
