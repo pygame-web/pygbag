@@ -161,17 +161,21 @@ def cache_check(app_folder, devmode=False):
 
     if clear_cache:
         win32 = sys.platform == "win32"
-        if shutil.rmtree.avoids_symlink_attacks or win32:
-            if cache_dir.is_dir():
+        if cache_dir.is_dir():
+            if shutil.rmtree.avoids_symlink_attacks or win32:
                 if win32:
                     warnings.warn("clear cache : rmtree is not safe on that system (win32)")
                 shutil.rmtree(cache_dir.as_posix())
-        else:
-            print(
-                "115: cannot clear cache : rmtree is not safe on that system",
-                file=sys.stderr,
-            )
-            raise SystemExit(115)
+            else:
+                print(
+                    "171: cannot clear cache : rmtree is not safe on that system",
+                    file=sys.stderr,
+                )
+                print(
+                    "175: Please remove build folder manually",
+                    file=sys.stderr,
+                )
+                raise SystemExit(115)
 
         # rebuild
         make_cache_dirs()
