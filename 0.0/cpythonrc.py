@@ -1475,6 +1475,7 @@ except:
 
 async def import_site(__file__, run=True):
     import builtins
+
     if builtins.LOCK:
         platform.window.console.error("1473: import_site IS NOT RE ENTRANT")
         return
@@ -1643,4 +1644,4 @@ async def import_site(__file__, run=True):
             shell.interactive(prompt=True)
             return None
     finally:
-        LOCK = False
+        builtins.LOCK = False
