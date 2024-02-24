@@ -238,7 +238,7 @@ async def async_repos():
         print(
             f"""
 
-===============  REDIRECTION TO DEV HOST {repo['-CDN-']}  ================
+======  REDIRECT TO DEV HOST {repo['-CDN-']}  ========
 {abitag=}
 {apitag=}
 
