@@ -36,6 +36,7 @@ DEFAULT_SCRIPT = "main.py"
 DEFAULT_CONSOLE = 25
 DEFAULT_LINES = 57
 DEFAULT_COLUMNS = 132
+DEFAULT_PYBUILD = "3.12"
 
 CACHE_ROOT = Path("build")
 CACHE_PATH = CACHE_ROOT / "web-cache"
@@ -214,8 +215,8 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
 
     parser.add_argument(
         "--PYBUILD",
-        default="3.11",
-        help="Specify python version [default:%s]" % "3.11",
+        default=DEFAULT_PYBUILD,
+        help="Specify python version [default:%s]" % DEFAULT_PYBUILD,
     )
 
     parser.add_argument(
