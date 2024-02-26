@@ -61,9 +61,11 @@ pushd external/hpy
 ${HPY} setup.py install
 
 # ${SDKROOT}/python3-wasm setup.py install
+${SDKROOT}/python3-wasm setup.py build
 
 # link static
 . ${SDKROOT}/emsdk/emsdk_env.sh
+
     $SDKROOT/emsdk/upstream/emscripten/emar rcs /opt/python-wasm-sdk/prebuilt/emsdk/libhpy${PYMAJOR}.${PYMINOR}.a \
  build/temp.wasm32-${WASM_FLAVOUR}-emscripten-cpython-${PYMAJOR}${PYMINOR}/hpy/debug/src/_debugmod.o \
  build/temp.wasm32-${WASM_FLAVOUR}-emscripten-cpython-${PYMAJOR}${PYMINOR}/hpy/debug/src/autogen_debug_wrappers.o \
