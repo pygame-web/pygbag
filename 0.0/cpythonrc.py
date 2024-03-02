@@ -960,7 +960,6 @@ import aio.filelike
 platform.fopen = aio.filelike.fopen
 platform.sopen = aio.filelike.sopen
 
-
 if not aio.cross.simulator:
 
     def fix_url(maybe_url):
@@ -1130,8 +1129,6 @@ if not aio.cross.simulator:
 
         from pathlib import Path
 
-        # repodata = "repodata.json"
-
         def eval(self, source):
             for count, line in enumerate(source.split("\n")):
                 if not count:
@@ -1143,7 +1140,7 @@ if not aio.cross.simulator:
             if count:
                 self.line = None
                 self.buffer.insert(0, "#")
-            # self.buffer.append("")
+
             DBG(f"1039: {count} lines queued for async eval")
 
         @classmethod
@@ -1208,13 +1205,13 @@ if not aio.cross.simulator:
             if not len(aio.pep0723.Config.pkg_repolist):
                 print(
                     """
-1170: pep0723 REPOSITORY MISSING
+1208: pep0723 REPOSITORY MISSING
 """
                 )
             else:
                 DBG(
                     f"""
-1175: list_imports {len(code)=} {file=} {hint=}")
+1214: list_imports {len(code)=} {file=} {hint=}")
 {aio.pep0723.Config.pkg_repolist[0]['-CDN-']=}
 
 """
