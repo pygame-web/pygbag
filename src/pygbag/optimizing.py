@@ -44,7 +44,10 @@ else:
 
     def optimize(folder, filenames, **kw):
         global BAD
-        print("optimizing", folder)
+        if "--no_opt" in sys.argv:
+            print("NOT optimizing", folder)
+        else:
+            print("optimizing", folder)
         png_quality = 50
 
         done_list = []
@@ -57,10 +60,13 @@ else:
         except ImportError:
             warnings.warn(f"Black not found for processing {folder=}")
 
-        if os.popen("pngquant 2>&1").read().count("pngfile"):
-            print(f"    -> with pngquant --quality {png_quality}", folder)
+        if "--no_opt" in sys.argv:
+            pass
         else:
-            png_quality = -1
+            if os.popen("pngquant 2>&1").read().count("pngfile"):
+                print(f"    -> with pngquant --quality {png_quality}", folder)
+            else:
+                png_quality = -1
 
         has_ffmpeg = os.popen("ffmpeg -version").read().count("version")
 

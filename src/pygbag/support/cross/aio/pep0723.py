@@ -198,7 +198,7 @@ async def async_repos():
         if apitag.find("mvp") > 0:
             idx = f"{repo}index.json"
         else:
-            idx = f"{repo}index-bi.json"
+            idx = f"{repo}index-090bi.json"
         async with fopen(idx, "r", encoding="UTF-8") as index:
             try:
                 data = index.read()
