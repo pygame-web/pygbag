@@ -1,4 +1,11 @@
 #!/bin/bash
+
+if [ -f vendor/vendor.sh ]
+then
+    echo "vendor build, skipping"
+    exit 0
+fi
+
 reset
 
 PW=$(realpath patchwork/pykpocket)
