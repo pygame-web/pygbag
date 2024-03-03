@@ -4,7 +4,19 @@
 
 . ${CONFIG:-$SDKROOT/config}
 
-#
+if [ -f vendor/vendor.sh ]
+then
+    echo "  vendor build"
+    if ${ABI3:-false}
+    then
+    echo "  vendor build (abi3) $PYBUILD"
+        if echo $PYBUILD|grep -v -q 3.12$
+        then
+            echo "abi3 vendor build only, skipping $PYBUILD"
+            exit 0
+        fi
+    fi
+fi
 
 ln -s $(pwd)/src/pygbag $(pwd)/pygbag
 
