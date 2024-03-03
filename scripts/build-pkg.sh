@@ -2,6 +2,20 @@
 
 . scripts/vendoring.sh
 
+if [ -f vendor/vendor.sh ]
+then
+    echo "  vendor build"
+    if ${ABI3:-false}
+    then
+    echo "  vendor build (abi3) $PYBUILD"
+        if echo $PYBUILD|grep -v -q 3.12$
+        then
+            echo "abi3 vendor build only, skipping $PYBUILD"
+            exit 0
+        fi
+    fi
+fi
+
 export PYMAJOR=$(echo -n $PYBUILD|cut -d. -f1)
 export PYMINOR=$(echo -n $PYBUILD|cut -d. -f2)
 
