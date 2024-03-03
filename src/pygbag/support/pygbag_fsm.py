@@ -13,7 +13,7 @@ class Draft(object):
     ...
 
 
-@dataclass()
+@dataclass
 class FSM(Machine):
     states: tuple
     initial: str
