@@ -4,8 +4,7 @@ then
 else
     
     # it is an abi3 module just use stable python
-    export PYBUILD="3.12"
-    export BUILDS="$PYBUILD"
+    export ABI3=true
 
     # build the mininimum
     export PACKAGES="emsdk raylib"
