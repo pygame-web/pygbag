@@ -75,7 +75,7 @@ then
         pushd $(pwd)/${PACKAGE}
     fi
 
-    cp ./physac/src/physac.h ${PREFIX}/include/
+    cp ./src/physac.h ${PREFIX}/include/
 
     popd
     popd
