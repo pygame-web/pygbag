@@ -16,6 +16,7 @@ IGNORE = """
 /.github
 /.vscode
 /.idea
+/.DS_Store
 /dist
 /build
 /venv
@@ -26,7 +27,7 @@ IGNORE = """
     "\n"
 )
 
-SKIP_EXT = ["pyc", "pyx", "pyd", "pyi", "exe", "log", "blend", "DS_Store"]
+SKIP_EXT = ["pyc", "pyx", "pyd", "pyi", "exe", "bak", "log", "blend", "DS_Store"]
 
 
 def filter(walked):

@@ -24,7 +24,7 @@ import pyodide
 
 class m_canvas:
     def getCanvas3D(self, name='canvas',width=1024,height=1024):
-        canvas = platform.document.getElementById("canvas")
+        canvas = platform.document.getElementById(name)
         canvas.width = width
         canvas.height = height
         return canvas

@@ -1576,10 +1576,12 @@ MM.unpause = function unpause(trackid) {
 }
 
 MM.set_volume = function set_volume(trackid, vol) {
+    console.log(`MM.set_volume track=${trackid} vol=${vol}`)
     MM[trackid].media.volume = 1 * vol
 }
 
-MM.set_volume = function get_volume(trackid, vol) {
+MM.get_volume = function get_volume(trackid, vol) {
+    console.log(`MM.get_volume track=${trackid} vol=${vol}`)
     return MM[trackid].media.volume
 }
 
