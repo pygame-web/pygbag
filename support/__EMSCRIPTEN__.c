@@ -384,7 +384,7 @@ embed_set_ps2(PyObject *self, PyObject *_null) {
 static PyObject *
 embed_prompt(PyObject *self, PyObject *_null) {
     if (sys_ps==1)
-        fprintf( stderr, ">=> ");
+        fprintf( stderr, ">>> ");
     else
         fprintf( stderr, "... ");
     embed_flush(self,_null);
