@@ -34,7 +34,9 @@ please use :
     if aio.pep0723.Config.dev_mode:
         aio.pep0723.Config.PKG_INDEXES.extend(["http://localhost:8000/archives/repo/"])
     else:
-        aio.pep0723.Config.PKG_INDEXES.extend(["https://pygame-web.github.io/archives/repo/"])
+        aio.pep0723.Config.PKG_INDEXES.extend([
+            os.environ.get('PYGPY', "https://pygame-web.github.io/archives/repo/"),
+        ])
 
     import pygbag.__main__
 

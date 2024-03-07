@@ -17,9 +17,9 @@ import json
 
 
 PYCONFIG_PKG_INDEXES_DEV = ["http://localhost:<port>/archives/repo/"]
-PYCONFIG_PKG_INDEXES = ["https://pygame-web.github.io/archives/repo/"]
+# normal index or PYGPY env is handled after env conversion around line 255
 
-# the sim does not preload assets and cannot access currentline
+# the sim does not ospreload assets and cannot access currentline
 # unless using https://github.com/pmp-p/aioprompt/blob/master/aioprompt/__init__.py
 # or a thread
 
@@ -252,6 +252,10 @@ else:
     os.environ["APPDATA"] = home
     del home
 
+# now in pep0723
+#PYCONFIG_PKG_INDEXES = [
+#    os.environ.get('PYGPY', "https://pygame-web.github.io/archives/repo/"),
+#]
 
 PyConfig["imports_ready"] = False
 PyConfig["pygbag"] = 0
@@ -682,8 +686,11 @@ ________________________
             env = Path(sconf["purelib"])
 
             if not len(Config.repos):
-                if not len(Config.PKG_INDEXES):
-                    Config.PKG_INDEXES = PyConfig.pkg_indexes
+                await aio.pep0723.async_repos()
+
+    # TODO switch to METADATA:Requires-Dist
+    #   see https://github.com/pygame-web/pygbag/issues/156
+
                 for cdn in Config.PKG_INDEXES:
                     async with platform.fopen(Path(cdn) / Config.REPO_DATA) as source:
                         Config.repos.append(json.loads(source.read()))
@@ -1066,9 +1073,10 @@ if not aio.cross.simulator:
                 PyConfig.pkg_indexes.append(redirect)
 
             print("807: DEV MODE ON", PyConfig.pkg_indexes)
-        else:
-            # address cdn
-            PyConfig.pkg_indexes = PYCONFIG_PKG_INDEXES
+# now in pep0723
+#        else:
+#            # address cdn
+#            PyConfig.pkg_indexes = PYCONFIG_PKG_INDEXES
 
         from platform import window, document, ffi
 

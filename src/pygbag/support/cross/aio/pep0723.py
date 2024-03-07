@@ -59,6 +59,7 @@ class Config:
     READ_723 = True
     BLOCK_RE_722 = r"(?i)^#\s+script\s+dependencies:\s*$"
     BLOCK_RE_723 = r"(?m)^# /// (?P<type>[a-zA-Z0-9-]+)$\s(?P<content>(^#(| .*)$\s)+)^# ///$"
+    PKG_BASE_DEFAULT = "https://pygame-web.github.io/archives/repo/"
     PKG_INDEXES = []
     REPO_INDEX = "index.json"
     REPO_DATA = "repodata.json"
@@ -174,26 +175,30 @@ def install(pkg_file, sconf=None):
         sys.print_exception(ex)
 
 
-async def async_imports_init():
-    ...
-
-
-#    see pythonrc
+#    see cpythonrc
 #            if not len(Config.repos):
 #                for cdn in (Config.PKG_INDEXES or PyConfig.pkg_indexes):
 #                    async with platform.fopen(Path(cdn) / Config.REPO_DATA) as source:
 #                        Config.repos.append(json.loads(source.read()))
 #
 #                DBG("1203: FIXME (this is pyodide maintened stuff, use PEP723 asap) referenced packages :", len(cls.repos[0]["packages"]))
-#
 
 
 async def async_repos():
     abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
-
     apitag = __import__("sysconfig").get_config_var("HOST_GNU_TYPE")
     apitag = apitag.replace("-", "_")
-    print("163: async_repos", Config.PKG_INDEXES)
+
+    # user can override "PYPI" index
+    if os.environ.get('PYGPI',""):
+        Config.PKG_INDEXES= [os.environ.get('PYGPI')]
+
+    # default to "official" cdn
+    if not len(Config.PKG_INDEXES):
+        Config.PKG_INDEXES = [ Config.PKG_BASE_DEFAULT ]
+
+    print("200: async_repos", Config.PKG_INDEXES)
+
     for repo in Config.PKG_INDEXES:
         if apitag.find("mvp") > 0:
             idx = f"{repo}index.json"
@@ -208,7 +213,7 @@ async def async_repos():
                 data = data.replace("<api>", apitag)
                 repo = json.loads(data)
             except:
-                pdb(f"110: {repo=}: malformed json index {data}")
+                pdb(f"216: {repo=}: malformed json index {data}")
                 continue
             if repo not in Config.pkg_repolist:
                 Config.pkg_repolist.append(repo)
@@ -224,7 +229,7 @@ async def async_repos():
     if not aio.cross.simulator:
         import platform
 
-        print("193:", platform.window.location.href)
+        print("232:", platform.window.location.href)
         if platform.window.location.href.startswith("http://localhost:8"):
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = "http://localhost:8000/archives/repo/"
@@ -274,7 +279,7 @@ async def pip_install(pkg, sysconf={}):
     if pkg in HISTORY:
         return
 
-    print("253: searching", pkg)
+    print("282: searching", pkg)
 
     if not sysconf:
         sysconf = sconf
@@ -286,7 +291,7 @@ async def pip_install(pkg, sysconf={}):
         pkg = Config.mapping[pkg.lower()]
         if pkg in HISTORY:
             return
-        print("279: package renamed to", pkg)
+        print("294: package renamed to", pkg)
 
     if pkg in platform.patches:
         if not pkg in PATCHLIST:
@@ -306,13 +311,13 @@ async def pip_install(pkg, sysconf={}):
                             if line.find("py3-none-any.whl") > 0:
                                 wheel_url = line.split('"', 2)[1]
                 else:
-                    print("283: ERROR: cannot find package :", pkg)
+                    print("308: ERROR: cannot find package :", pkg)
         except FileNotFoundError:
             print("285: ERROR: cannot find package :", pkg)
             return
 
         except:
-            print("289: ERROR: cannot find package :", pkg)
+            print("320: ERROR: cannot find package :", pkg)
             return
 
     if wheel_url:
@@ -322,11 +327,9 @@ async def pip_install(pkg, sysconf={}):
             if pkg not in HISTORY:
                 HISTORY.append(pkg)
         except:
-            print("299: INVALID", pkg, "from", wheel_url)
-
+            print("324: INVALID", pkg, "from", wheel_url)
 
 PYGAME = 0
-
 
 async def parse_code(code, env):
     global PATCHLIST, PYGAME
@@ -378,7 +381,7 @@ async def parse_code(code, env):
 # parse_code does the patching
 # this is not called by pythonrc
 async def check_list(code=None, filename=None):
-    global PATCHLIST, async_imports_init, async_repos, env, sconf
+    global PATCHLIST, async_repos, env, sconf
     print()
     print("-" * 11, "computing required packages", "-" * 10)
 
@@ -386,12 +389,11 @@ async def check_list(code=None, filename=None):
     # so do patching here
     patchlevel = platform_wasm.todo.patch()
     if patchlevel:
-        print("264:parse_code() patches loaded :", list(patchlevel.keys()))
+        print("392: parse_code() patches loaded :", list(patchlevel.keys()))
         platform_wasm.todo.patch = lambda: None
         # and only do that once and for all.
-        await async_imports_init()
         await async_repos()
-        del async_imports_init, async_repos
+        del async_repos
 
     # mandatory
     importlib.invalidate_caches()
