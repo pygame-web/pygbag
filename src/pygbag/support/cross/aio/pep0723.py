@@ -200,10 +200,7 @@ async def async_repos():
     print("200: async_repos", Config.PKG_INDEXES)
 
     for repo in Config.PKG_INDEXES:
-        if apitag.find("mvp") > 0:
-            idx = f"{repo}index.json"
-        else:
-            idx = f"{repo}index-090bi.json"
+        idx = f"{repo}index-090-{abitag}.json"
         async with fopen(idx, "r", encoding="UTF-8") as index:
             try:
                 data = index.read()
@@ -213,43 +210,23 @@ async def async_repos():
                 data = data.replace("<api>", apitag)
                 repo = json.loads(data)
             except:
-                pdb(f"216: {repo=}: malformed json index {data}")
+                pdb(f"213: {idx=}: malformed json index {data}")
                 continue
             if repo not in Config.pkg_repolist:
                 Config.pkg_repolist.append(repo)
 
-    repo = None
-    if Config.dev_mode > 0:
-        for idx, repo in enumerate(Config.pkg_repolist):
-            try:
-                repo["-CDN-"] = Config.PKG_INDEXES[idx]
-            except Exception as e:
-                sys.print_exception(e)
-
     if not aio.cross.simulator:
+        rewritecdn = ""
         import platform
+        if os.environ.get('PYGPI',""):
+            rewritecdn = os.environ.get('PYGPI')
+        elif platform.window.location.href.startswith("http://localhost:8"):
+            rewritecdn = "http://localhost:8000/archives/repo/"
 
-        print("232:", platform.window.location.href)
-        if platform.window.location.href.startswith("http://localhost:8"):
+        if rewritecdn:
+            print(f"""230: {platform.window.location.href} {rewritecdn=}""")
             for idx, repo in enumerate(Config.pkg_repolist):
-                repo["-CDN-"] = "http://localhost:8000/archives/repo/"
-        elif platform.window.location.href.startswith("http://p-p.mywire.org/pygbag"):
-            for idx, repo in enumerate(Config.pkg_repolist):
-                repo["-CDN-"] = "http://p-p.mywire.org/archives/repo/"
-        elif platform.window.location.href.startswith("http://192.168.1.66/pygbag"):
-            for idx, repo in enumerate(Config.pkg_repolist):
-                repo["-CDN-"] = "http://192.168.1.66/archives/repo/"
-    if repo:
-        print(
-            f"""
-
-======  REDIRECT TO DEV HOST {repo['-CDN-']}  ========
-{abitag=}
-{apitag=}
-
-"""
-        )
-
+                repo["-CDN-"] = rewritecdn
 
 async def install_pkg(sysconf, wheel_url, wheel_pkg):
     target_filename = f"/tmp/{wheel_pkg}"
