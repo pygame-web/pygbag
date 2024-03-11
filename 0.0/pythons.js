@@ -1050,10 +1050,18 @@ async function feat_vtx(debug_hidden) {
     var fntsize = Math.floor(py/lines) - 1
 
     if (lines<=33) {
-        fntsize = ( fntsize - 5 ) / console_divider
+        fntsize = ( fntsize - 6 ) / console_divider
+        console.log("vtx font: less than 33 lines : forced font to", fntsize)
     }
 
-    console.warn("fnt:",window.document.body.clientHeight ,"/", lines,"=", fntsize, " Cols:", cols, "Cons:", cons)
+    if (navigator.userAgent.indexOf("Chrome") != -1 ) {
+        fntsize = Math.floor( fntsize  * 1.12 )
+        console.log("vtx font: 125%")
+    } else {
+        console.log("vtx font: 100%")
+    }
+
+    console.warn("vtx font:",window.document.body.clientHeight ,"/", lines,"=", fntsize, " Cols:", cols, "Cons:", cons)
     vm.vt = new WasmTerminal(
         "terminal",
         cols,
