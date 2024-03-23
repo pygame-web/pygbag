@@ -1587,12 +1587,12 @@ async def import_site(__file__, run=True):
         DBG(f"1830: {local=} {source=} {is_py=} {hint=}")
 
         if local is None:
+
             ext = str(source).rsplit(".")[-1].lower()
 
             if ext == "py":
                 local = tmpdir / source.rsplit("/", 1)[-1]
                 await shell.exec(shell.wget(f"-O{local}", source))
-
             # TODO: test tar.bz2 lzma tar.xz
             elif ext in ("zip", "gz", "tar", "apk", "jar"):
                 DBG(f"1841: found archive source {source=}")
@@ -1617,6 +1617,10 @@ async def import_site(__file__, run=True):
                         local = tmpdir / file
                         break
                 DBG("1862: import_site: found ", local)
+            elif str(source).startswith('http'):
+                print("Remote file :", source)
+                local = tmpdir / "remote.py"
+                await shell.exec(shell.wget(f"-O{local}", source))
             else:
                 # maybe base64 or frozen code in html.
                 ...

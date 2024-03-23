@@ -2090,35 +2090,86 @@ window.Fetch.GET = function * GET (url, flags)
     }
 }
 
-
-
 // ====================================================================================
-//          pyodide compat layer
+//          dlfcn
 // ====================================================================================
 
+var dlfcn_handle_id = 0
+var dlfcn_handles = {}
+var dlfcn_retval = {}
 
-window.loadPyodide =
-    async function loadPyodide(cfg) {
-        vm.runPython =
-            function runPython(code) {
-                console.warn("runPython N/I", code)
-                vm.PyRun_SimpleString(code)
-                return 'N/A'
-            }
+function dlvoid(hexstack) {
+    //const dlhandler = document.getElementById("dlhandler").contentWindow
+    //window.console.log(`dlhandler.postMessage("${hexstack}")`)
+    dlhandler.postMessage(hexstack, "*")
+}
 
-        console.warn("loadPyodide N/I")
-        auto_start(cfg)
-        auto_start = null
-        await onload()
-        onload = null
-        await _until(defined)("python")
-        vm.vt.xterm.write = cfg.stdout
-        console.warn("using ", python)
-        return vm
+function * dlcall(callid, hexstack) {
+    //const dlhandler = document.getElementById("dlhandler").contentWindow
+    dlhandler.postMessage(hexstack, "*")
+    while (!dlfcn_retval[callid])
+        yield 0
+    yield dlfcn_retval[callid]
+}
+
+
+function * dlopen(lib) {
+    dlfcn_handle_id += 1
+    const linkid =  lib + "_" + dlfcn_handle_id
+//    const dlhandler = document.getElementById("dlhandler").contentWindow
+
+    console.log("dlopen: opening :", linkid)
+
+// wait for lazy iframe case
+    while (!dlfcn_handles["dlopen"])
+        yield 0
+
+    dlhandler.postMessage("dlopen:"+lib+":"+ linkid , "*")
+    while (!dlfcn_handles[linkid])
+        yield 0
+
+    yield linkid
+}
+
+function from_hex(h) {
+    var s = ''
+    for (var i = 0; i < h.length; i+=2) {
+        s += String.fromCharCode(parseInt(h.substr(i, 2), 16))
+    }
+    return decodeURIComponent(escape(s))
+}
+
+function rx(event) {
+    const rxmsg = ""+event.data
+    const origin = event.origin
+
+    var e = rxmsg.split(':')
+    const rt = e.shift()
+    if (rt == "dlopen") {
+        const serial = e.shift()
+        if (serial =="") {
+            const linkid = e.shift()
+            dlfcn_handles[linkid] = linkid
+        // call returned value
+        } else {
+            dlfcn_retval[serial] = from_hex(e.shift())
+        }
+    } else {
+        console.warn("bus(567)",rxmsg, origin)
     }
 
+    if (origin) {
+        //console.log("forwarding",rxmsg)
+    }
+}
+
+window.addEventListener("message", rx, false);
+
+
+
+
 // ====================================================================================
-//          STARTUP
+//  Window  STARTUP
 // ====================================================================================
 
 async function onload() {
@@ -2292,10 +2343,44 @@ async function onload() {
 // -->
     }
 
+
+    // Hides mobile browser's address bar when page is done loading.
+    setTimeout(function() { window.scrollTo({left:0, top:1080, behaviour :"instant"}) }, 1);
+
 // TODO: error alert if 404 / timeout
     console.warn("Loading python interpreter from", config.executable)
     jsimport(config.executable)
 }
+
+// ====================================================================================
+//          pyodide compat layer
+// ====================================================================================
+
+
+window.loadPyodide =
+    async function loadPyodide(cfg) {
+        vm.runPython =
+            function runPython(code) {
+                console.warn("runPython N/I", code)
+                vm.PyRun_SimpleString(code)
+                return 'N/A'
+            }
+
+        console.warn("loadPyodide N/I")
+        auto_start(cfg)
+        auto_start = null
+        await onload()
+        onload = null
+        await _until(defined)("python")
+        vm.vt.xterm.write = cfg.stdout
+        console.warn("using ", python)
+        return vm
+    }
+
+
+// ====================================================================================
+//  JS STARTUP
+// ====================================================================================
 
 
 function auto_conf(cfg) {
@@ -2552,7 +2637,5 @@ function auto_start(cfg) {
 window.set_raw_mode = function (param) {
     window.RAW_MODE = param || 0
 }
-
-
 
 auto_start()
