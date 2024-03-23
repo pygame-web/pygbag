@@ -111,6 +111,9 @@ import distutils.spawn
 #matplotlib
 import uuid
 
+# pandas
+import tarfile
+
 #arcade
 import ctypes.util
 

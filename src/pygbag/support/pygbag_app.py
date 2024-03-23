@@ -51,3 +51,5 @@ class console:
 
         clear(LINES, CONSOLE-1)  # , '>C> ')
         return self
+
+__ALL__ = [ ui, ux ]
