@@ -991,6 +991,33 @@ async function feat_fs(debug_hidden) {
 
 }
 
+// js.SMP
+
+function feat_smp() {
+    var dlhandler = document.getElementById('dlhandler')
+    if (!dlhandler) {
+        dlhandler = document.createElement('iframe')
+        dlhandler.id = "dlhandler"
+        dlhandler.name = "dlhandler"
+        dlhandler.loading = "lazy"
+        dlhandler.width = "470px"
+        dlhandler.height = "30%"
+        /*
+        dlhandler.style.top = "70%"
+        dlhandler.style.right = "0px"
+        dlhandler.style.height = "30%"
+        dlhandler.style.border = ""
+        dlhandler.style.postition = "absolute"
+        */
+dlhandler.style = "position: relative;top: 0px;right: 0px;border: 1px solid red;"
+
+        dlhandler.frameborder = "1"
+        dlhandler.sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
+        dlhandler.allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
+        dlhandler.src=config.cdn+"../../archives/lib/index.html"
+        document.body.appendChild(dlhandler)
+    }
+}
 
 // js.VT
 
@@ -2111,7 +2138,7 @@ function * dlcall(callid, hexstack) {
         yield 0
     yield dlfcn_retval[callid]
 }
-
+window.dlcall = dlcall
 
 function * dlopen(lib) {
     dlfcn_handle_id += 1
@@ -2130,6 +2157,7 @@ function * dlopen(lib) {
 
     yield linkid
 }
+window.dlopen = dlopen
 
 function from_hex(h) {
     var s = ''
@@ -2155,7 +2183,7 @@ function rx(event) {
             dlfcn_retval[serial] = from_hex(e.shift())
         }
     } else {
-        console.warn("bus(567)",rxmsg, origin)
+        console.warn("bus(2158)",rxmsg, origin)
     }
 
     if (origin) {
@@ -2291,6 +2319,12 @@ async function onload() {
         } else {
             console.warn("NO VT/stdout on mobile, use remote debugger or explicit flag")
         }
+
+        if (feature.startsWith("smp")) {
+            // cannot be hidden
+            feat_smp()
+        }
+
     }
 
     // FIXME: forced minimal output until until remote debugger is a thing.
@@ -2315,7 +2349,7 @@ async function onload() {
 
 // console.log("cleanup while loading wasm", "has_parent?", is_iframe(), "Parent:", window.parent)
 
-    feat_snd = feat_gui = feat_fs = feat_vt = feat_vtx = feat_stdout = feat_lifecycle = onload = null
+    feat_smp = feat_snd = feat_gui = feat_fs = feat_vt = feat_vtx = feat_stdout = feat_lifecycle = onload = null
 
     if ( is_iframe() ) {
         try {

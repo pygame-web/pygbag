@@ -475,7 +475,7 @@ config = {
 
         .framed{
            position: relative;
-           top: 00px;
+           top: 0px;
            right: 0px;
            border: 1px solid white;
         }
@@ -521,14 +521,10 @@ allowtransparency="true"
 style="z-index: 10;"
 style="background: #FFFFFF;"
 frameborder="1"
-                allowfullscreen="true"
-                webkitallowfullscreen="true"
-                msallowfullscreen="true"
-                mozallowfullscreen="true"
-                sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
-                allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
-                src="{{cookiecutter.cdn}}../../archives/lib/index.html"
-                scrolling="yes">
+    sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
+    allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
+    src="{{cookiecutter.cdn}}../../archives/lib/index.html"
+    scrolling="yes">
 </iframe>
 
 
@@ -592,8 +588,6 @@ function dragOverHandler(event) {
 
 }
 
-
-
 async function custom_onload(debug_hidden) {
     // this is called before anything python is loaded
     // make your js customization here
@@ -601,8 +595,6 @@ async function custom_onload(debug_hidden) {
     pyconsole.hidden = debug_hidden
     box.hidden =  debug_hidden
 }
-
-
 
 function custom_prerun(){
     // no python main and no (MEMFS + VFS) yet.
@@ -623,11 +615,6 @@ function debug() {
     Module.PyRun_SimpleString("shell.uptime()")
     window_resize()
 }
-
-// Hides mobile browser's address bar when page is done loading.
-window.addEventListener('load', function(e) {
-    setTimeout(function() { window.scrollTo({left:0, top:1080, behaviour :"instant"}) }, 1);
-}, false);
 
 </script>
 
