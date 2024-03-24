@@ -40,12 +40,12 @@ def y(*argv):
 
 
 def r(*argv):
-    x = ux(argv[0])
-    y = uy(argv[1])
-    ret = [x, y]
+    rx = x(argv[0])
+    ry = y(argv[1])
+    ret = [rx, ry]
     if len(argv) > 2:
-        w = ux(argv[2])
-        h = uy(argv[3])
+        w = x(argv[2])
+        h = y(argv[3])
         ret.append(w)
         ret.append(h)
     return ret
