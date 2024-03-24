@@ -1002,14 +1002,7 @@ function feat_smp() {
         dlhandler.loading = "lazy"
         dlhandler.width = "470px"
         dlhandler.height = "30%"
-        /*
-        dlhandler.style.top = "70%"
-        dlhandler.style.right = "0px"
-        dlhandler.style.height = "30%"
-        dlhandler.style.border = ""
-        dlhandler.style.postition = "absolute"
-        */
-dlhandler.style = "position: relative;top: 0px;right: 0px;border: 1px solid red;"
+dlhandler.style = "position: absolute;top: 12px;right: 12px;border: 1px solid red;"
 
         dlhandler.frameborder = "1"
         dlhandler.sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
@@ -2260,10 +2253,7 @@ async function onload() {
     var has_vt = false
 
     for (const feature of vm.config.features) {
-        if (feature.startsWith("3d")) {
-            vm.config.user_canvas_managed = 3
-        }
-
+        // embed is for canvas only, do not handle anything else.
         if (feature.startsWith("embed")) {
 
             vm.config.user_canvas_managed = vm.config.user_canvas_managed || 1
@@ -2274,6 +2264,16 @@ async function onload() {
             }
             // only canvas when embedding 2D/3D, stdxxx go to console.
             break
+        }
+
+        // position iframe first
+        if (feature.startsWith("smp")) {
+            // cannot be hidden
+            feat_smp()
+        }
+
+        if (feature.startsWith("3d")) {
+            vm.config.user_canvas_managed = 3
         }
 
         if (feature.startsWith("snd")) {
@@ -2320,10 +2320,7 @@ async function onload() {
             console.warn("NO VT/stdout on mobile, use remote debugger or explicit flag")
         }
 
-        if (feature.startsWith("smp")) {
-            // cannot be hidden
-            feat_smp()
-        }
+
 
     }
 
