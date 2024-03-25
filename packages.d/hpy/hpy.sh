@@ -103,12 +103,13 @@ ${SDKROOT}/python3-wasm setup.py build
  build/temp.wasm32-${WASM_FLAVOUR}-emscripten-cpython-${PYMAJOR}${PYMINOR}/hpy/universal/src/ctx_misc.o \
  build/temp.wasm32-${WASM_FLAVOUR}-emscripten-cpython-${PYMAJOR}${PYMINOR}/hpy/universal/src/hpymodule.o
 
-if [ -f /pp ]
+# local publish
+if [ -d $WHEELS ]
 then
     # build wheel for wasm
     ${SDKROOT}/python3-wasm -m build --no-isolation .
 
-    mv dist/*wasm*whl /data/git/archives/repo/pkg/
+    mv dist/*wasm*whl $WHEELS/cp${PYMAJOR}${PYMINOR}/
 fi
 
 popd
