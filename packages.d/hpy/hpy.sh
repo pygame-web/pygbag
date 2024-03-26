@@ -61,7 +61,7 @@ pushd external/hpy
 ${HPY} setup.py install
 
 # ${SDKROOT}/python3-wasm setup.py install
-${SDKROOT}/python3-wasm setup.py build
+PYTHONOPTIMIZE=TRUE ${SDKROOT}/python3-wasm -O setup.py build
 
 # link static
 . ${SDKROOT}/emsdk/emsdk_env.sh
@@ -107,7 +107,7 @@ ${SDKROOT}/python3-wasm setup.py build
 if [ -d $WHEELS ]
 then
     # build wheel for wasm
-    ${SDKROOT}/python3-wasm -m build --no-isolation .
+    PYTHONOPTIMIZE=TRUE ${SDKROOT}/python3-wasm -m build --no-isolation .
 
     mv dist/*wasm*whl $WHEELS/cp${PYMAJOR}${PYMINOR}/
 fi
