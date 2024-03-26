@@ -171,8 +171,8 @@ import optparse
 # bokeh
 import hmac
 
-#ursina
-import imghdr
+#ursina, not in 3.13
+# import imghdr
 
 # pep722
 import pyparsing

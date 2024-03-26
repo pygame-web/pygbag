@@ -4,73 +4,18 @@
 
 #if __PYDK__
 
-#if PY_VERSION_HEX >= 0x030d0000  // 3.13
-#   include "pycore_import.h"
-#   include "pycore_initconfig.h"    // _PyArgv
-#   include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
-#   include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
-#   include "pycore_runtime.h"       //  + pycore_runtime.h _PyRuntime_Initialize
-
-#else
-#   include "pycore_call.h"          // _PyObject_CallNoArgs()
-#   include "pycore_initconfig.h"    // _PyArgv
-#   include "pycore_interp.h"        // _PyInterpreterState.sysdict
-#   include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
-#   include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
-#   include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#endif // <3.13
-
 static PyStatus
-pymain_init(const _PyArgv *args)
+pymain_init(const void *args)
 {
     PyStatus status;
-
-    status = _PyRuntime_Initialize();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    PyPreConfig preconfig;
-    PyPreConfig_InitPythonConfig(&preconfig);
-
-    status = _Py_PreInitializeFromPyArgv(&preconfig, args);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    PyConfig config;
-    PyConfig_InitPythonConfig(&config);
-
-    if (args->use_bytes_argv) {
-        status = PyConfig_SetBytesArgv(&config, args->argc, args->bytes_argv);
-    }
-    else {
-        status = PyConfig_SetArgv(&config, args->argc, args->wchar_argv);
-    }
-    if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
-
-    status = Py_InitializeFromConfig(&config);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
-    status = _PyStatus_OK();
-
-done:
-    PyConfig_Clear(&config);
+    Py_Initialize();
     return status;
 }
 
 static void
 pymain_free(void)
 {
-    _PyImport_Fini2();
-    _PyPathConfig_ClearGlobal();
-    // removed in 3.13
-    //_Py_ClearStandardStreamEncoding();
-    _Py_ClearArgcArgv();
-    _PyRuntime_Finalize();
+    Py_FinalizeEx();
 }
 
 // run a main customized for browser/wasi fd and renderAnimationFrame.
@@ -81,7 +26,6 @@ pymain_free(void)
 int
 main(int argc, char **argv)
 {
-
     return Py_BytesMain(argc, argv);
 }
 #endif //#if __PYDK__

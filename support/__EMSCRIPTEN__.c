@@ -987,14 +987,14 @@ main(int argc, char **argv)
 #endif
 {
     gettimeofday(&time_last, NULL);
-
+/*
     _PyArgv args = {
         .argc = argc,
         .use_bytes_argv = 1,
         .bytes_argv = argv,
         .wchar_argv = NULL
     };
-
+*/
     PyImport_AppendInittab("embed", PyInit_embed);
 
 // wip hpy
@@ -1030,14 +1030,9 @@ main(int argc, char **argv)
 
     setenv("PYGLET_HEADLESS", "1", 1);
 
-    status = pymain_init(&args);
+    status = pymain_init(NULL);
 
-    if (_PyStatus_IS_EXIT(status)) {
-        pymain_free();
-        return status.exitcode;
-    }
-
-    if (_PyStatus_EXCEPTION(status)) {
+    if (PyErr_Occurred()) {
         puts(" ---------- pymain_exit_error ----------");
         Py_ExitStatusException(status);
         pymain_free();
@@ -1076,7 +1071,6 @@ main(int argc, char **argv)
     io_shm[0] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
     io_shm[IO_RAW] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
     io_shm[IO_RCON] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
-
 
 
 
