@@ -48,6 +48,13 @@ else
     fi
 fi
 
+if echo $PYBUILD|grep -q 3.13$
+then
+#    $HPY -m pip install --upgrade --force git+https://github.com/cython/cython.git
+    echo
+fi
+
+
 mkdir -p external
 pushd $(pwd)/external
 
@@ -72,6 +79,9 @@ then
 
     #unsure
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
+
+    # new cython
+    wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/6.diff | patch -p1
 
     # added Vector2.from_polar and Vector3.from_spherical classmethods
     wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2141.diff | patch -p1

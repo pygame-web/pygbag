@@ -3,12 +3,22 @@
 #include "Python.h"
 
 #if __PYDK__
-#include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_initconfig.h"    // _PyArgv
-#include "pycore_interp.h"        // _PyInterpreterState.sysdict
-#include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
-#include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+
+#if PY_VERSION_HEX >= 0x030d0000  // 3.13
+#   include "pycore_import.h"
+#   include "pycore_initconfig.h"    // _PyArgv
+#   include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
+#   include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
+#   include "pycore_runtime.h"       //  + pycore_runtime.h _PyRuntime_Initialize
+
+#else
+#   include "pycore_call.h"          // _PyObject_CallNoArgs()
+#   include "pycore_initconfig.h"    // _PyArgv
+#   include "pycore_interp.h"        // _PyInterpreterState.sysdict
+#   include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
+#   include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
+#   include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#endif // <3.13
 
 static PyStatus
 pymain_init(const _PyArgv *args)
@@ -63,8 +73,11 @@ pymain_free(void)
     _PyRuntime_Finalize();
 }
 
+// run a main customized for browser/wasi fd and renderAnimationFrame.
 #include "__EMSCRIPTEN__.c"
+
 #else
+// normal host build.
 int
 main(int argc, char **argv)
 {
