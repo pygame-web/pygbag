@@ -50,7 +50,7 @@ fi
 
 if echo $PYBUILD|grep -q 3.13$
 then
-#    $HPY -m pip install --upgrade --force git+https://github.com/cython/cython.git
+    $HPY -m pip install --upgrade --force git+https://github.com/cython/cython.git
     echo
 fi
 
