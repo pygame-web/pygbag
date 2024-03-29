@@ -1002,7 +1002,7 @@ function feat_smp() {
         dlhandler.loading = "lazy"
         dlhandler.width = "470px"
         dlhandler.height = "30%"
-dlhandler.style = "position: absolute;top: 12px;right: 12px;border: 1px solid red;"
+dlhandler.style = "position: absolute;bottom: 12px;right: 12px;border: 1px solid red;"
 
         dlhandler.frameborder = "1"
         dlhandler.sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
