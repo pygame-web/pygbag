@@ -987,21 +987,12 @@ main(int argc, char **argv)
 #endif
 {
     gettimeofday(&time_last, NULL);
-/*
-    _PyArgv args = {
-        .argc = argc,
-        .use_bytes_argv = 1,
-        .bytes_argv = argv,
-        .wchar_argv = NULL
-    };
-*/
     PyImport_AppendInittab("embed", PyInit_embed);
 
 // wip hpy
 #if defined(PYDK_static_hpy)
     PyImport_AppendInittab("_platform", PyInit__platform);
 #endif
-
 
 #   include "../build/gen_inittab.c"
 
@@ -1019,7 +1010,6 @@ main(int argc, char **argv)
     setenv("NCURSES_NO_UTF8_ACS", "1", 0);
     setenv("MPLBACKEND", "Agg", 0);
 
-
 // force
     setenv("PYTHONHOME","/usr", 1);
     setenv("PYTHONUNBUFFERED", "1", 1);
@@ -1029,6 +1019,8 @@ main(int argc, char **argv)
     setenv("APPDATA", "/home/web_user", 1);
 
     setenv("PYGLET_HEADLESS", "1", 1);
+    setenv("ELECTRIC_TELEMETRY","disabled", 1);
+
 
     status = pymain_init(NULL);
 
@@ -1055,7 +1047,6 @@ main(int argc, char **argv)
        puts("no 'tmp' directory, creating one ...");
     }
 
-
     for (int i=0;i<FD_MAX;i++)
         io_shm[i]= NULL;
 
@@ -1071,7 +1062,6 @@ main(int argc, char **argv)
     io_shm[0] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
     io_shm[IO_RAW] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
     io_shm[IO_RCON] = memset(malloc(FD_BUFFER_MAX) , 0, FD_BUFFER_MAX);
-
 
 
 EM_ASM({
