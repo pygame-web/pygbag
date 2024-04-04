@@ -1020,6 +1020,7 @@ main(int argc, char **argv)
 
     setenv("PYGLET_HEADLESS", "1", 1);
     setenv("ELECTRIC_TELEMETRY","disabled", 1);
+    setenv("PSYCOPG_WAIT_FUNC", "wait_select", 1);
 
 
     status = pymain_init(NULL);

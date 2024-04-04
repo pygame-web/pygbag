@@ -123,6 +123,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
         # .map don't exist and apk is local and could be generated on the fly
         invalid = path.endswith(".map") or path.endswith(".apk")
 
+        print(f"INVALID : {path}")
+
         if not os.path.isfile(path) and not invalid:
             remote_url = CDN + self.path
             cache = hashlib.md5(remote_url.encode()).hexdigest()

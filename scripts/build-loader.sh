@@ -127,10 +127,10 @@ LOPTS="-sMAIN_MODULE=1"
 echo "  ************************************"
 if [ -f dev ]
 then
-    export COPTS="-O1 -g1 -fPIC"
+    export COPTS="-O0 -g4 -fPIC --source-map-base http://localhost:8000/maps/"
     echo "       building DEBUG $COPTS"
     LOPTS="$LOPTS -sASSERTIONS=0"
-    ALWAYS_FS="--preload-file ${ALWAYS_CODE}@/data/data/org.python/assets"
+#    ALWAYS_FS="--preload-file ${ALWAYS_CODE}@/data/data/org.python/assets"
 else
     export COPTS="-Os -g0 -fPIC"
     echo "       building RELEASE $COPTS"
@@ -298,7 +298,7 @@ then
 emcc \\
  $FINAL_OPTS \\
  $LOPTS \\
- -D__PYDK__=1 -DNDEBUG \\
+ -D__PYDK__=1 -DNDEBUG  \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=4MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
     -sEXPORTED_RUNTIME_METHODS=FS \\
      $CF_SDL \\
@@ -312,13 +312,8 @@ emcc \\
      -o ${DIST_DIR}/${DISTRO}${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \\
      $LDFLAGS -lembind
 
-# -lfreetype
-
-# --bind -fno-rtti
-
 # -sERROR_ON_UNDEFINED_SYMBOLS=0
 # -sGL_ENABLE_GET_PROC_ADDRESS
-
 # --bind -fno-rtti
 
 
