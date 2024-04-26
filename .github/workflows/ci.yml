@@ -6,13 +6,13 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.57.2bi
+        SDK_VERSION: 3.1.59.0bi
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: emsdk hpy pygame
         BUILD_STATIC: emsdk hpy
         STATIC: false
         BUILDS: 3.12 3.13
-        CYTHON: Cython-3.0.8-py2.py3-none-any.whl
+        CYTHON: Cython-3.0.10-py2.py3-none-any.whl
         LD_VENDOR: -sUSE_GLFW=3
 
     steps:

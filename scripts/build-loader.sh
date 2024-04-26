@@ -127,7 +127,7 @@ LOPTS="-sMAIN_MODULE=1"
 echo "  ************************************"
 if [ -f dev ]
 then
-    export COPTS="-O0 -g4 -fPIC --source-map-base http://localhost:8000/maps/"
+    export COPTS="-O0 -g3 -fPIC --source-map-base http://localhost:8000/maps/"
     echo "       building DEBUG $COPTS"
     LOPTS="$LOPTS -sASSERTIONS=0"
 #    ALWAYS_FS="--preload-file ${ALWAYS_CODE}@/data/data/org.python/assets"

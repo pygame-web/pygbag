@@ -58,7 +58,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
         self.send_header("access-control-allow-origin", "*")
         self.send_header("cross-origin-resource-policy:", "cross-origin")
         self.send_header("cross-origin-opener-policy", "cross-origin")
-        # allow local threads
+
+        # allow local threads ( and hardware ones with xxx.localhost subdomains )
         self.send_header("origin-agent-cluster", "?1")
 
         # not valid for Atomics
@@ -87,11 +88,11 @@ class CodeHandler(SimpleHTTPRequestHandler):
     def send_head(self):
         global VERB, CDN, PROXY, BCDN, BPROXY, AUTO_REBUILD
         path = self.translate_path(self.path)
-        print(
-            f"""
+        if VERB:
+            print(f"""
 
-{self.path=} {path=}"""
-        )
+{self.path=} {path=}
+""")
 
         f = None
         if os.path.isdir(path):
@@ -123,7 +124,8 @@ class CodeHandler(SimpleHTTPRequestHandler):
         # .map don't exist and apk is local and could be generated on the fly
         invalid = path.endswith(".map") or path.endswith(".apk")
 
-        print(f"INVALID : {path}")
+        if invalid and path.endswith(".map"):
+            print(f"MAP? : {path}")
 
         if not os.path.isfile(path) and not invalid:
             remote_url = CDN + self.path
