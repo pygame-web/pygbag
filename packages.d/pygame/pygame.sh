@@ -40,9 +40,9 @@ else
         echo "  * upgrading cython $TEST_CYTHON to 3.0.1
 "  1>&2
         #$SYS_PYTHON -m pip install --user --upgrade git+https://github.com/cython/cython.git
-        CYTHON=${CYTHON:-Cython-3.0.1-py2.py3-none-any.whl}
+        CYTHON=${CYTHON:-Cython-3.0.10-py2.py3-none-any.whl}
         pushd build
-        wget -q -c https://github.com/cython/cython/releases/download/3.0.1/${CYTHON}
+        wget -q -c https://github.com/cython/cython/releases/download/3.0.10/${CYTHON}
         $HPY -m pip install $CYTHON
         popd
     fi
@@ -86,30 +86,61 @@ then
     # added Vector2.from_polar and Vector3.from_spherical classmethods
     wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2141.diff | patch -p1
 
-    patch -p1 << END
-diff --git a/src_c/static.c b/src_c/static.c
-index 03cc7c61..a00a51a7 100644
---- a/src_c/static.c
-+++ b/src_c/static.c
-@@ -255,9 +255,17 @@ static struct PyModuleDef mod_pygame_static = {PyModuleDef_HEAD_INIT,
-                                                "pygame_static", NULL, -1,
-                                                mod_pygame_static_methods};
+    if echo $PYBUILD|grep -q 3.13$
+    then
+        patch -p1 << END
+diff --git a/setup.py b/setup.py
+index 062859fa..37d07b33 100644
+--- a/setup.py
++++ b/setup.py
+@@ -122,7 +122,7 @@ distutils.ccompiler.CCompiler.__spawn = distutils.ccompiler.CCompiler.spawn
+ distutils.ccompiler.CCompiler.spawn = spawn
 
-+#include <SDL2/SDL_ttf.h>
+ # A (bit hacky) fix for https://github.com/pygame-community/pygame-ce/issues/1346
+-# This is due to the fact that distutils uses command line args to
++# This is due to the fact that distutils uses command line args to
+ # export PyInit_* functions on windows, but those functions are already exported
+ # and that is why compiler gives warnings
+ from distutils.command.build_ext import build_ext
+@@ -257,7 +257,8 @@ if compile_cython:
+             priority = 0
+         if outdated:
+             print(f'Compiling {pyx_file} because it changed.')
+-            queue.append((priority, {'pyx_file': pyx_file, 'c_file': c_file, 'fingerprint': None, 'quiet': False,
++            queue.append((priority, {'pyx_file': pyx_file, 'c_file': c_file, 'fingerprint': None,
++                                         'cache' : None, 'quiet': False,
+                                          'options': c_options, 'full_module_name': ext.name,
+                                          'embedded_metadata': pyx_meta.get(ext.name)}))
+
+@@ -269,7 +270,7 @@ if compile_cython:
+     for i, kwargs in enumerate(queue):
+         kwargs['progress'] = f'[{i + 1}/{count}] '
+         cythonize_one(**kwargs)
+-
 +
- PyMODINIT_FUNC
- PyInit_pygame_static()
- {
-+    {
-+        if (TTF_Init())
-+            fprintf(stderr, "ERROR: TTF_Init error");
-+        SDL_SetHint("SDL_EMSCRIPTEN_KEYBOARD_ELEMENT", "1");
-+    }
+     if cython_only:
+         sys.exit(0)
+
+@@ -423,7 +424,7 @@ for e in extensions:
+
+     if "freetype" in e.name and sys.platform not in ("darwin", "win32"):
+         # TODO: fix freetype issues here
+-        if sysconfig.get_config_var("MAINCC") != "clang":
++        if sysconfig.get_config_var("MAINCC") != "clang":
+             e.extra_compile_args.append("-Wno-error=unused-but-set-variable")
+
+     if "mask" in e.name and sys.platform == "win32":
+@@ -913,7 +914,7 @@ class StubcheckCommand(Command):
+     user_options = []
+     def initialize_options(self):
+         pass
+-
 +
-     load_submodule("pygame", PyInit_base(), "base");
-     load_submodule("pygame", PyInit_constants(), "constants");
-     load_submodule("pygame", PyInit_surflock(), "surflock");
+     def finalize_options(self):
+         pass
+
 END
+    fi
 
     # cython3 / merged
     # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2395.diff | patch -p1
