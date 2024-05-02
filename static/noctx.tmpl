@@ -120,7 +120,7 @@ async def custom_site():
             await asyncio.sleep(.1)
 
     # start async top level machinery if not started and add a console in any case if requested.
-    await aio.toplevel.handler.start_toplevel(platform.shell, console=window.python.config.debug)
+    await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
 
     # now that apk is mounted we have access to font cache
     # but we need to fill __file__/__name__ that are not yet set
