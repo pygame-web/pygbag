@@ -32,12 +32,12 @@ else
 
     # update cython
     TEST_CYTHON=$($HPY -m cython -V 2>&1)
-    if echo $TEST_CYTHON| grep -q 3.0.1$
+    if echo $TEST_CYTHON| grep -q 3.0.10$
     then
         echo "  * not upgrading cython $TEST_CYTHON
 " 1>&2
     else
-        echo "  * upgrading cython $TEST_CYTHON to 3.0.1
+        echo "  * upgrading cython $TEST_CYTHON to 3.0.10
 "  1>&2
         #$SYS_PYTHON -m pip install --user --upgrade git+https://github.com/cython/cython.git
         CYTHON=${CYTHON:-Cython-3.0.10-py2.py3-none-any.whl}
@@ -76,6 +76,9 @@ then
         git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
         pushd $(pwd)/pygame-wasm
     fi
+
+    # to upstream after tests
+    # done wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/7.diff | patch -p1
 
     #unsure
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
@@ -167,6 +170,19 @@ index e33eae33..f5f6697e 100644
 
 END
 
+    if echo $PYBUILD|grep -q 3.13$
+    then
+        echo "
+
+
+============================================
+    Forcing cython regen for 3.13+
+============================================
+
+
+"
+        rm src_c/_sdl2/sdl2.c src_c/_sdl2/audio.c src_c/_sdl2/mixer.c src_c/_sdl2/controller_old.c src_c/_sdl2/video.c
+    fi
 
 else
     pushd $(pwd)/pygame-wasm

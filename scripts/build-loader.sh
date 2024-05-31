@@ -297,6 +297,10 @@ then
         LDFLAGS="$LDFLAGS $cpylib"
     done
 
+
+    LDFLAGS="$LDFLAGS $(cat $LNK_TEST) -lembind"
+
+
     echo "
 
      LDFLAGS=$LDFLAGS
@@ -327,9 +331,8 @@ emcc \\
      --preload-file ${DYNLOAD}@/usr/lib/python${PYBUILD}/lib-dynload \\
      --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \\
      -o ${DIST_DIR}/${DISTRO}${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \\
-     $LDFLAGS \\
-    $(cat $LNK_TEST) \\
-    -lembind
+     $LDFLAGS
+
 
 END
     chmod +x ./final_link.sh

@@ -31,6 +31,7 @@ BAD = {
     "wav": "ogg",
     "bmp": "png",
     "mp3": "ogg",
+    "xm" : "ogg",
 }
 
 
@@ -84,6 +85,9 @@ else:
 
                 # TODO: still issue a warning
                 if fp.suffix == ".mp3":
+                    ...
+
+                if fp.suffix == ".xm":
                     ...
 
                 if fp.suffix == ".wav":

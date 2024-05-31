@@ -1072,13 +1072,13 @@ main(int argc, char **argv)
 
 
 EM_ASM({
-    const FD_BUFFER_MAX = $0;
-    const shm_stdin = $1;
-    const shm_rawinput = $2;
-    const shm_rcon = $3;
+    globalThis.FD_BUFFER_MAX = $0;
+    globalThis.shm_stdin = $1;
+    globalThis.shm_rawinput = $2;
+    globalThis.shm_rcon = $3;
 
     Module.printErr = Module.print;
-    const is_worker = (typeof WorkerGlobalScope !== 'undefined') && self instanceof WorkerGlobalScope;
+    globalThis.is_worker = (typeof WorkerGlobalScope !== 'undefined') && self instanceof WorkerGlobalScope;
 
     function jswasm_load(script, aio) {
         if (!aio) aio=false;
@@ -1135,17 +1135,11 @@ EM_ASM({
             } else {
                 console.error("PyMain: BrowserFS not found");
             }
-            if ($4) {
-                SYSCALLS.getStreamFromFD(0).tty = true;
-                SYSCALLS.getStreamFromFD(1).tty = true;
-                SYSCALLS.getStreamFromFD(2).tty = false;
-            }
         }
     }
 
 
-}, FD_BUFFER_MAX, io_shm[0], io_shm[IO_RAW], io_shm[IO_RCON], CPY);
-
+}, FD_BUFFER_MAX, io_shm[0], io_shm[IO_RAW], io_shm[IO_RCON]);
 
     PyRun_SimpleString("import sys, os, json, builtins, time");
     PyRun_SimpleString("sys.ps1 = ''");

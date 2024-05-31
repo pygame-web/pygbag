@@ -224,7 +224,7 @@ async def async_repos():
             rewritecdn = "http://localhost:8000/archives/repo/"
 
         if rewritecdn:
-            print(f"""230: {platform.window.location.href} {rewritecdn=}""")
+            print(f"""230: {rewritecdn=}""")
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = rewritecdn
 
@@ -277,9 +277,9 @@ async def pip_install(pkg, sysconf={}):
     for repo in Config.pkg_repolist:
         if pkg in repo:
             wheel_url = f"{repo['-CDN-']}{repo[pkg]}#"
-
-    # try to get a pure python wheel from pypi
-    if not wheel_url:
+            break
+    else:
+        # try to get a pure python wheel from pypi
         try:
             async with fopen(f"https://pypi.org/simple/{pkg}/") as html:
                 if html:
@@ -305,6 +305,9 @@ async def pip_install(pkg, sysconf={}):
                 HISTORY.append(pkg)
         except:
             print("324: INVALID", pkg, "from", wheel_url)
+    else:
+        print(f"309: no provider found for {pkg}")
+
 
 PYGAME = 0
 
