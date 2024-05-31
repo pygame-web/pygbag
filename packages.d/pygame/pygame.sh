@@ -83,8 +83,11 @@ then
     #unsure
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
 
-    # new cython
-    wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/6.diff | patch -p1
+    if echo $PYBUILD|grep -q 3.13$
+    then
+        # new cython (git)
+        wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/6.diff | patch -p1
+    fi
 
     # added Vector2.from_polar and Vector3.from_spherical classmethods
     # breaks, left a review !
