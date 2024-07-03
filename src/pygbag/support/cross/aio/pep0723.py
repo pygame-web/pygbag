@@ -72,6 +72,7 @@ class Config:
         "pygame_ce": "pygame.base",
         "python_i18n": "i18n",
         "pillow": "PIL",
+        "pyglm" : "glm",
     }
 
 
