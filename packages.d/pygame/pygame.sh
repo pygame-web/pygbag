@@ -51,6 +51,7 @@ fi
 if echo $PYBUILD|grep -q 3.13$
 then
     $HPY -m pip install --upgrade --force git+https://github.com/cython/cython.git
+    /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force --no-build-isolation --force git+https://github.com/cython/cython.git
 else
     echo " ================= NOT UPGRADING CYTHON TO GIT====================="
 fi
