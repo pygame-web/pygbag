@@ -198,8 +198,15 @@ echo "-----------------------------------------------------------"
 $HPY -u -I -B <<END
 import sys, os
 stdlp=""
+
+if os.environ.get('PYBUILD','')=='3.13':
+    SCD="_sysconfigdata_t"
+else:
+    SCD="_sysconfigdata_"
+
 with open("build/stdlib.list","w") as tarlist:
-    sysconf = "_sysconfigdata__linux_$(arch)-linux-gnu.py"
+
+    sysconf = f"{SCD}_linux_$(arch)-linux-gnu.py"
     with open("$FS") as fs:
         for l in fs.readlines():
             #print( l.strip() )
