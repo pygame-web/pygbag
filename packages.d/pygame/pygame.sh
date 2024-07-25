@@ -105,6 +105,24 @@ then
     # zerodiv mixer.music / merged
     # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2426.diff | patch -p1
 
+    patch -p1 <<END
+diff --git a/src_c/key.c b/src_c/key.c
+index 3a2435d2..a353c24f 100644
+--- a/src_c/key.c
++++ b/src_c/key.c
+@@ -150,8 +150,10 @@ static PyTypeObject pgScancodeWrapper_Type = {
+     PyVarObject_HEAD_INIT(NULL, 0).tp_name = "pygame.key.ScancodeWrapper",
+     .tp_repr = (reprfunc)pg_scancodewrapper_repr,
+     .tp_as_mapping = &pg_scancodewrapper_mapping,
++/*
+     .tp_iter = (getiterfunc)pg_iter_raise,
+     .tp_iternext = (iternextfunc)pg_iter_raise,
++*/
+ #ifdef PYPY_VERSION
+     .tp_new = pg_scancodewrapper_new,
+ #endif
+END
+
 
     # weird exception not raised correctly in test/pixelcopy_test
     patch -p1 <<END
