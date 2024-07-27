@@ -250,7 +250,12 @@ if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $MIMALLOC $CPY_CFLAGS $CF_SDL $CP
  -I${PYDIR}/internal -I${PYDIR} -I./support -I./external/hpy/hpy/devel/include -DPy_BUILD_CORE\
  -o build/${MODE}.o support/__EMSCRIPTEN__-pymain.c
 then
-    STDLIBFS="--preload-file build/stdlib-rootfs/python${PYBUILD}@/usr/lib/python${PYBUILD}"
+    if echo $PYBUILD | grep -q 13$
+    then
+        STDLIBFS="--preload-file build/stdlib-rootfs/python${PYBUILD}t@/usr/lib/python${PYBUILD}t"
+    else
+        STDLIBFS="--preload-file build/stdlib-rootfs/python${PYBUILD}@/usr/lib/python${PYBUILD}"
+    fi
 
     # \
     # --preload-file /usr/share/terminfo/x/xterm@/usr/share/terminfo/x/xterm \
