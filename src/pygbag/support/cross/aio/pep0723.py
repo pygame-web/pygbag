@@ -73,6 +73,7 @@ class Config:
         "python_i18n": "i18n",
         "pillow": "PIL",
         "pyglm" : "glm",
+        "opencv_python" : "cv2",
     }
 
 
@@ -201,7 +202,7 @@ async def async_repos():
     print("200: async_repos", Config.PKG_INDEXES)
 
     for repo in Config.PKG_INDEXES:
-        idx = f"{repo}index-090-{abitag}.json"
+        idx = f"{repo}index-0.9.2-{abitag}.json"
         try:
             async with fopen(idx, "r", encoding="UTF-8") as index:
                 try:
@@ -435,8 +436,15 @@ async def check_list(code=None, filename=None):
     if not aio.cross.simulator:
         import platform
         import asyncio
+        print(f'# 439: Scanning {sconf["platlib"]} for WebAssembly library')
+        platform.explore(sconf["platlib"], verbose=True)
+        for compilation in range(1+embed.preloading()):
 
-        platform.explore(sconf["platlib"])
+            await asyncio.sleep(0)
+            if embed.preloading()<=0:
+                break
+        else:
+            print("# 442: ERROR: remaining wasm {embed.preloading()}")
         await asyncio.sleep(0)
 
     do_patches()

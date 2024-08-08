@@ -245,19 +245,21 @@ prelist = {}
 ROOTDIR = f"/data/data/{sys.argv[0]}/assets"
 
 
-def explore(root):
+def explore(root, verbose=False):
     global prelist, preloading
+
+    import embed
 
     if preloading < 0:
         preloading = 0
-
-    import shutil
 
     for current, dirnames, filenames in os.walk(root):
         for filename in filenames:
             if filename.endswith(".so"):
                 preloading += 1
                 src = f"{current}/{filename}"
+                if verbose:
+                    print(f"# 260: preload {src=}")
                 embed.preload(src)
 
 
