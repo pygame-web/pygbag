@@ -244,11 +244,12 @@ MAIN_TEST="${LNK_TEST}.c"
 
 touch ${INT_TEST} ${INC_TEST} ${MAIN_TEST}
 
+# -L${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic only !
+
 if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $MIMALLOC $CPY_CFLAGS $CF_SDL $CPOPTS \
  -DINC_TEST=$INC_TEST -DMAIN_TEST=$MAIN_TEST \
  -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden \
  -I${PYDIR}/internal -I${PYDIR} -I./support -I./external/hpy/hpy/devel/include -DPy_BUILD_CORE \
- -L${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten \
  -o build/${MODE}.o support/__EMSCRIPTEN__-pymain.c
 then
     if echo $PYBUILD | grep -q 13$
@@ -273,7 +274,7 @@ then
 
     LDFLAGS="$LDFLAGS -lsqlite3"
 
-    LDFLAGS="-L${SDKROOT}/devices/emsdk/usr/lib -L${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten $LDFLAGS -lssl -lcrypto -lffi -lbz2 -lz -ldl -lm"
+    LDFLAGS="-L${SDKROOT}/devices/emsdk/usr/lib $LDFLAGS -lssl -lcrypto -lffi -lbz2 -lz -ldl -lm"
 
     LINKPYTHON="python mpdec expat"
 
@@ -315,7 +316,6 @@ then
 
 #  -std=gnu99 -std=c++23
 # EXTRA_EXPORTED_RUNTIME_METHODS => EXPORTED_RUNTIME_METHODS after 3.1.52
-
 
 
 
