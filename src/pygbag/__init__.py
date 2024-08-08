@@ -30,7 +30,7 @@ if not sys.platform in ('emscripten','wasi'):
 sys.path.append(str(Path(__file__).parent / "support/cross"))
 
 
-# WaPy<=>CPython compat
+# WaPy/Micropython <=> CPython compat
 
 import builtins
 

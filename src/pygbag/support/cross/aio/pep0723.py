@@ -202,19 +202,27 @@ async def async_repos():
 
     for repo in Config.PKG_INDEXES:
         idx = f"{repo}index-090-{abitag}.json"
-        async with fopen(idx, "r", encoding="UTF-8") as index:
-            try:
-                data = index.read()
-                if isinstance(data, bytes):
-                    data = data.decode()
-                data = data.replace("<abi>", abitag)
-                data = data.replace("<api>", apitag)
-                repo = json.loads(data)
-            except:
-                pdb(f"213: {idx=}: malformed json index {data}")
-                continue
-            if repo not in Config.pkg_repolist:
-                Config.pkg_repolist.append(repo)
+        try:
+            async with fopen(idx, "r", encoding="UTF-8") as index:
+                try:
+                    data = index.read()
+                    if isinstance(data, bytes):
+                        data = data.decode()
+                    data = data.replace("<abi>", abitag)
+                    data = data.replace("<api>", apitag)
+                    repo = json.loads(data)
+                except:
+                    pdb(f"213: {idx=}: malformed json index {data}")
+                    continue
+                if repo not in Config.pkg_repolist:
+                    Config.pkg_repolist.append(repo)
+        except FileNotFoundError:
+            print("\n"*4)
+            print("!"*75)
+            print("Sorry, there is no pygbag package repository for your python version")
+            print("!"*75,"\n"*4)
+            raise SystemExit
+
 
     if not aio.cross.simulator:
         rewritecdn = ""
