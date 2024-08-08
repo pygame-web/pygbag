@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.65.1bi
+        SDK_VERSION: 3.1.65.7bi
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: emsdk hpy pygame
         BUILD_STATIC: emsdk hpy
@@ -83,19 +83,16 @@ jobs:
             cd $GITHUB_WORKSPACE
             /opt/python-wasm-sdk/python3-wasm -m build --no-isolation .
 
-    - name: Upload sdk to Github Releases
-      if: github.event_name == 'release'
-      uses: svenstaro/upload-release-action@2.3.0
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: $GITHUB_WORKSPACE/dist/*
-        file_glob: true
-        tag: ${{ github.ref }}
+    - name: Setup Pages
+      uses: actions/configure-pages@v5
 
-
-    - name : "Upload to GitHub pages"
-      uses: JamesIves/github-pages-deploy-action@v4.4.1
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        branch: gh-pages
-        folder: build/web/archives
+          # Upload entire repository
+          path: 'build/web/archives'
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
 
