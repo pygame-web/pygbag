@@ -76,6 +76,7 @@ jobs:
     - name: publishing
       run: |
             cd $GITHUB_WORKSPACE
+            touch build/web/archives/.nojekyll
             echo "<html></html>" >  build/web/archives/index.html
 
     - name: make wheel
@@ -83,16 +84,8 @@ jobs:
             cd $GITHUB_WORKSPACE
             /opt/python-wasm-sdk/python3-wasm -m build --no-isolation .
 
-    - name: Setup Pages
-      uses: actions/configure-pages@v5
-
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
+    - name : "Upload to GitHub pages"
+      uses: JamesIves/github-pages-deploy-action@v4.6.3
       with:
-          # Upload entire repository
-          path: 'build/web/archives'
-
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
-
+        branch: gh-pages
+        folder: build/web/archives
