@@ -79,7 +79,7 @@ Serving python files from [/data/git/pygbag/test/build/web]
 
 with no security/performance in mind, i'm just a test tool : don't rely on me
 usage: __main__.py [-h] [--bind ADDRESS] [--PYBUILD PYBUILD] [--app_name APP_NAME] [--ume_block UME_BLOCK] [--can_close CAN_CLOSE] [--cache CACHE] [--package PACKAGE] [--title TITLE] [--version VERSION] [--build] [--html] [--no_opt] [--archive] [--icon ICON] [--cdn CDN] [--template TEMPLATE] [--ssl SSL]
-                   [--port [PORT]]
+                   [--port [PORT]] [--disable-sound-format-error]
 
 options:
   -h, --help            show this help message and exit
@@ -103,6 +103,7 @@ options:
   --template TEMPLATE   index.html template [default:default.tmpl]
   --ssl SSL             enable ssl with server.pem and key.pem
   --port [PORT]         Specify alternate port [default: 8000]
+  --disable-sound-format-error   audio files with a common unsupported format found in the assets won't raise an exception
 ```
 
 unlisted developper options:

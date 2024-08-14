@@ -21,15 +21,22 @@ async def pack_files(zf, packlist, zfolders, target_folder):
     global COUNTER
 
     for asset in packlist:
+        asset_name = str(asset)[1:]
+        if "--disable-mp3-error" not in sys.argv and Path(asset_name).suffix == ".mp3":
+            raise RuntimeError(
+                f"Audio file '{str(asset)[1:]}' in '{target_folder}' has a common unsupported format. "
+                "Use OGG format instead. Suppress this error with the '--disable-sound-format-error' option."
+            )
+
         zpath = list(zfolders)
         zpath.insert(0, str(target_folder))
-        zpath.append(str(asset)[1:])
+        zpath.append(asset_name)
 
-        zip_content = target_folder / str(asset)[1:]
-        print(f"\t{target_folder} : {str(asset)[1:]}")
+        zip_content = target_folder / asset_name
+        print(f"\t{target_folder} : {asset_name}")
 
         zpath = list(zfolders)
-        zpath.append(str(asset)[1:].replace("-pygbag.", "."))
+        zpath.append(asset_name.replace("-pygbag.", "."))
 
         if not zip_content.is_file():
             print("32: ERROR", zip_content)
