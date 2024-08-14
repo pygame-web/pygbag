@@ -22,7 +22,7 @@ async def pack_files(zf, packlist, zfolders, target_folder):
 
     for asset in packlist:
         asset_name = str(asset)[1:]
-        if "--disable-mp3-error" not in sys.argv and Path(asset_name).suffix == ".mp3":
+        if "--disable-mp3-error" not in sys.argv and Path(asset_name).suffix[1:].lower() in ["mp3", "wav", "aiff"]:
             raise RuntimeError(
                 f"Audio file '{str(asset)[1:]}' in '{target_folder}' has a common unsupported format. "
                 "Use OGG format instead. Suppress this error with the '--disable-sound-format-error' option."
