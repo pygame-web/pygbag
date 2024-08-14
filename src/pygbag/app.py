@@ -6,6 +6,7 @@ import warnings
 
 import os
 import argparse
+import configparser
 
 
 from pathlib import Path
@@ -294,7 +295,7 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
     parser.add_argument("--no_opt", action="store_true", help="turn off assets optimizer")
 
     parser.add_argument("--archive", action="store_true", help="make build/web.zip archive for itch.io")
-
+    
     #    parser.add_argument(
     #        "--main",
     #        default=DEFAULT_SCRIPT,
@@ -379,6 +380,36 @@ now packing application ....
 """
     )
 
+    config_parse = configparser.ConfigParser()
+    # config_parse["DEPENDENCIES"] = {"ignoreDirs":[], "ignoreFiles":[]}
+    if os.path.exists("pygbag.ini"):
+        config_parse.read("pygbag.ini")
+    else:
+        print("WARNING: No pygbag.ini found! See: https://pygame-web.github.io/#configuration")
+    
+    ignore_files = config_parse.get("DEPENDENCIES", "ignoreFiles")
+    ignore_dirs = config_parse.get("DEPENDENCIES","ignoreDirs")
+    def parse_ignore(ignore_raw:str):  # TODO: move this somewhere
+        if not ignore_raw:
+            return []
+        ignore_raw = ignore_raw.strip()
+        
+        for quote in ['"', "'"]:
+            if ignore_raw.find(quote) != -1:
+                print(f'ERROR: Don\'t use {quote} in pygbag config!')
+                raise SystemExit
+        
+        if ignore_raw.startswith("["):
+            if ignore_raw:
+                ignore_raw = ignore_raw.strip("[]")  # remove brackets
+                return [folder for folder in ignore_raw.split(",")]
+            else:
+                return []
+        else:  # just a single item without brackets
+            return [ignore_raw]
+    ignore_files = parse_ignore(ignore_files)
+    ignore_dirs = parse_ignore(ignore_dirs)
+
     CC = {
         "cdn": args.cdn,
         "proxy": f"http://{args.bind}:{args.port}/",
@@ -400,11 +431,13 @@ now packing application ....
         "LINES" : args.LINES,
         "CONSOLE" : args.CONSOLE,
     }
-
-
+    
     pygbag.config = CC
+    
+    print(f"Ignored dirs: {ignore_dirs}")
+    print(f"Ignored files: {ignore_files}")
 
-    await pack.archive(f"{app_name}.apk", app_folder, build_dir)
+    await pack.archive(f"{app_name}.apk", app_folder, ignore_dirs, ignore_files, build_dir)
 
     def cache_file(remote_url, suffix):
         nonlocal cache_dir

@@ -16,8 +16,6 @@ IGNORE = """
 /.github
 /.vscode
 /.idea
-/.venv
-/.tox
 /.DS_Store
 /dist
 /build
@@ -27,13 +25,17 @@ IGNORE = """
 /ATTIC
 """.strip().split(
     "\n"
-)
+)  # Why not .splitlines()
 
-SKIP_EXT = ["lnk", "pyc", "pyx", "pyd", "pyi", "exe", "bak", "log", "blend", "DS_Store"]
+SKIP_EXT = ["pyc", "pyx", "pyd", "pyi", "exe", "bak", "log", "blend", "DS_Store"]
 
 
-def filter(walked):
-    global dbg, IGNORE, SKIP_EXT
+def filter(walked, ignore_dirs, ignore_files):
+    global dbg, IGNORE, SKIP_EXT, IGNORE_FILES
+    IGNORE.extend(ignore_dirs)
+    
+    IGNORE_FILES = ignore_files
+    
     for folder, filenames in walked:
         blocking = False
 
@@ -61,6 +63,8 @@ def filter(walked):
             if filename in [".gitignore"]:
                 if dbg:
                     print("REJ 3", folder, filename)
+                continue
+            if filename in IGNORE_FILES:
                 continue
 
             ext = filename.rsplit(".", 1)[-1].lower()
