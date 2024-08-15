@@ -385,7 +385,7 @@ now packing application ....
     if os.path.exists("pygbag.ini"):
         config_parse.read("pygbag.ini")
     else:
-        print("WARNING: No pygbag.ini found! See: https://pygame-web.github.io/#configuration")
+        print("WARNING: No pygbag.ini found! See: https://pygame-web.github.io/pygbag-configuration")
     
     ignore_files = config_parse.get("DEPENDENCIES", "ignoreFiles")
     ignore_dirs = config_parse.get("DEPENDENCIES","ignoreDirs")

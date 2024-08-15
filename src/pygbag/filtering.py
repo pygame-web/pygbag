@@ -23,9 +23,7 @@ IGNORE = """
 /ignore
 /static
 /ATTIC
-""".strip().split(
-    "\n"
-)  # Why not .splitlines()
+""".splitlines()
 
 SKIP_EXT = ["pyc", "pyx", "pyd", "pyi", "exe", "bak", "log", "blend", "DS_Store"]
 
