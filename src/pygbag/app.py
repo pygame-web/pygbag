@@ -29,6 +29,10 @@ import pygbag
 
 from . import pack
 from . import web
+from .config_types import Config
+
+
+from config_to_object import load_config
 
 
 devmode = "--dev" in sys.argv
@@ -380,35 +384,19 @@ now packing application ....
 """
     )
 
-    config_parse = configparser.ConfigParser()
-    # config_parse["DEPENDENCIES"] = {"ignoreDirs":[], "ignoreFiles":[]}
     if os.path.exists("pygbag.ini"):
-        config_parse.read("pygbag.ini")
+        config:Config = load_config("path/to/your/config.ini")
     else:
         print("WARNING: No pygbag.ini found! See: https://pygame-web.github.io/wiki/pygbag-configuration")
     
-    ignore_files = config_parse.get("DEPENDENCIES", "ignoreFiles")
-    ignore_dirs = config_parse.get("DEPENDENCIES","ignoreDirs")
-    def parse_ignore(ignore_raw:str):  # TODO: move this somewhere
-        if not ignore_raw:
-            return []
-        ignore_raw = ignore_raw.strip()
-        
-        for quote in ['"', "'"]:
-            if ignore_raw.find(quote) != -1:
-                print(f'ERROR: Don\'t use {quote} in pygbag config!')
-                raise SystemExit
-        
-        if ignore_raw.startswith("["):
-            if ignore_raw:
-                ignore_raw = ignore_raw.strip("[]")  # remove brackets
-                return [folder for folder in ignore_raw.split(",")]
-            else:
-                return []
-        else:  # just a single item without brackets
-            return [ignore_raw]
-    ignore_files = parse_ignore(ignore_files)
-    ignore_dirs = parse_ignore(ignore_dirs)
+    ignore_files = config.DEPENDENCIES.ignorefiles
+    ignore_dirs =  config.DEPENDENCIES.ignoredirs
+
+    for ignore_arr in [ignore_files, ignore_dirs]:
+        for ignored in ignore_arr:
+            if ignored.strip().find(" "):  # has space in folder/file name
+                print("ERROR! You cannot use folder/files with spaces in it.")
+                raise SystemExit  # maybe use a custom pygbag exception
 
     CC = {
         "cdn": args.cdn,
