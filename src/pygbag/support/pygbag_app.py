@@ -49,7 +49,8 @@ class console:
         platform.shell.interactive(True)
         aio.toplevel.handler.muted = False
 
-        clear(LINES, CONSOLE-1)  # , '>C> ')
+        clear(LINES, CONSOLE - 1)  # , '>C> ')
         return self
 
-__ALL__ = [ ui, ux ]
+
+__ALL__ = [ui, ux]

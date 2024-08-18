@@ -10,8 +10,7 @@ class tui:
         out = sys.__stdout__.write
     else:
 
-        def out(self, *argv, **kw):
-            ...
+        def out(self, *argv, **kw): ...
 
     try:
         LINES = int(os.environ.get("LINES", 200))

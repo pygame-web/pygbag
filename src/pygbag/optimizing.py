@@ -31,7 +31,7 @@ BAD = {
     "wav": "ogg",
     "bmp": "png",
     "mp3": "ogg",
-    "xm" : "ogg",
+    "xm": "ogg",
 }
 
 

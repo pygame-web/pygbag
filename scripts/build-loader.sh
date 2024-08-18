@@ -384,13 +384,6 @@ END
             done
             popd
         fi
-#echo "
-#    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#    emsdk tot js gen temp fix
-#    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#"
-#        sed -i 's/_glfwSetWindowContentScaleCallback_sig=iii/_glfwSetWindowContentScaleCallback_sig="iii"/g' \
-#         ${DIST_DIR}/python${PYMAJOR}${PYMINOR}/${MODE}.js
         du -hs ${DIST_DIR}/*
     else
         echo "pymain+loader linking failed"

@@ -17,11 +17,12 @@ from datetime import datetime
 
 from .__init__ import VERSION
 
-if '--no_ssl_check' in sys.argv:
+if "--no_ssl_check" in sys.argv:
     import ssl
+
     # ssl local server testing.
     ssl._create_default_https_context = ssl._create_unverified_context
-    #os.environ["REQUESTS_CA_BUNDLE"]="/etc/ssl/certs/ca-bundle.crt"
+    # os.environ["REQUESTS_CA_BUNDLE"]="/etc/ssl/certs/ca-bundle.crt"
     sys.argv.remove("--no_ssl_check")
 
 import pygbag
@@ -396,11 +397,10 @@ now packing application ....
         "spdx": "cookiecutter.spdx",
         "version": VERSION,
         "PYBUILD": args.PYBUILD,
-        "COLUMNS" : args.COLUMNS,
-        "LINES" : args.LINES,
-        "CONSOLE" : args.CONSOLE,
+        "COLUMNS": args.COLUMNS,
+        "LINES": args.LINES,
+        "CONSOLE": args.CONSOLE,
     }
-
 
     pygbag.config = CC
 

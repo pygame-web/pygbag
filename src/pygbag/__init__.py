@@ -24,9 +24,9 @@ if "--git" in sys.argv:
     VERSION = "0.0.0"
 
 # make aio available
-if not sys.platform in ('emscripten','wasi'):
+if not sys.platform in ("emscripten", "wasi"):
     # must be first for readline
-    sys.path.insert(0, str(Path(__file__).parent / "support" ))
+    sys.path.insert(0, str(Path(__file__).parent / "support"))
 sys.path.append(str(Path(__file__).parent / "support/cross"))
 
 

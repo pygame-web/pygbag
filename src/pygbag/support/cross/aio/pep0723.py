@@ -55,9 +55,9 @@ hint_failed = []
 
 
 class Config:
-    READ_722 = False
+    #    READ_722 = False
     READ_723 = True
-    BLOCK_RE_722 = r"(?i)^#\s+script\s+dependencies:\s*$"
+    #    BLOCK_RE_722 = r"(?i)^#\s+script\s+dependencies:\s*$"
     BLOCK_RE_723 = r"(?m)^# /// (?P<type>[a-zA-Z0-9-]+)$\s(?P<content>(^#(| .*)$\s)+)^# ///$"
     PKG_BASE_DEFAULT = "https://pygame-web.github.io/archives/repo/"
     PKG_INDEXES = []
@@ -72,8 +72,8 @@ class Config:
         "pygame_ce": "pygame.base",
         "python_i18n": "i18n",
         "pillow": "PIL",
-        "pyglm" : "glm",
-        "opencv_python" : "cv2",
+        "pyglm": "glm",
+        "opencv_python": "cv2",
     }
 
 
@@ -110,7 +110,7 @@ def read_dependency_block_723(code):
     content = []
     for line in code.split("\n"):
         if not has_block:
-            if line.strip() in ["# /// pyproject","# /// script"]:
+            if line.strip() in ["# /// pyproject", "# /// script"]:
                 has_block = True
             continue
 
@@ -192,12 +192,12 @@ async def async_repos():
     apitag = apitag.replace("-", "_")
 
     # user can override "PYPI" index
-    if os.environ.get('PYGPI',""):
-        Config.PKG_INDEXES= [os.environ.get('PYGPI')]
+    if os.environ.get("PYGPI", ""):
+        Config.PKG_INDEXES = [os.environ.get("PYGPI")]
 
     # default to "official" cdn
     if not len(Config.PKG_INDEXES):
-        Config.PKG_INDEXES = [ Config.PKG_BASE_DEFAULT ]
+        Config.PKG_INDEXES = [Config.PKG_BASE_DEFAULT]
 
     print("200: async_repos", Config.PKG_INDEXES)
 
@@ -218,18 +218,18 @@ async def async_repos():
                 if repo not in Config.pkg_repolist:
                     Config.pkg_repolist.append(repo)
         except FileNotFoundError:
-            print("\n"*4)
-            print("!"*75)
+            print("\n" * 4)
+            print("!" * 75)
             print("Sorry, there is no pygbag package repository for your python version")
-            print("!"*75,"\n"*4)
+            print("!" * 75, "\n" * 4)
             raise SystemExit
-
 
     if not aio.cross.simulator:
         rewritecdn = ""
         import platform
-        if os.environ.get('PYGPI',""):
-            rewritecdn = os.environ.get('PYGPI')
+
+        if os.environ.get("PYGPI", ""):
+            rewritecdn = os.environ.get("PYGPI")
         elif platform.window.location.href.startswith("http://localhost:8"):
             rewritecdn = "http://localhost:8000/archives/repo/"
 
@@ -237,6 +237,7 @@ async def async_repos():
             print(f"""230: {rewritecdn=}""")
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = rewritecdn
+
 
 async def install_pkg(sysconf, wheel_url, wheel_pkg):
     target_filename = f"/tmp/{wheel_pkg}"
@@ -321,20 +322,21 @@ async def pip_install(pkg, sysconf={}):
 
 PYGAME = 0
 
+
 async def parse_code(code, env):
     global PATCHLIST, PYGAME
 
     maybe_missing = []
 
-    if Config.READ_722:
-        for req in read_dependency_block_722(code):
-            pkg = str(req)
-            if (env / pkg).is_dir():
-                print("found in env :", pkg)
-                continue
-            elif pkg not in maybe_missing:
-                # do not change case ( eg PIL )
-                maybe_missing.append(pkg.lower().replace("-", "_"))
+    #    if Config.READ_722:
+    #        for req in read_dependency_block_722(code):
+    #            pkg = str(req)
+    #            if (env / pkg).is_dir():
+    #                print("found in env :", pkg)
+    #                continue
+    #            elif pkg not in maybe_missing:
+    #                # do not change case ( eg PIL )
+    #                maybe_missing.append(pkg.lower().replace("-", "_"))
 
     if Config.READ_723:
         for req in read_dependency_block_723(code):
@@ -436,12 +438,13 @@ async def check_list(code=None, filename=None):
     if not aio.cross.simulator:
         import platform
         import asyncio
+
         print(f'# 439: Scanning {sconf["platlib"]} for WebAssembly library')
         platform.explore(sconf["platlib"], verbose=True)
-        for compilation in range(1+embed.preloading()):
+        for compilation in range(1 + embed.preloading()):
 
             await asyncio.sleep(0)
-            if embed.preloading()<=0:
+            if embed.preloading() <= 0:
                 break
         else:
             print("# 442: ERROR: remaining wasm {embed.preloading()}")
