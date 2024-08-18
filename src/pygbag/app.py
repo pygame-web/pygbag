@@ -17,6 +17,7 @@ import shutil
 from datetime import datetime
 
 from .__init__ import VERSION
+from .example_config import EXAMPLE_CONFIG
 
 if '--no_ssl_check' in sys.argv:
     import ssl
@@ -318,6 +319,8 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         help="web site to cache locally [default:%s]" % cdn,
     )
 
+    parser.add_argument("--ini", default=False, action="store_true", help="Initialize an example pygbag.ini config file")
+
     parser.add_argument(
         "--template",
         default=DEFAULT_TMPL,
@@ -384,19 +387,6 @@ now packing application ....
 """
     )
 
-    if os.path.exists("pygbag.ini"):
-        config:Config = load_config("path/to/your/config.ini")
-    else:
-        print("WARNING: No pygbag.ini found! See: https://pygame-web.github.io/wiki/pygbag-configuration")
-    
-    ignore_files = config.DEPENDENCIES.ignorefiles
-    ignore_dirs =  config.DEPENDENCIES.ignoredirs
-
-    for ignore_arr in [ignore_files, ignore_dirs]:
-        for ignored in ignore_arr:
-            if ignored.strip().find(" "):  # has space in folder/file name
-                print("ERROR! You cannot use folder/files with spaces in it.")
-                raise SystemExit  # maybe use a custom pygbag exception
 
     CC = {
         "cdn": args.cdn,
@@ -418,7 +408,32 @@ now packing application ....
         "COLUMNS" : args.COLUMNS,
         "LINES" : args.LINES,
         "CONSOLE" : args.CONSOLE,
+        "INIT_CONFIG": args.ini
     }
+
+    if args.ini:
+        if not os.path.exists("pygbag.ini"):
+            with open("pygbag.ini", "w") as f:
+                f.write(EXAMPLE_CONFIG)
+        else:
+            print("ERROR: You already have an pygbag.ini file. Please delete it before attempting to init a fresh config.")
+            raise SystemExit
+
+    if os.path.exists("pygbag.ini"):
+        config:Config = load_config("pygbag.ini")
+        ignore_files = config.DEPENDENCIES.ignorefiles
+        ignore_dirs =  config.DEPENDENCIES.ignoredirs
+    else:
+        print("WARNING: No pygbag.ini found! See: https://pygame-web.github.io/wiki/pygbag-configuration")
+        ignore_files = []
+        ignore_dirs = []
+
+    for ignore_arr in [ignore_files, ignore_dirs]:
+        for ignored in ignore_arr:
+            if ignored.strip().find(" ") != -1:  # has space in folder/file name
+                print(f"|{ignored}|")
+                print("ERROR! You cannot use folder/files with spaces in it.")
+                raise SystemExit  # maybe use a custom pygbag exception
     
     pygbag.config = CC
     
