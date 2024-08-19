@@ -37,6 +37,10 @@ def filter(walked, ignore_dirs, ignore_files):
     for folder, filenames in walked:
         blocking = False
 
+        # ignore .* folders
+        if folder.startswith("."):
+            continue
+
         for block in IGNORE:
             if not block:
                 continue
@@ -58,6 +62,9 @@ def filter(walked, ignore_dirs, ignore_files):
             continue
 
         for filename in filenames:
+            # ignore .* files
+            if filename.startswith("."):
+                continue
             if filename in [".gitignore"]:
                 if dbg:
                     print("REJ 3", folder, filename)

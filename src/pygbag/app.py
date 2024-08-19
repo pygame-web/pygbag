@@ -6,7 +6,6 @@ import warnings
 
 import os
 import argparse
-import configparser
 
 
 from pathlib import Path
@@ -19,11 +18,12 @@ from datetime import datetime
 from .__init__ import VERSION
 from .example_config import EXAMPLE_CONFIG
 
-if '--no_ssl_check' in sys.argv:
+if "--no_ssl_check" in sys.argv:
     import ssl
+
     # ssl local server testing.
     ssl._create_default_https_context = ssl._create_unverified_context
-    #os.environ["REQUESTS_CA_BUNDLE"]="/etc/ssl/certs/ca-bundle.crt"
+    # os.environ["REQUESTS_CA_BUNDLE"]="/etc/ssl/certs/ca-bundle.crt"
     sys.argv.remove("--no_ssl_check")
 
 import pygbag
@@ -300,7 +300,7 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
     parser.add_argument("--no_opt", action="store_true", help="turn off assets optimizer")
 
     parser.add_argument("--archive", action="store_true", help="make build/web.zip archive for itch.io")
-    
+
     #    parser.add_argument(
     #        "--main",
     #        default=DEFAULT_SCRIPT,
@@ -387,7 +387,6 @@ now packing application ....
 """
     )
 
-
     CC = {
         "cdn": args.cdn,
         "proxy": f"http://{args.bind}:{args.port}/",
@@ -405,10 +404,10 @@ now packing application ....
         "spdx": "cookiecutter.spdx",
         "version": VERSION,
         "PYBUILD": args.PYBUILD,
-        "COLUMNS" : args.COLUMNS,
-        "LINES" : args.LINES,
-        "CONSOLE" : args.CONSOLE,
-        "INIT_CONFIG": args.ini
+        "COLUMNS": args.COLUMNS,
+        "LINES": args.LINES,
+        "CONSOLE": args.CONSOLE,
+        "INIT_CONFIG": args.ini,
     }
 
     if args.ini:
@@ -420,9 +419,9 @@ now packing application ....
             raise SystemExit
 
     if os.path.exists("pygbag.ini"):
-        config:Config = load_config("pygbag.ini")
+        config: Config = load_config("pygbag.ini")
         ignore_files = config.DEPENDENCIES.ignorefiles
-        ignore_dirs =  config.DEPENDENCIES.ignoredirs
+        ignore_dirs = config.DEPENDENCIES.ignoredirs
     else:
         print("WARNING: No pygbag.ini found! See: https://pygame-web.github.io/wiki/pygbag-configuration")
         ignore_files = []
@@ -434,9 +433,9 @@ now packing application ....
                 print(f"|{ignored}|")
                 print("ERROR! You cannot use folder/files with spaces in it.")
                 raise SystemExit  # maybe use a custom pygbag exception
-    
+
     pygbag.config = CC
-    
+
     print(f"Ignored dirs: {ignore_dirs}")
     print(f"Ignored files: {ignore_files}")
 
