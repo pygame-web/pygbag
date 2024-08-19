@@ -219,7 +219,7 @@ if PyConfig is None:
 else:
 
     # for the various emulations/tools provided
-    sys.path.append('/data/data/org.python/assets')
+    sys.path.append("/data/data/org.python/assets")
 
     PyConfig["pkg_repolist"] = []
 
@@ -253,9 +253,9 @@ else:
     del home
 
 # now in pep0723
-#PYCONFIG_PKG_INDEXES = [
+# PYCONFIG_PKG_INDEXES = [
 #    os.environ.get('PYGPY', "https://pygame-web.github.io/archives/repo/"),
-#]
+# ]
 
 PyConfig["imports_ready"] = False
 PyConfig["pygbag"] = 0
@@ -688,8 +688,8 @@ ________________________
             if not len(Config.repos):
                 await aio.pep0723.async_repos()
 
-    # TODO switch to METADATA:Requires-Dist
-    #   see https://github.com/pygame-web/pygbag/issues/156
+                # TODO switch to METADATA:Requires-Dist
+                #   see https://github.com/pygame-web/pygbag/issues/156
 
                 for cdn in Config.PKG_INDEXES:
                     async with platform.fopen(Path(cdn) / Config.REPO_DATA) as source:
@@ -708,13 +708,13 @@ ________________________
             DBG(f"635: {maybe_wanted=} known failed {aio.pep0723.hint_failed=}")
 
             # FIXME use an hybrid wheel
-            if 'pyodide' in aio.pep0723.hint_failed:
+            if "pyodide" in aio.pep0723.hint_failed:
 
-                for no_need in ('_zengl','pyodide','beautifulsoup4'):
+                for no_need in ("_zengl", "pyodide", "beautifulsoup4"):
                     if no_need in maybe_wanted:
                         maybe_wanted.remove(no_need)
                 # force
-                maybe_wanted.append('beautifulsoup4')
+                maybe_wanted.append("beautifulsoup4")
 
             for dep in maybe_wanted:
                 if not dep in deps:
@@ -1073,10 +1073,10 @@ if not aio.cross.simulator:
                 PyConfig.pkg_indexes.append(redirect)
 
             print("807: DEV MODE ON", PyConfig.pkg_indexes)
-# now in pep0723
-#        else:
-#            # address cdn
-#            PyConfig.pkg_indexes = PYCONFIG_PKG_INDEXES
+        # now in pep0723
+        #        else:
+        #            # address cdn
+        #            PyConfig.pkg_indexes = PYCONFIG_PKG_INDEXES
 
         from platform import window, document, ffi
 
@@ -1375,6 +1375,7 @@ if not aio.cross.simulator:
                     return None
 
                 print(f"{self.__dlref}.{fn}({argv},{env}) {callid=}")
+
                 async def rv():
                     obj = await platform.jsiter(window.dlcall(callid, jshex))
                     return json.loads(obj)
@@ -1475,6 +1476,7 @@ try:
     LOCK
 except:
     import builtins
+
     builtins.LOCK = False
 
 
@@ -1617,7 +1619,7 @@ async def import_site(__file__, run=True):
                         local = tmpdir / file
                         break
                 DBG("1862: import_site: found ", local)
-            elif str(source).startswith('http'):
+            elif str(source).startswith("http"):
                 print("Remote file :", source)
                 local = tmpdir / "remote.py"
                 await shell.exec(shell.wget(f"-O{local}", source))
