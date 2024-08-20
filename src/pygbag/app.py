@@ -331,6 +331,13 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         help="Specify alternate port [default: 8000]",
     )
 
+    parser.add_argument(
+        "--disable-sound-format-error",
+        action="store_true",
+        default=False,
+        help="audio files with a common unsupported format found in the assets won't raise an exception",
+    )
+
     args = parser.parse_args()
 
     # when in browser IDE everything should be done in allowed folder

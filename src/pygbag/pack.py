@@ -8,6 +8,8 @@ from .optimizing import optimize
 from .html_embed import html_embed
 
 COUNTER = 0
+UNSUPPORTED_CACHE = []
+OGG_CACHE = []
 
 
 class REPLAY:
@@ -21,15 +23,24 @@ async def pack_files(zf, packlist, zfolders, target_folder):
     global COUNTER
 
     for asset in packlist:
+        asset_name = str(asset)[1:]
+
+        if "--disable-sound-format-error" not in sys.argv:
+            suffix = Path(asset_name).suffix[1:].lower()
+            if suffix in ["mp3", "wav", "aiff"]:
+                UNSUPPORTED_CACHE.append((asset_name.replace(f".{suffix}", ""), suffix))
+            elif suffix == "ogg":
+                OGG_CACHE.append(asset_name.replace(".ogg", ""))
+
         zpath = list(zfolders)
         zpath.insert(0, str(target_folder))
-        zpath.append(str(asset)[1:])
+        zpath.append(asset_name)
 
-        zip_content = target_folder / str(asset)[1:]
-        print(f"\t{target_folder} : {str(asset)[1:]}")
+        zip_content = target_folder / asset_name
+        print(f"\t{target_folder} : {asset_name}")
 
         zpath = list(zfolders)
-        zpath.append(str(asset)[1:].replace("-pygbag.", "."))
+        zpath.append(asset_name.replace("-pygbag.", "."))
 
         if not zip_content.is_file():
             print("32: ERROR", zip_content)
@@ -112,6 +123,18 @@ async def archive(apkname, target_folder, build_dir=None):
         with zipfile.ZipFile(apkname, mode="x", compression=zipfile.ZIP_DEFLATED) as zf:
             # pack_files(zf, Path.cwd(), ["assets"], target_folder)
             await pack_files(zf, packlist, ["assets"], target_folder)
+
+    for unsupported_name, suffix in UNSUPPORTED_CACHE:
+        found_ogg = False
+        for ogg_name in OGG_CACHE:
+            if ogg_name in [unsupported_name, f"{unsupported_name}-pygbag"]:
+                found_ogg = True
+                break
+        if not found_ogg:
+            raise RuntimeError(
+                f"Audio file '{unsupported_name}.{suffix}' in '{target_folder}' has a common unsupported format. "
+                "Use OGG format instead. Suppress this error with the '--disable-sound-format-error' option."
+            )
 
     print(f"packing {COUNTER} files complete")
 
