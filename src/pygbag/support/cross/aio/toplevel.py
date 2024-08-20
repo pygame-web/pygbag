@@ -261,5 +261,4 @@ if not __UPY__:
 else:
     # TODO upy event driven async repl
 
-    class AsyncInteractiveConsole:
-        ...
+    class AsyncInteractiveConsole: ...

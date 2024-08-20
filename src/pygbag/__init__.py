@@ -9,7 +9,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 from pathlib import Path
 
-VERSION = "0.9.2"
+VERSION = "0.9.3"
 
 # hack to test git cdn build without upgrading pygbag
 # beware can have side effects when file packager behaviour must change !
@@ -24,9 +24,9 @@ if "--git" in sys.argv:
     VERSION = "0.0.0"
 
 # make aio available
-if not sys.platform in ('emscripten','wasi'):
+if not sys.platform in ("emscripten", "wasi"):
     # must be first for readline
-    sys.path.insert(0, str(Path(__file__).parent / "support" ))
+    sys.path.insert(0, str(Path(__file__).parent / "support"))
 sys.path.append(str(Path(__file__).parent / "support/cross"))
 
 

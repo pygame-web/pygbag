@@ -5,12 +5,10 @@ import textwrap
 index = {}
 
 
-class State(object):
-    ...
+class State(object): ...
 
 
-class Draft(object):
-    ...
+class Draft(object): ...
 
 
 @dataclass

@@ -334,13 +334,17 @@ def clear(LINES=0, CONSOLE=0, prompt=""):
 
 
 import sys
+
 try:
     import re
+
     ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 except:
+
     class ansi_escape:
         def sub(self, sb, line):
             return line
+
     ansi_escape = ansi_escape()
 
 

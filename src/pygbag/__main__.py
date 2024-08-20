@@ -139,8 +139,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
         clients = {}
         events = []
 
-        async def process(self):
-            ...
+        async def process(self): ...
 
     def patch_platform_system():
         return "Emscripten"
@@ -180,8 +179,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
             return "Linux"
 
         @classmethod
-        def no_op(cls, *argv, **kw):
-            ...
+        def no_op(cls, *argv, **kw): ...
 
         run = no_op
 

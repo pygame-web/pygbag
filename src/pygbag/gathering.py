@@ -1,8 +1,10 @@
 import os
 from pathlib import Path
 
+
 class Error(Exception):
     pass
+
 
 def gather(root: Path, *kw):
     if root.is_file():

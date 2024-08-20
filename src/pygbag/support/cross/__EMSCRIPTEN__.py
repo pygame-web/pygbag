@@ -96,7 +96,7 @@ if hasattr(sys, "_emscripten_info"):
             async def main():
                 while not aio.exit:
                     if len(AnimatedFrames):
-                        frames.append( AnimatedFrames.pop(0) )
+                        frames.append(AnimatedFrames.pop(0))
                     await asyncio.sleep(0)
 
             asyncio.run(main())
@@ -105,7 +105,7 @@ if hasattr(sys, "_emscripten_info"):
 
     # just a workaround until bridge support js "options" from **kw
     def ffi(arg=0xDEADBEEF, **kw):
-        if arg==0xDEADBEEF:
+        if arg == 0xDEADBEEF:
             return window.JSON.parse(json.dumps(kw))
         return window.JSON.parse(json.dumps(arg))
 

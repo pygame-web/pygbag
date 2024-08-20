@@ -407,7 +407,7 @@ now packing application ....
         "COLUMNS": args.COLUMNS,
         "LINES": args.LINES,
         "CONSOLE": args.CONSOLE,
-        "INIT_CONFIG": args.ini,
+        "INI": args.ini,
     }
 
     if args.ini:

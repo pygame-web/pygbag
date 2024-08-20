@@ -90,10 +90,12 @@ class CodeHandler(SimpleHTTPRequestHandler):
         global VERB, CDN, PROXY, BCDN, BPROXY, AUTO_REBUILD
         path = self.translate_path(self.path)
         if VERB:
-            print(f"""
+            print(
+                f"""
 
 {self.path=} {path=}
-""")
+"""
+            )
 
         f = None
         if os.path.isdir(path):
