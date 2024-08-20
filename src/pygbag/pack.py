@@ -75,7 +75,7 @@ def stream_pack_replay():
     print(f"replay packing {len(REPLAY.LIST)=} files complete for {REPLAY.APK}")
 
 
-async def archive(apkname, target_folder, build_dir=None):
+async def archive(apkname, target_folder, ignore_dirs:list[str], ignore_files:list[str], build_dir=None):
     global COUNTER, REPLAY
 
     COUNTER = 0
@@ -90,7 +90,7 @@ async def archive(apkname, target_folder, build_dir=None):
 
     filtered = []
     last = ""
-    for infolder, fullpath in filter(walked):
+    for infolder, fullpath in filter(walked, ignore_dirs, ignore_files):
         if last != infolder:
             print(f"Now in {infolder}")
             last = infolder

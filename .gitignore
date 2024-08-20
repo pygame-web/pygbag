@@ -130,7 +130,7 @@ dmypy.json
 
 /0.0
 /.eric6project
-/src
+# /src
 /dist
 /ATTIC
 /platform_wasm
