@@ -3,8 +3,9 @@ reset
 
 export CI=${CI:-false}
 
+export WORKSPACE=${GITHUB_WORKSPACE:-$(pwd)}
 
-BUILDS=${BUILDS:-3.12 3.11}
+export BUILDS=${BUILDS:-3.12 3.11}
 
 export STATIC=${STATIC:-true}
 

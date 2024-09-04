@@ -12,7 +12,6 @@ import glob
 
 import re
 
-print(sys.path)
 import tomllib
 
 import json
@@ -27,6 +26,7 @@ from aio.filelike import fopen
 import platform
 import platform_wasm.todo
 
+from zipfile import ZipFile
 
 # TODO: maybe control wheel cache with $XDG_CACHE_HOME/pip
 
@@ -66,6 +66,10 @@ class Config:
     repos = []
     pkg_repolist = []
     dev_mode = ".-X.dev." in ".".join([""] + sys.orig_argv + [""])
+
+    Requires_Dist = []
+    Requires_Processing = []
+    Requires_Failures = []
 
     mapping = {
         "pygame": "pygame.base",
@@ -129,18 +133,6 @@ def read_dependency_block_723(code):
     deps = struct.get("dependencies", [])
     for dep in deps:
         yield dep
-
-
-def read_dependency_block_723x(script):
-    name = "pyproject"
-    matches = list(filter(lambda m: m.group("type") == name, re.finditer(Config.BLOCK_RE_723, script)))
-    if len(matches) > 1:
-        raise ValueError(f"Multiple {name} blocks found")
-    elif len(matches) == 1:
-        print(tomllib.loads(matches[0]))
-        yield "none"
-    else:
-        return None
 
 
 def install(pkg_file, sconf=None):
@@ -238,12 +230,57 @@ async def async_repos():
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = rewritecdn
 
+def processing(dep):
+    if dep in HISTORY:
+        return True
+    if dep in Config.Requires_Processing:
+        return True
+    if dep in Config.Requires_Failures:
+        return True
+    return False
+
 
 async def install_pkg(sysconf, wheel_url, wheel_pkg):
     target_filename = f"/tmp/{wheel_pkg}"
     async with fopen(wheel_url, "rb") as pkg:
         with open(target_filename, "wb") as target:
             target.write(pkg.read())
+        pkg.seek(0)
+        with ZipFile(pkg) as archive:
+            for name in archive.namelist():
+                if name.endswith(".dist-info/METADATA"):
+                    for line in archive.open(name).read().decode().splitlines():
+                        if line.startswith('Requires-Dist: '):
+                            if line.find('; extra ')>0:
+                                continue
+                            req = Requirement(line[15:])
+                            if req.extras:
+                                continue
+                            if processing(req.name):
+                                continue
+                            if not req.name in Config.Requires_Dist:
+                                Config.Requires_Dist.insert(0,req.name)
+    while len(Config.Requires_Dist):
+        elem = None
+        for elem in Config.Requires_Dist:
+            if not processing(elem):
+                break
+        else:
+            break
+        Config.Requires_Processing.append(elem)
+        print(f"# 265: {elem=}")
+        if not await pip_install(elem, sysconf):
+            print(f"install: {wheel_pkg} is missing {elem}")
+        else:
+            try:
+                Config.Requires_Processing.remove(elem)
+            except:
+                pass
+            try:
+                Config.Requires_Dist.remove(elem)
+            except:
+                pass
+
     install(target_filename, sysconf)
 
 
@@ -264,6 +301,8 @@ def do_patches():
 # FIXME: HISTORY and invalidate caches
 async def pip_install(pkg, sysconf={}):
     global sconf
+    if pkg in Config.Requires_Failures:
+        return
     if pkg in HISTORY:
         return
 
@@ -314,10 +353,15 @@ async def pip_install(pkg, sysconf={}):
             await install_pkg(sysconf, wheel_url, wheel_pkg)
             if pkg not in HISTORY:
                 HISTORY.append(pkg)
-        except:
-            print("324: INVALID", pkg, "from", wheel_url)
+            return True
+        except Exception as e:
+            print("324: INVALID", pkg, "from", wheel_url, e)
+            #sys.print_exception(e)
     else:
         print(f"309: no provider found for {pkg}")
+
+    if not pkg in Config.Requires_Failures:
+        Config.Requires_Failures.append(pkg)
 
 
 PYGAME = 0

@@ -231,9 +231,9 @@ echo CPY_CFLAGS=$CPY_CFLAGS
 
 
 
-if [ -f /data/git/pygbag/integration/${INTEGRATION}.h ]
+if [ -f ${WORKSPACE}/integration/${INTEGRATION}.h ]
 then
-    LNK_TEST=/data/git/pygbag/integration/${INTEGRATION}
+    LNK_TEST=${WORKSPACE}/integration/${INTEGRATION}
 else
     LNK_TEST=/tmp/pygbag_integration_test
 fi
@@ -242,7 +242,7 @@ INC_TEST="${LNK_TEST}.h"
 MAIN_TEST="${LNK_TEST}.c"
 
 
-touch ${INT_TEST} ${INC_TEST} ${MAIN_TEST}
+touch ${INT_TEST} ${INC_TEST} ${LNK_TEST} ${MAIN_TEST}
 
 # -L${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic only !
 
@@ -294,6 +294,8 @@ then
         if [ -f $cpylib ]
         then
             LDFLAGS="$LDFLAGS $cpylib"
+        else
+            echo "  Not found : $cpylib"
         fi
     done
 
@@ -316,7 +318,6 @@ then
 
 #  -std=gnu99 -std=c++23
 # EXTRA_EXPORTED_RUNTIME_METHODS => EXPORTED_RUNTIME_METHODS after 3.1.52
-
 
 
 PG=/pgdata
