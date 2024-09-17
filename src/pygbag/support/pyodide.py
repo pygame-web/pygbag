@@ -24,6 +24,7 @@ class m_pyodide:
 
 
 sys.modules["pyodide"] = m_pyodide()
+sys.modules["pyodide.ffi"] = sys.modules["pyodide"] = ffi
 del m_pyodide
 import pyodide
 
