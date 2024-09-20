@@ -18,7 +18,7 @@ then
     fi
 fi
 
-ln -sf $(pwd)/src/pygbag $(pwd)/pygbag
+# [ -L $(pwd)/pygbag ] || -sf $(pwd)/src/pygbag $(pwd)/pygbag
 
 pushd src/pygbag/support
 cp -r _xterm_parser ${SDKROOT}/prebuilt/emsdk/common/site-packages/

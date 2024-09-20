@@ -140,6 +140,9 @@ def install(pkg_file, sconf=None):
     from installer import install
     from installer.destinations import SchemeDictionaryDestination
     from installer.sources import WheelFile
+    if pkg_file in HISTORY:
+        print(f"# 144: install: {pkg_file} already installed")
+        return
 
     # Handler for installation directories and writing into them.
     destination = SchemeDictionaryDestination(
@@ -161,11 +164,11 @@ def install(pkg_file, sconf=None):
         if pkg_file not in HISTORY:
             HISTORY.append(pkg_file)
             importlib.invalidate_caches()
-        print(f"142: {pkg_file} installed")
+        print(f"# 166: {pkg_file} installed")
     except FileExistsError as ex:
-        print(f"38: {pkg_file} already installed (or partially)", ex)
+        print(f"# 160: {pkg_file} already installed (or partially)", ex)
     except Exception as ex:
-        pdb(f"82: cannot install {pkg_file}")
+        pdb(f"# 170: cannot install {pkg_file}")
         sys.print_exception(ex)
 
 
@@ -226,7 +229,7 @@ async def async_repos():
             rewritecdn = "http://localhost:8000/archives/repo/"
 
         if rewritecdn:
-            print(f"""230: {rewritecdn=}""")
+            print(f"# 231: {rewritecdn=}")
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = rewritecdn
 
@@ -303,10 +306,8 @@ async def pip_install(pkg, sysconf={}):
     global sconf
     if pkg in Config.Requires_Failures:
         return
-    if pkg in HISTORY:
-        return
 
-    print("282: searching", pkg)
+    #print("282: searching", pkg)
 
     if not sysconf:
         sysconf = sconf
@@ -316,9 +317,11 @@ async def pip_install(pkg, sysconf={}):
     # hack for WASM wheel repo
     if pkg.lower() in Config.mapping:
         pkg = Config.mapping[pkg.lower()]
-        if pkg in HISTORY:
-            return
         print("294: package renamed to", pkg)
+
+    if pkg in HISTORY:
+        print(f"# 322: pip_install: {pkg} already installed")
+        return
 
     if pkg in platform.patches:
         if not pkg in PATCHLIST:
@@ -350,9 +353,9 @@ async def pip_install(pkg, sysconf={}):
     if wheel_url:
         try:
             wheel_pkg, wheel_hash = wheel_url.rsplit("/", 1)[-1].split("#", 1)
-            await install_pkg(sysconf, wheel_url, wheel_pkg)
             if pkg not in HISTORY:
                 HISTORY.append(pkg)
+            await install_pkg(sysconf, wheel_url, wheel_pkg)
             return True
         except Exception as e:
             print("324: INVALID", pkg, "from", wheel_url, e)
