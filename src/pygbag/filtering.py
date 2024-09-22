@@ -37,20 +37,21 @@ def filter(walked, ignore_dirs, ignore_files):
     for folder, filenames in walked:
         blocking = False
 
+        fx = Path(folder).as_posix()
+
         # ignore .* folders
-        if folder.as_posix().startswith("."):
+        if fx.startswith("."):
             continue
 
         for block in IGNORE:
             if not block:
                 continue
+
             if folder.match(block):
                 if dbg:
                     print("REJ 1", folder)
                 blocking = True
                 break
-
-            fx = folder.as_posix()
 
             if fx.startswith(f"{block}/"):
                 if dbg:
@@ -62,17 +63,21 @@ def filter(walked, ignore_dirs, ignore_files):
             continue
 
         for filename in filenames:
+            fnx = Path(filename).as_posix()
+
             # ignore .* files
-            if filename.startswith("."):
+            if fnx.startswith("."):
                 continue
-            if filename in [".gitignore"]:
+
+            if fnx in [".gitignore"]:
                 if dbg:
                     print("REJ 3", folder, filename)
                 continue
-            if filename in IGNORE_FILES:
+
+            if fnx in IGNORE_FILES:
                 continue
 
-            ext = filename.rsplit(".", 1)[-1].lower()
+            ext = fnx.rsplit(".", 1)[-1].lower()
             if ext in SKIP_EXT:
                 if dbg:
                     print("REJ 4", folder, filename)
