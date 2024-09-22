@@ -31,14 +31,14 @@ SKIP_EXT = ["lnk", "pyc", "pyx", "pyd", "pyi", "exe", "bak", "log", "blend", "DS
 def filter(walked, ignore_dirs, ignore_files):
     global dbg, IGNORE, SKIP_EXT, IGNORE_FILES
     IGNORE.extend(ignore_dirs)
-    
+
     IGNORE_FILES = ignore_files
-    
+
     for folder, filenames in walked:
         blocking = False
 
         # ignore .* folders
-        if folder.startswith("."):
+        if folder.as_posix().startswith("."):
             continue
 
         for block in IGNORE:
