@@ -31,7 +31,7 @@ import pygbag
 from . import pack
 from . import web
 from .config_types import Config
-from src.pygbag.support.cross.aio.pep0723 import read_dependency_block_723
+from .support.cross.aio.pep0723 import read_dependency_block_723
 
 
 from config_to_object import load_config
