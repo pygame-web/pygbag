@@ -1604,7 +1604,7 @@ async def import_site(__file__, run=True):
                 if ext in ("apk", "jar"):
                     fname = fname + ".zip"
 
-                async with platfom.fopen(source, "rb") as zipdata:
+                async with platform.fopen(source, "rb") as zipdata:
                     with open(fname, "wb") as file:
                         file.write(zipdata.read())
                 import shutil
