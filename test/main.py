@@ -19,22 +19,24 @@ else:
     # native case
 
     import asyncio as aio
+
     aio.exit = False
-    aio.frame = 1.0/60
+    aio.frame = 1.0 / 60
     aio.sync = False
 
     # because threading target= does not handle generators
     def synchronized(f):
-        def run(*argv,**kw):
+        def run(*argv, **kw):
             global Native
-            gen = f(*argv,**kw)
+            gen = f(*argv, **kw)
             while True:
-                deadline = time.time()+aio.frame
+                deadline = time.time() + aio.frame
                 if next(gen) is StopIteration:
                     return
                 alarm = deadline - time.time()
-                if alarm>0:
+                if alarm > 0:
                     time.sleep(alarm)
+
         return run
 
 
@@ -76,7 +78,6 @@ class Moving_svg(Thread):
             self.way = -self.way
         self.win.blit(self.surf, (50 + (self.way * decal), 50 + (-self.way * decal)))
 
-
     @synchronized
     def run(self):
         print(f"{self.native_id=} {self.ident=} {self.is_alive()=}")
@@ -89,6 +90,7 @@ class Moving_svg(Thread):
 
 # ok model
 moving_svg = None
+
 
 @synchronized
 def color_background(win):
@@ -117,6 +119,7 @@ def moving_bmp(win):
 
         win.blit(bmp, (50 + (way * decal), 50 + (-way * decal)))
         yield aio
+
 
 @synchronized
 def moving_png(win):
@@ -149,31 +152,24 @@ async def main():
     # still bugs in that thread model
     # mbmp = Moving_bmp()
 
-
     # erase and fill
-    (t1:=Thread(target=color_background, args=[win])).start()
-
-
+    (t1 := Thread(target=color_background, args=[win])).start()
 
     moving_svg = Moving_svg()
     moving_svg.win = win
     print(f"{moving_svg.native_id=} {moving_svg.ident=} {moving_svg.is_alive()=}")
     moving_svg.start()
 
-
     # 1st object to draw
-    t2=Thread(target=moving_bmp, args=[win])
+    t2 = Thread(target=moving_bmp, args=[win])
     t2.start()
 
     # 2nd
 
-    t3=Thread(target=moving_png, args=[win])
+    t3 = Thread(target=moving_png, args=[win])
     t3.start()
 
-
-    print( t1.native_id , t2.native_id , t3.native_id)
-
-
+    print(t1.native_id, t2.native_id, t3.native_id)
 
     while True:
         if count >= 0:
@@ -185,16 +181,15 @@ async def main():
 """
             )
 
-#        if moving_svg and moving_svg.native_id:
-#            moving_svg.loop()
+        #        if moving_svg and moving_svg.native_id:
+        #            moving_svg.loop()
 
         pygame.display.update()
 
         if not aio.sync:
-            time.sleep(aio.frame) # frametime idle
+            time.sleep(aio.frame)  # frametime idle
 
         await asyncio.sleep(0)
-
 
         if count < -60 * 30:  # about * seconds
             print("exit game loop")

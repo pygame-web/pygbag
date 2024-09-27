@@ -45,12 +45,10 @@ class _dangling:
         pass
 
 
-class Local:
-    pass
-
-
-def local():
-    return Local
+class local:
+    @classmethod
+    def __call__(cls):
+         return cls()
 
 
 class Lock:
