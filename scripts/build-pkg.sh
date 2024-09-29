@@ -7,8 +7,8 @@ then
     echo "  vendor build"
     if ${ABI3:-false}
     then
-    echo "  vendor build (abi3) $PYBUILD"
-        if echo $PYBUILD|grep -v -q 3.12$
+        echo "  vendor build (abi3) $PYBUILD"
+        if echo $PYBUILD|grep -v -q 3.13$
         then
             echo "abi3 vendor build only, skipping $PYBUILD"
             exit 0
@@ -18,6 +18,7 @@ fi
 
 export PYMAJOR=$(echo -n $PYBUILD|cut -d. -f1)
 export PYMINOR=$(echo -n $PYBUILD|cut -d. -f2)
+export PYGBAG_VERSION=$(PYTHONPATH=${WORKSPACE}/src $SYS_PYTHON -c "print(__import__('pygbag').VERSION)")
 
 . /etc/lsb-release
 
@@ -214,6 +215,14 @@ END
     fi
 
     export pkg
+
+    # TODO: get wheel file from script and move it to the right place
+
+    export TAG=${PYMAJOR}${PYMINOR}
+    export WHEEL_DIR_PURE=/data/git/archives/repo/pkg
+    export WHEEL_DIR_ABI3=/data/git/archives/repo/${PYGBAG_VERSION}
+    export WHEEL_DIR=/data/git/archives/repo/cp${TAG}-${PYGBAG_VERSION}
+
 
     if ./${PKG_PATH}.sh
     then

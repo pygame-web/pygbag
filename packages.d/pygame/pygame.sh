@@ -86,8 +86,9 @@ then
     # to upstream after tests
     # done wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/7.diff | patch -p1
 
-    #unsure
-    wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
+    # unsure : wasm pygame.freetype hack
+    #wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
+    wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/1967.diff  | patch -p1
 
     # new cython (git)
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/8.diff | patch -p1
@@ -267,9 +268,11 @@ SDL2="-sUSE_ZLIB=1 -sUSE_BZIP2=1 -sUSE_LIBPNG -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -lSD
 SDL2="$SDL2 -lssl -lcrypto -lffi -lbz2 -lz -ldl -lm"
 
 
-if [ -d testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten ]
+TARGET_FOLDER=$(pwd)/testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_${WASM_FLAVOUR}_emscripten
+
+if [ -d ${TARGET_FOLDER} ]
 then
-    TARGET_FOLDER=$(pwd)/testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_${WASM_FLAVOUR}_emscripten
+
     TARGET_FILE=${TARGET_FOLDER}/pygame_static.cpython-${TAG}-wasm32-emscripten.so
 
     . ${SDKROOT}/emsdk/emsdk_env.sh
@@ -279,7 +282,8 @@ then
     emcc -shared -Os -g0 -fpic -o ${TARGET_FILE} $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a $SDL2
 
     # github CI does not build wheel for now.
-    if [ -d /data/git/archives/repo/cp${TAG} ]
+    echo ${WHEEL_DIR}
+    if [ -d ${WHEEL_DIR} ]
     then
         mkdir -p $TARGET_FOLDER
         /bin/cp -rf testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_mvp_emscripten/. ${TARGET_FOLDER}/
@@ -287,21 +291,17 @@ then
         if pushd testing/pygame_static-1.0-cp${TAG}-cp${TAG}-wasm32_${WASM_FLAVOUR}_emscripten
         then
             rm ${TARGET_FILE}.map
-            if $WASM_PURE
-            then
-                /data/git/archives/repo/norm.sh
-            else
-                whl=/data/git/archives/repo/cp${TAG}/$(basename $(pwd)).whl
-                [ -f $whl ] && rm $whl
-                zip $whl -r .
-            fi
+            WHEEL_PATH=${WHEEL_DIR}/$(basename $(pwd)).whl
+            [ -f $WHEEL_PATH ] && rm $WHEEL_PATH
+            zip $WHEEL_PATH -r .
             rm ${TARGET_FILE}
             popd
         fi
+    else
+        echo " =========== no wheel build from ${TARGET_FOLDER} ==========="
     fi
+
 fi
-
-
 
 
 
