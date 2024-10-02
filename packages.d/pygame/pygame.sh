@@ -58,9 +58,9 @@ then
 
     "
                 pushd build
-                wget -q -c https://github.com/cython/cython/releases/download/3.0.11-1/${CYTHON}
-                $HPY -m pip install $CYTHON
-                /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force $CYTHON
+                    wget -q -c https://github.com/cython/cython/releases/download/3.0.11-1/${CYTHON}
+                    /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force $CYTHON
+                    $HPY -m pip install --upgrade --force $CYTHON
                 popd
             fi
 
