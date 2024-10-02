@@ -6,7 +6,7 @@ export PACKAGES=${PACKAGES:-emsdk hpy pygame}
 
 export SDKROOT=${SDKROOT:-/opt/python-wasm-sdk}
 export SDK_VERSION=${SDK_VERSION:-3.1.64.1bi}
-export CYTHON=${CYTHON:-Cython-3.0.10-py2.py3-none-any.whl}
+export CYTHON=${CYTHON:-Cython-3.0.11-py2.py3-none-any.whl}
 export PYBUILD=${PYBUILD:-3.12}
 export LC_ALL=C
 

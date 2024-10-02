@@ -1178,6 +1178,9 @@ PyObject *PyInit_browser() {
   if (module == NULL) {
     return NULL;
   }
+#ifdef Py_GIL_DISABLED
+  PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
 
   Object *window = PyObject_New(Object, &Object_Type);
   if (PyModule_AddObject(module, "window", (PyObject *)window) < 0) {

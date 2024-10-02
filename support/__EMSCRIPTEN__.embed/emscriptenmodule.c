@@ -873,5 +873,11 @@ extern PyObject *PyInit_emscripten();
 #endif
 
 PyObject *PyInit_emscripten() {
-  return PyModule_Create(&emscripten_module);
+#ifdef Py_GIL_DISABLED
+    PyObject *emscripten_mod = PyModule_Create(&emscripten_module);
+    PyUnstable_Module_SetGIL(emscripten_mod, Py_MOD_GIL_NOT_USED);
+    return emscripten_mod;
+#else
+    return PyModule_Create(&emscripten_module);
+#endif
 }

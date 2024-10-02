@@ -17,48 +17,58 @@ echo "
 
 " 1>&2
 
+sed -i 's|check.warn(importable)|pass|g' ${HOST_PREFIX}/lib/python3.13/site-packages/setuptools/command/build_py.py
 
 
-CYTHON=${CYTHON:-Cython-3.0.10-py2.py3-none-any.whl}
-if echo $GITHUB_WORKSPACE|grep wip
+
+if ${CI:-false}
 then
-    DEV=true
-else
-    DEV=${DEV:-false}
+    CYTHON_URL=git+https://github.com/pygame-web/cython.git
 
-    # update cython
-    TEST_CYTHON=$($HPY -m cython -V 2>&1)
-    if echo $TEST_CYTHON| grep -q 3.1.0a0$
+    CYTHON=${CYTHON:-Cython-3.0.11-py2.py3-none-any.whl}
+    if echo $GITHUB_WORKSPACE|grep wip
     then
-        echo "  * not upgrading cython $TEST_CYTHON
-" 1>&2
+        DEV=true
     else
-        echo "  * upgrading cython $TEST_CYTHON to 3.0.10
-"  1>&2
+        DEV=${DEV:-false}
 
-        if echo $PYBUILD|grep -q 3.13$
+        # update cython
+        TEST_CYTHON=$($HPY -m cython -V 2>&1)
+        if echo $TEST_CYTHON| grep -q 3\\.1\\.0a0$
         then
-           echo "
-
- ================= forcing Cython git instead of release ${CYTHON}  =================
-
-"
-            $HPY -m pip install --upgrade --force git+https://github.com/cython/cython.git
-            /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force --no-build-isolation --force git+https://github.com/cython/cython.git
+            echo "  * not upgrading cython $TEST_CYTHON
+    " 1>&2
         else
-            echo "
+            echo "  * upgrading cython $TEST_CYTHON to 3.0.10
+    "  1>&2
 
- ================= Using Cython release ${CYTHON}  =================
+            if echo $PYBUILD|grep -q 3\\.13$
+            then
+               echo "
 
-"
-            pushd build
-            wget -q -c https://github.com/cython/cython/releases/download/3.0.10/${CYTHON}
-            $HPY -m pip install $CYTHON
-            popd
+     ================= forcing Cython git instead of release ${CYTHON}  =================
+
+    "
+                # /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force --no-build-isolation git+${CYTHON_URL}
+                $HPY -m pip install --upgrade --force --no-build-isolation ${CYTHON_URL}
+            else
+                echo "
+
+     ================= Using Cython release ${CYTHON}  =================
+
+    "
+                pushd build
+                wget -q -c https://github.com/cython/cython/releases/download/3.0.11-1/${CYTHON}
+                $HPY -m pip install $CYTHON
+                /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force $CYTHON
+                popd
+            fi
+
         fi
-
     fi
 fi
+
+echo "cython ? $(PYTHON_GIL=0 $HPY -m cython -V 2>&1)"
 
 
 mkdir -p external
@@ -86,13 +96,18 @@ then
     # to upstream after tests
     # done wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/7.diff | patch -p1
 
+
+
+
     # unsure : wasm pygame.freetype hack
     #wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
     wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/1967.diff  | patch -p1
 
+    # 313t controller fix
+    wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/3137.diff | patch -p1
+
     # new cython (git)
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/8.diff | patch -p1
-
 
     # added Vector2.from_polar and Vector3.from_spherical classmethods
     # breaks, left a review !
@@ -105,6 +120,7 @@ then
 
     # zerodiv mixer.music / merged
     # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2426.diff | patch -p1
+
 
     patch -p1 <<END
 diff --git a/src_c/key.c b/src_c/key.c
@@ -184,75 +200,78 @@ fi
     rm -rf build Setup
 # ===================
 
-
-
-pwd
-env|grep PY
-
-touch $(find | grep pxd$)
-if $HPY setup.py cython_only
+if ${CI:-false}
 then
-    # do not link -lSDL2 some emmc versions will think .so will use EM_ASM
-    #SDL_IMAGE="-s USE_SDL=2 -lfreetype -lwebp"
-    SDL_IMAGE="-lSDL2 -lfreetype -lwebp"
-
-    export CFLAGS="-DSDL_NO_COMPAT $SDL_IMAGE"
-    EMCC_CFLAGS="-I${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/include/freetype2"
-    EMCC_CFLAGS="$EMCC_CFLAGS -I$PREFIX/include/SDL2"
-    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unused-command-line-argument"
-    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unreachable-code-fallthrough"
-    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unreachable-code"
-    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-parentheses-equality"
-    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unknown-pragmas"
-
-
-    # FIXME 3.13
-    EMCC_CFLAGS="$EMCC_CFLAGS -Wno-deprecated-declarations"
-
-
-
-    export EMCC_CFLAGS="$EMCC_CFLAGS -DHAVE_STDARG_PROTOTYPES -DBUILD_STATIC -ferror-limit=1 -fpic"
-
-    export CC=emcc
-
-    # remove SDL1 for good
-    rm -rf /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/include/SDL
-
-    [ -d build ] && rm -r build
-    [ -f Setup ] && rm Setup
-    [ -f ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a ] && rm ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a
-
-    if $SDKROOT/python3-wasm setup.py -config -auto -sdl2
+    touch $(find | grep pxd$)
+    if PYTHON_GIL=0 $HPY setup.py cython_only
     then
-        $SDKROOT/python3-wasm setup.py build -j1 || echo "encountered some build errors" 1>&2
-
-        OBJS=$(find build/temp.wasm32-*/|grep o$)
-
-
-        $SDKROOT/emsdk/upstream/emscripten/emar rcs ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a $OBJS
-        for obj in $OBJS
-        do
-            echo $obj
-        done
-
-        # to install python part (unpatched)
-        cp -r src_py/. ${PKGDIR:-${SDKROOT}/prebuilt/emsdk/${PYBUILD}/site-packages/pygame/}
-
-        # prepare testsuite
-        [ -d ${ROOT}/build/pygame-test ] && rm -fr ${ROOT}/build/pygame-test
-        mkdir ${ROOT}/build/pygame-test
-        cp -r test ${ROOT}/build/pygame-test/test
-        cp -r examples ${ROOT}/build/pygame-test/test/
-        cp ${ROOT}/packages.d/pygame/tests/main.py ${ROOT}/build/pygame-test/
-
+        echo -n
     else
-        echo "ERROR: pygame configuration failed" 1>&2
-        exit 109
+        echo "cythonize failed" 1>&2
+        exit 208
     fi
+else
+    echo "skipping cython regen"
+fi
+
+#$HPY ${WORKSPACE}/src/replacer.py --go "Py_GIL_DISABLED'\): raise ImportError" "Py_GIL_DISABLED'): print(__name__)"
+
+# do not link -lSDL2 some emmc versions will think .so will use EM_ASM
+#SDL_IMAGE="-s USE_SDL=2 -lfreetype -lwebp"
+SDL_IMAGE="-lSDL2 -lfreetype -lwebp"
+
+export CFLAGS="-DSDL_NO_COMPAT $SDL_IMAGE"
+EMCC_CFLAGS="-I${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/include/freetype2"
+EMCC_CFLAGS="$EMCC_CFLAGS -I$PREFIX/include/SDL2"
+EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unused-command-line-argument"
+EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unreachable-code-fallthrough"
+EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unreachable-code"
+EMCC_CFLAGS="$EMCC_CFLAGS -Wno-parentheses-equality"
+EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unknown-pragmas"
+
+
+# FIXME 3.13
+EMCC_CFLAGS="$EMCC_CFLAGS -Wno-deprecated-declarations"
+
+
+
+export EMCC_CFLAGS="$EMCC_CFLAGS -DHAVE_STDARG_PROTOTYPES -DBUILD_STATIC -ferror-limit=1 -fpic"
+
+export CC=emcc
+
+# remove SDL1 for good
+rm -rf /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/include/SDL
+
+[ -d build ] && rm -r build
+[ -f Setup ] && rm Setup
+[ -f ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a ] && rm ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a
+
+if PYTHON_GIL=0 $SDKROOT/python3-wasm setup.py -config -auto -sdl2
+then
+    PYTHON_GIL=0 $SDKROOT/python3-wasm setup.py build -j1 || echo "encountered some build errors" 1>&2
+
+    OBJS=$(find build/temp.wasm32-*/|grep o$)
+
+
+    $SDKROOT/emsdk/upstream/emscripten/emar rcs ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a $OBJS
+    for obj in $OBJS
+    do
+        echo $obj
+    done
+
+    # to install python part (unpatched)
+    cp -r src_py/. ${PKGDIR:-${SDKROOT}/prebuilt/emsdk/${PYBUILD}/site-packages/pygame/}
+
+    # prepare testsuite
+    [ -d ${ROOT}/build/pygame-test ] && rm -fr ${ROOT}/build/pygame-test
+    mkdir ${ROOT}/build/pygame-test
+    cp -r test ${ROOT}/build/pygame-test/test
+    cp -r examples ${ROOT}/build/pygame-test/test/
+    cp ${ROOT}/packages.d/pygame/tests/main.py ${ROOT}/build/pygame-test/
 
 else
-    echo "cythonize failed" 1>&2
-    exit 114
+    echo "ERROR: pygame configuration failed" 1>&2
+    exit 109
 fi
 
 popd
@@ -263,8 +282,10 @@ TAG=${PYMAJOR}${PYMINOR}
 
 echo "FIXME: build wheel"
 
-
-SDL2="-sUSE_ZLIB=1 -sUSE_BZIP2=1 -sUSE_LIBPNG -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -lSDL2 -L/opt/python-wasm-sdk/devices/emsdk/usr/lib -lSDL2_image -lSDL2_gfx -lSDL2_mixer -lSDL2_mixer_ogg -lSDL2_ttf -lvorbis -logg -lwebp -ljpeg -lpng -lharfbuzz -lfreetype"
+SDL2="-sUSE_ZLIB=1 -sUSE_BZIP2=1 -sUSE_LIBPNG"
+SDL2="$SDL2 -sUSE_FREETYPE -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -lSDL2 -L/opt/python-wasm-sdk/devices/emsdk/usr/lib"
+SDL2="$SDL2 -lSDL2_image -lSDL2_gfx -lSDL2_mixer -lSDL2_mixer_ogg -lSDL2_ttf"
+SDL2="$SDL2 -lvorbis -logg -lwebp -lwebpdemux -ljpeg -lpng -lharfbuzz -lfreetype"
 SDL2="$SDL2 -lssl -lcrypto -lffi -lbz2 -lz -ldl -lm"
 
 

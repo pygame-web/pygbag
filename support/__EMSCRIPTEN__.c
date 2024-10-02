@@ -579,7 +579,6 @@ embed_get_sdl_version(PyObject *self, PyObject *_null)
 #endif
 
 
-
 static PyMethodDef mod_embed_methods[] = {
     {"run", (PyCFunction)embed_run, METH_VARARGS | METH_KEYWORDS, "start aio stepping"},
 #if TEST_ASYNCSLEEP
@@ -621,6 +620,20 @@ static PyMethodDef mod_embed_methods[] = {
 
     {NULL, NULL, 0, NULL}
 };
+
+
+/* later for mphase
+static struct PyModuleDef_Slot mod_embed_slots[] = {
+#if PY_VERSION_HEX >= 0x030D0000
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL}
+};
+#if PY_VERSION_HEX >= 0x030D0000
+    .m_slots = mod_embed_slots,
+#endif
+*/
+
 
 static struct PyModuleDef mod_embed = {
     PyModuleDef_HEAD_INIT,
@@ -664,6 +677,9 @@ type_init_failed:;
 // helper module for pygbag api not well defined and need clean up.
 // callable as "platform" module.
     PyObject *embed_mod = PyModule_Create(&mod_embed);
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(embed_mod, Py_MOD_GIL_NOT_USED);
+#endif
 
 // from old aiolink poc
     //embed_dict = PyModule_GetDict(embed_mod);
@@ -1005,7 +1021,9 @@ main(int argc, char **argv)
     setenv("TERMINFO", "/usr/share/terminfo", 0);
     setenv("COLUMNS","132", 0);
     setenv("LINES","30", 0);
+//
     setenv("PYGBAG","1", 1);
+    setenv("PYTHON_GIL","0", 1);
 
 //    setenv("PYTHONINTMAXSTRDIGITS", "0", 0);
     setenv("LANG", "en_US.UTF-8", 0);
@@ -1025,7 +1043,6 @@ main(int argc, char **argv)
     setenv("PYGLET_HEADLESS", "1", 1);
     setenv("ELECTRIC_TELEMETRY","disabled", 1);
     setenv("PSYCOPG_WAIT_FUNC", "wait_select", 1);
-
 
     status = pymain_init(NULL);
 
@@ -1141,7 +1158,8 @@ EM_ASM({
 
 }, FD_BUFFER_MAX, io_shm[0], io_shm[IO_RAW], io_shm[IO_RCON]);
 
-    PyRun_SimpleString("import sys, os, json, builtins, time");
+    PyRun_SimpleString("import sys, os, json, builtins, time, sysconfig");
+
     PyRun_SimpleString("sys.ps1 = ''");
 
     //PyRun_SimpleString("import hpy;import hpy.universal;print('HPy init done')");

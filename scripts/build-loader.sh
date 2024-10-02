@@ -272,9 +272,9 @@ then
 
     LDFLAGS="-sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
 
-    LDFLAGS="$LDFLAGS -lsqlite3"
+    # LDFLAGS="$LDFLAGS -lSDL2 -lSDL2_image -lSDL2_mixer_ogg -logg -lvorbis -lwebpdecoder -lfreetype"
 
-    LDFLAGS="-L${SDKROOT}/devices/emsdk/usr/lib $LDFLAGS -lssl -lcrypto -lffi -lbz2 -lz -ldl -lm"
+    LDFLAGS="-L${SDKROOT}/devices/emsdk/usr/lib $LDFLAGS -lssl -lcrypto -lsqlite3 -lffi -lbz2 -lz -ldl -lm"
 
     LINKPYTHON="python mpdec expat"
 
