@@ -33,7 +33,7 @@ from . import web
 from .config_types import Config
 
 
-from config_to_object import load_config
+from .config_to_object import load_config
 
 
 devmode = "--dev" in sys.argv

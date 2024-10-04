@@ -17,54 +17,46 @@ echo "
 
 " 1>&2
 
-sed -i 's|check.warn(importable)|pass|g' ${HOST_PREFIX}/lib/python3.13/site-packages/setuptools/command/build_py.py
-
-
+sed -i 's|check.warn(importable)|pass|g' ${HOST_PREFIX}/lib/python${PYMAJOR}.${PYMINOR}/site-packages/setuptools/command/build_py.py
 
 if ${CI:-false}
 then
     CYTHON_URL=git+https://github.com/pygame-web/cython.git
 
     CYTHON=${CYTHON:-Cython-3.0.11-py2.py3-none-any.whl}
-    if echo $GITHUB_WORKSPACE|grep wip
+
+    # update cython
+    TEST_CYTHON=$($HPY -m cython -V 2>&1)
+    if echo $TEST_CYTHON| grep -q 3\\.1\\.0a0$
     then
-        DEV=true
+        echo "  * not upgrading cython $TEST_CYTHON
+" 1>&2
     else
-        DEV=${DEV:-false}
+        echo "  * upgrading cython $TEST_CYTHON to at least 3.0.11
+"  1>&2
 
-        # update cython
-        TEST_CYTHON=$($HPY -m cython -V 2>&1)
-        if echo $TEST_CYTHON| grep -q 3\\.1\\.0a0$
+        if echo $PYBUILD|grep -q 3\\.13$
         then
-            echo "  * not upgrading cython $TEST_CYTHON
-    " 1>&2
+           echo "
+
+ ================= forcing Cython git instead of release ${CYTHON}  =================
+
+"
+            # /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force --no-build-isolation git+${CYTHON_URL}
+            $HPY -m pip install --upgrade --force --no-build-isolation ${CYTHON_URL}
         else
-            echo "  * upgrading cython $TEST_CYTHON to 3.0.10
-    "  1>&2
+            echo "
 
-            if echo $PYBUILD|grep -q 3\\.13$
-            then
-               echo "
+ ================= Using Cython release ${CYTHON}  =================
 
-     ================= forcing Cython git instead of release ${CYTHON}  =================
-
-    "
-                # /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force --no-build-isolation git+${CYTHON_URL}
-                $HPY -m pip install --upgrade --force --no-build-isolation ${CYTHON_URL}
-            else
-                echo "
-
-     ================= Using Cython release ${CYTHON}  =================
-
-    "
-                pushd build
-                    wget -q -c https://github.com/cython/cython/releases/download/3.0.11-1/${CYTHON}
-                    /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force $CYTHON
-                    $HPY -m pip install --upgrade --force $CYTHON
-                popd
-            fi
-
+"
+            pushd build
+                wget -q -c https://github.com/cython/cython/releases/download/3.0.11-1/${CYTHON}
+                /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force $CYTHON
+                $HPY -m pip install --upgrade --force $CYTHON
+            popd
         fi
+
     fi
 fi
 
