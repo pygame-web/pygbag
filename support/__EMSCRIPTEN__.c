@@ -578,6 +578,23 @@ embed_get_sdl_version(PyObject *self, PyObject *_null)
 }
 #endif
 
+#if PY_VERSION_HEX >= 0x030D0000
+#   if !defined(Py_GIL_DISABLED)
+        #pragma message "unsupported Py_LIMITED_API/Py_GIL_DISABLED combination"
+EMSCRIPTEN_KEEPALIVE void
+_Py_DecRefShared(PyObject *o) {
+    Py_XDECREF(o);
+}
+EMSCRIPTEN_KEEPALIVE uintptr_t
+_Py_GetThreadLocal_Addr(void) {
+    return 0;
+}
+EMSCRIPTEN_KEEPALIVE void
+_Py_MergeZeroLocalRefcount(PyObject *op) {
+    _Py_Dealloc(op);
+}
+#   endif
+#endif
 
 static PyMethodDef mod_embed_methods[] = {
     {"run", (PyCFunction)embed_run, METH_VARARGS | METH_KEYWORDS, "start aio stepping"},
@@ -677,7 +694,7 @@ type_init_failed:;
 // helper module for pygbag api not well defined and need clean up.
 // callable as "platform" module.
     PyObject *embed_mod = PyModule_Create(&mod_embed);
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED)
     PyUnstable_Module_SetGIL(embed_mod, Py_MOD_GIL_NOT_USED);
 #endif
 
@@ -1002,6 +1019,9 @@ main_(int argc, char **argv)
 
 #else
 #define CPY 1
+
+//#include "pycore_initconfig.h"    // _PyArgv
+
 int
 main(int argc, char **argv)
 #endif
@@ -1019,11 +1039,15 @@ main(int argc, char **argv)
 // defaults
     setenv("LC_ALL", "C.UTF-8", 0);
     setenv("TERMINFO", "/usr/share/terminfo", 0);
-    setenv("COLUMNS","132", 0);
-    setenv("LINES","30", 0);
+    setenv("COLUMNS", "132", 0);
+    setenv("LINES", "30", 0);
 //
-    setenv("PYGBAG","1", 1);
-    setenv("PYTHON_GIL","0", 1);
+    setenv("PYGBAG", "1", 1);
+
+    #if defined(Py_GIL_DISABLED)
+        setenv("PYTHON_GIL", "0", 1);
+    #endif
+
 
 //    setenv("PYTHONINTMAXSTRDIGITS", "0", 0);
     setenv("LANG", "en_US.UTF-8", 0);
@@ -1033,9 +1057,9 @@ main(int argc, char **argv)
     setenv("MPLBACKEND", "Agg", 0);
 
 // force
-    setenv("PYTHONHOME","/usr", 1);
+    setenv("PYTHONHOME", "/usr", 1);
     setenv("PYTHONUNBUFFERED", "1", 1);
-    setenv("PYTHONINSPECT","1",1);
+    setenv("PYTHONINSPECT", "1",1);
     setenv("PYTHONDONTWRITEBYTECODE","1",1);
     setenv("HOME", "/home/web_user", 1);
     setenv("APPDATA", "/home/web_user", 1);
@@ -1044,6 +1068,20 @@ main(int argc, char **argv)
     setenv("ELECTRIC_TELEMETRY","disabled", 1);
     setenv("PSYCOPG_WAIT_FUNC", "wait_select", 1);
 
+// rich
+    setenv("FORCE_COLOR", "1", 1);
+
+/*
+    puts(" ---------- pymain_init ------------");
+    _PyArgv args = {
+        .argc = argc,
+        .use_bytes_argv = 0,
+        .bytes_argv = NULL,
+        .wchar_argv = argv
+    };
+
+    status = pymain_init(&args);
+*/
     status = pymain_init(NULL);
 
     if (PyErr_Occurred()) {

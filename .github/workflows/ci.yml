@@ -6,14 +6,14 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.69.0bi
+        SDK_VERSION: 3.1.70.6bi
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: emsdk hpy pygame
         BUILD_STATIC: emsdk hpy
         STATIC: false
-        BUILDS: 3.12 3.13
+        BUILDS: 3.12 3.13 3.14
         CYTHON: Cython-3.0.11-py2.py3-none-any.whl
-        LD_VENDOR: -sUSE_GLFW=3
+#        LD_VENDOR: -sUSE_GLFW=3
 
     steps:
     - uses: actions/checkout@v4.1.0
@@ -67,6 +67,17 @@ jobs:
       run: |
             cd $GITHUB_WORKSPACE
             PYBUILD=3.13 bash ./scripts/build-loader.sh
+
+    - name: build 3.14 packages
+      run: |
+            cd $GITHUB_WORKSPACE
+            PYBUILD=3.14 bash ./scripts/build-pkg.sh
+
+    - name: build 3.14 loader
+      run: |
+            cd $GITHUB_WORKSPACE
+            PYBUILD=3.14 bash ./scripts/build-loader.sh
+
 
     - name: build PkPy loader
       run: |

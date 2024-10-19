@@ -252,7 +252,7 @@ if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $MIMALLOC $CPY_CFLAGS $CF_SDL $CP
  -I${PYDIR}/internal -I${PYDIR} -I./support -I./external/hpy/hpy/devel/include -DPy_BUILD_CORE \
  -o build/${MODE}.o support/__EMSCRIPTEN__-pymain.c
 then
-    if echo $PYBUILD | grep -q 13$
+    if ${HPY}-config --abiflags| grep -q t$
     then
         STDLIBFS="--preload-file build/stdlib-rootfs/python${PYBUILD}t@/usr/lib/python${PYBUILD}t"
     else
@@ -268,24 +268,19 @@ then
 
 # TODO: test -sWEBGL2_BACKWARDS_COMPATIBILITY_EMULATION
 
-#
+# --use-port=contrib.glfw3
 
     LDFLAGS="-sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
+    LDFLAGS="-sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
 
-    # LDFLAGS="$LDFLAGS -lSDL2 -lSDL2_image -lSDL2_mixer_ogg -logg -lvorbis -lwebpdecoder -lfreetype"
 
     LDFLAGS="-L${SDKROOT}/devices/emsdk/usr/lib $LDFLAGS -lssl -lcrypto -lsqlite3 -lffi -lbz2 -lz -ldl -lm"
 
     LINKPYTHON="python mpdec expat"
 
-    if  echo $PYBUILD|grep -q 3.12
+    if [ ${PYMINOR} -ge 12 ]
     then
         LINKPYTHON="Hacl_Hash_SHA2 $LINKPYTHON"
-    else
-        if  echo $PYBUILD|grep -q 3.13
-        then
-            LINKPYTHON="Hacl_Hash_SHA2 $LINKPYTHON"
-        fi
     fi
 
     for lib in $LINKPYTHON
@@ -298,6 +293,14 @@ then
             echo "  Not found : $cpylib"
         fi
     done
+
+    # 3.13 and up may rely on system mpdec
+    if echo $LDFLAGS|grep libmpdec
+    then
+        echo -n
+    else
+        LDFLAGS="$LDFLAGS -lmpdec"
+    fi
 
 
     for lib in $PACKAGES
@@ -323,7 +326,7 @@ then
 PG=/pgdata
     cat > final_link.sh <<END
 #!/bin/bash
-emcc \\
+emcc -sENVIRONMENT=web \\
  $FINAL_OPTS \\
  $LOPTS \\
  -D__PYDK__=1 -DNDEBUG  \\
@@ -340,12 +343,11 @@ emcc \\
      -o ${DIST_DIR}/${DISTRO}${PYMAJOR}${PYMINOR}/${MODE}.js build/${MODE}.o \\
      $LDFLAGS
 
-
 END
     chmod +x ./final_link.sh
     if ./final_link.sh
     then
-        rm build/${MODE}.o
+        #rm build/${MODE}.o
         du -hs ${DIST_DIR}/*
         echo Total
         echo _________

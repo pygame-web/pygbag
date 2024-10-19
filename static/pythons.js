@@ -864,7 +864,6 @@ console.warn("TODO: user defined canvas")
     }
 
     function window_resize_3d(gui_divider) {
-console.log(" @@@@@@@@@@@@@@@@@@@@@@ 3D CANVAS @@@@@@@@@@@@@@@@@@@@@@")
         setTimeout(window_canvas_adjust_3d, 200, gui_divider);
         setTimeout(window.focus, 300);
     }
@@ -907,7 +906,6 @@ console.log(" @@@@@@@@@@@@@@@@@@@@@@ 3D CANVAS @@@@@@@@@@@@@@@@@@@@@@")
 
 
 // file transfer (upload)
-
 
 
 
@@ -1067,7 +1065,7 @@ async function feat_vtx(debug_hidden) {
     const { WasmTerminal } = await import("./vtx.js")
     const lines = get_terminal_lines() + cons  // including virtual get_terminal_console()
     const py = window.document.body.clientHeight
-    var fntsize = Math.floor(py/lines) - 1
+    var fntsize = Math.floor(py/lines) - 3
 
     if (lines<=33) {
         fntsize = ( fntsize - 6 ) / console_divider

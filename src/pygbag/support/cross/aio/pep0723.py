@@ -48,8 +48,9 @@ if sconf["platlib"] not in sys.path:
     sys.path.append(sconf["platlib"])
 
 PATCHLIST = []
+
 # fast skip list
-HISTORY = ["pyodide"]
+HISTORY = ["pyodide", "pytest", "pytest-ruff", "ruff"]
 
 hint_failed = []
 
@@ -315,9 +316,10 @@ async def pip_install(pkg, sysconf={}):
     wheel_url = ""
 
     # hack for WASM wheel repo
-    if pkg.lower() in Config.mapping:
-        pkg = Config.mapping[pkg.lower()]
-        print("294: package renamed to", pkg)
+    remap = pkg.lower().replace('-','_')
+    if remap in Config.mapping:
+        pkg = Config.mapping[remap]
+        print(f"294: {remap} package renamed to {pkg}")
 
     if pkg in HISTORY:
         print(f"# 322: pip_install: {pkg} already installed")

@@ -199,7 +199,11 @@ $HPY -u -I -B <<END
 import sys, os
 stdlp=""
 
-if os.environ.get('PYBUILD','')=='3.13':
+
+threading_model = os.popen('${HPY}-config --abiflags').read().strip()
+
+
+if 't' in threading_model:
     SCD="_sysconfigdata_t"
 else:
     SCD="_sysconfigdata_"

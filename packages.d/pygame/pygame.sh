@@ -35,7 +35,7 @@ then
         echo "  * upgrading cython $TEST_CYTHON to at least 3.0.11
 "  1>&2
 
-        if echo $PYBUILD|grep -q 3\\.13$
+        if [ ${PYMINOR} -ge 13 ]
         then
            echo "
 
@@ -43,7 +43,7 @@ then
 
 "
             # /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force --no-build-isolation git+${CYTHON_URL}
-            $HPY -m pip install --upgrade --force --no-build-isolation ${CYTHON_URL}
+            NO_CYTHON_COMPILE=true $HPY -m pip install --upgrade --force --no-build-isolation ${CYTHON_URL}
         else
             echo "
 
@@ -60,7 +60,11 @@ then
     fi
 fi
 
-echo "cython ? $(PYTHON_GIL=0 $HPY -m cython -V 2>&1)"
+# PYTHON_GIL=0
+# Fatal Python error: config_read_gil: Disabling the GIL is not supported by this build
+# Python runtime state: preinitialized
+
+echo "cython ? $( $HPY -m cython -V 2>&1)"
 
 
 mkdir -p external
@@ -95,8 +99,8 @@ then
     #wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
     wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/1967.diff  | patch -p1
 
-    # 313t controller fix
-    wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/3137.diff | patch -p1
+    # 313t controller fix merged
+    # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/3137.diff | patch -p1
 
     # new cython (git)
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/8.diff | patch -p1
@@ -112,6 +116,37 @@ then
 
     # zerodiv mixer.music / merged
     # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2426.diff | patch -p1
+
+
+    # remove cython/gil warnings
+    patch -p1 <<END
+diff --git a/src_c/cython/pygame/_sdl2/audio.pyx b/src_c/cython/pygame/_sdl2/audio.pyx
+index c3667d5e3..dfe85fb72 100644
+--- a/src_c/cython/pygame/_sdl2/audio.pyx
++++ b/src_c/cython/pygame/_sdl2/audio.pyx
+@@ -68,7 +68,7 @@ def get_audio_device_names(iscapture = False):
+     return names
+
+ import traceback
+-cdef void recording_cb(void* userdata, Uint8* stream, int len) nogil:
++cdef int recording_cb(void* userdata, Uint8* stream, int len) nogil:
+     """ This is called in a thread made by SDL.
+         So we need the python GIL to do python stuff.
+     """
+diff --git a/src_c/cython/pygame/_sdl2/mixer.pyx b/src_c/cython/pygame/_sdl2/mixer.pyx
+index ebc23b992..c70cebab6 100644
+--- a/src_c/cython/pygame/_sdl2/mixer.pyx
++++ b/src_c/cython/pygame/_sdl2/mixer.pyx
+@@ -14,7 +14,7 @@ import traceback
+ # Mix_SetPostMix(noEffect, NULL);
+
+
+-cdef void recording_cb(void* userdata, Uint8* stream, int len) nogil:
++cdef int recording_cb(void* userdata, Uint8* stream, int len) nogil:
+     """ This is called in a thread made by SDL.
+         So we need the python GIL to do python stuff.
+     """
+END
 
 
     patch -p1 <<END
@@ -195,7 +230,7 @@ fi
 if ${CI:-false}
 then
     touch $(find | grep pxd$)
-    if PYTHON_GIL=0 $HPY setup.py cython_only
+    if $HPY setup.py cython_only
     then
         echo -n
     else
@@ -238,9 +273,9 @@ rm -rf /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/include/SDL
 [ -f Setup ] && rm Setup
 [ -f ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a ] && rm ${SDKROOT}/prebuilt/emsdk/libpygame${PYBUILD}.a
 
-if PYTHON_GIL=0 $SDKROOT/python3-wasm setup.py -config -auto -sdl2
+if $SDKROOT/python3-wasm setup.py -config -auto -sdl2
 then
-    PYTHON_GIL=0 $SDKROOT/python3-wasm setup.py build -j1 || echo "encountered some build errors" 1>&2
+    $SDKROOT/python3-wasm setup.py build -j1 || echo "encountered some build errors" 1>&2
 
     OBJS=$(find build/temp.wasm32-*/|grep o$)
 
