@@ -47,6 +47,7 @@ jobs:
 #            cd $GITHUB_WORKSPACE
 #            PYBUILD=3.11 PACKAGES="emsdk hpy _ctypes pygame" BUILD_STATIC="emsdk _ctypes hpy" bash ./scripts/build-loader.sh
 #
+#   PACKAGES="emsdk pygame" BUILD_STATIC="emsdk"
 
     - name: build 3.12 packages
       run: |
@@ -61,12 +62,12 @@ jobs:
     - name: build 3.13 packages
       run: |
             cd $GITHUB_WORKSPACE
-            PYBUILD=3.13 PACKAGES="emsdk pygame" BUILD_STATIC="emsdk" bash ./scripts/build-pkg.sh
+            PYBUILD=3.13 bash ./scripts/build-pkg.sh
 
     - name: build 3.13 loader
       run: |
             cd $GITHUB_WORKSPACE
-            PYBUILD=3.13 PACKAGES="emsdk pygame" BUILD_STATIC="emsdk" bash ./scripts/build-loader.sh
+            PYBUILD=3.13 bash ./scripts/build-loader.sh
 
     - name: build 3.14 packages
       run: |
