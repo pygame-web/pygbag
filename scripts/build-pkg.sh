@@ -113,7 +113,7 @@ mkdir -p build
 for pkg in ${PACKAGES}
 do
 
-    PKG_PATH=packages.d/${pkg}/${pkg}
+    export PKG_PATH=packages.d/${pkg}/${pkg}
 
     pkg_script=${PKG_PATH}.sh
 

@@ -119,7 +119,7 @@ fi
 export PATCH_FS="--preload-file $(realpath platform_wasm/platform_wasm)@/data/data/org.python/assets/site-packages/platform_wasm"
 
 # =2 will break pyodide module reuses
-LOPTS="-sMAIN_MODULE=1"
+LOPTS="-sENVIRONMENT=web -sMAIN_MODULE=1"
 
 # O0/g3 is much faster to build and easier to debug
 
@@ -327,12 +327,13 @@ then
 PG=/pgdata
     cat > final_link.sh <<END
 #!/bin/bash
-emcc -sENVIRONMENT=web \\
+. $SDKROOT/emsdk/emsdk_env.sh
+emcc \\
  $FINAL_OPTS \\
  $LOPTS \\
  -D__PYDK__=1 -DNDEBUG  \\
-     -sTOTAL_MEMORY=256MB -sSTACK_SIZE=4MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
-    -sEXPORTED_RUNTIME_METHODS=FS \\
+     -sTOTAL_MEMORY=256MB -sSTACK_SIZE=8MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
+    -sEXPORTED_RUNTIME_METHODS=FS,print \\
      $CF_SDL \\
      --use-preload-plugins \\
      $STDLIBFS \\
