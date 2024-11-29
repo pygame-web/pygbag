@@ -34,6 +34,8 @@ def fs_decode(fsname, o248):
         if topack == "/main.py":
             continue
 
+        topack = str(topack)
+
         vfs_name = topack[1:].replace("-pygbag.", ".")
 
         src_name = target_folder / topack[1:]
