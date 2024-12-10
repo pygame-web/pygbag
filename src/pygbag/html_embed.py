@@ -31,10 +31,11 @@ def fs_decode(fsname, o248):
     )
 
     for topack in packlist:
+        if isinstance(topack, Path):
+           topack = topack.as_posix()
+            
         if topack == "/main.py":
             continue
-
-        topack = str(topack)
 
         vfs_name = topack[1:].replace("-pygbag.", ".")
 
