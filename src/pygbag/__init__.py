@@ -11,6 +11,8 @@ from pathlib import Path
 
 VERSION = "0.9.2"
 
+__version__ = VERSION
+
 # hack to test git cdn build without upgrading pygbag
 # beware can have side effects when file packager behaviour must change !
 if "--git" in sys.argv:

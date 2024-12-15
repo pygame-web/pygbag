@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.71.0bi
+        SDK_VERSION: 3.1.73.2bi
         SYS_PYTHON: /usr/bin/python3
         PACKAGES: emsdk pygame
         BUILD_STATIC: emsdk
@@ -14,6 +14,7 @@ jobs:
         BUILDS: 3.12 3.13 3.14
         CYTHON: Cython-3.0.11-py2.py3-none-any.whl
         LD_VENDOR: -sUSE_GLFW=3
+
 
     steps:
     - uses: actions/checkout@v4.1.0

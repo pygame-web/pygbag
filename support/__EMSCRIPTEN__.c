@@ -1071,6 +1071,10 @@ main(int argc, char **argv)
 // rich
     setenv("FORCE_COLOR", "1", 1);
 
+// termtk
+    setenv("TERMTK_FORCESERIAL", "1", 1);
+
+
 /*
     puts(" ---------- pymain_init ------------");
     _PyArgv args = {

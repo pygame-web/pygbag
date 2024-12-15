@@ -204,7 +204,7 @@ if $STATIC
 then
     echo "building static loader"
 else
-    export PACKAGES=${BUILD_STATIC:-emsdk hpy _ctypes}
+    export PACKAGES=${BUILD_STATIC:-"emsdk hpy _ctypes"}
 
     echo "building dynamic loader
 
@@ -246,7 +246,7 @@ touch ${INT_TEST} ${INC_TEST} ${LNK_TEST} ${MAIN_TEST}
 
 # -L${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic only !
 
-if emcc -fPIC -std=gnu99 -D__PYDK__=1 -DNDEBUG $MIMALLOC $CPY_CFLAGS $CF_SDL $CPOPTS \
+if emcc -D__PYGBAG__ -fPIC -std=gnu99 -DNDEBUG $MIMALLOC $CPY_CFLAGS $CF_SDL $CPOPTS \
  -DINC_TEST=$INC_TEST -DMAIN_TEST=$MAIN_TEST \
  -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden \
  -I${PYDIR}/internal -I${PYDIR} -I./support -I./external/hpy/hpy/devel/include -DPy_BUILD_CORE \
@@ -264,7 +264,6 @@ then
 
     # --preload-file ${REQUIREMENTS}@/data/data/org.python/assets/site-packages \
     # --preload-file ${ROOT}/support/xterm@/etc/termcap \
-
 
 # TODO: test -sWEBGL2_BACKWARDS_COMPATIBILITY_EMULATION
 
@@ -323,15 +322,13 @@ then
 #  -std=gnu99 -std=c++23
 # EXTRA_EXPORTED_RUNTIME_METHODS => EXPORTED_RUNTIME_METHODS after 3.1.52
 
-
-PG=/pgdata
     cat > final_link.sh <<END
 #!/bin/bash
 . $SDKROOT/emsdk/emsdk_env.sh
-emcc \\
+emcc -D__PYGBAG__ \\
  $FINAL_OPTS \\
  $LOPTS \\
- -D__PYDK__=1 -DNDEBUG  \\
+ -DNDEBUG  \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=8MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
     -sEXPORTED_RUNTIME_METHODS=FS,print \\
      $CF_SDL \\
