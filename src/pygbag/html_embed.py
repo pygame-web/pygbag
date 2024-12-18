@@ -31,6 +31,9 @@ def fs_decode(fsname, o248):
     )
 
     for topack in packlist:
+        if isinstance(topack, Path):
+           topack = topack.as_posix()
+            
         if topack == "/main.py":
             continue
 
