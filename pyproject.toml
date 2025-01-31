@@ -1,6 +1,12 @@
 [project]
-license = "MIT"
+license = {file = "LICENCE"}
 name = "pygbag"
+authors = [{name = "Paul Peny"}]
+
+maintainers = [
+    {name = "Paul Peny"},
+]
+
 
 [build-system]
 requires = ["setuptools>=42"]
