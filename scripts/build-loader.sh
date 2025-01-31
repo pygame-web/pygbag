@@ -290,7 +290,7 @@ then
         then
             LDFLAGS="$LDFLAGS $cpylib"
         else
-            echo "  Not found : $cpylib"
+            echo "  WARNING: Not found : $cpylib"
         fi
     done
 
@@ -306,7 +306,12 @@ then
     for lib in $PACKAGES
     do
         cpylib=${SDKROOT}/prebuilt/emsdk/lib${lib}${PYBUILD}.a
-        LDFLAGS="$LDFLAGS $cpylib"
+        if [ -f $cpylib ]
+        then
+            LDFLAGS="$LDFLAGS $cpylib"
+        else
+            echo "  WARNING:  Not found : $cpylib"
+        fi
     done
 
 

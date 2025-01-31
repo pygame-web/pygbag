@@ -25,7 +25,7 @@ IGNORE = """
 /ATTIC
 """.splitlines()
 
-SKIP_EXT = ["lnk", "pyc", "pyx", "pyd", "pyi", "exe", "bak", "log", "blend", "DS_Store"]
+SKIP_EXT = ["gltf", "glb", "lnk", "pyc", "pyx", "pyd", "pyi", "exe", "bak", "log", "blend", "DS_Store"]
 
 
 def filter(walked, ignore_dirs, ignore_files):
