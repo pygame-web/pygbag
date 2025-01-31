@@ -1,5 +1,6 @@
 [project]
 license = "MIT"
+name = "pygbag"
 
 [build-system]
 requires = ["setuptools>=42"]
