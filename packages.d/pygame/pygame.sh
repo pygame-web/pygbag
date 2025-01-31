@@ -327,7 +327,7 @@ then
 
     [ -f ${TARGET_FILE} ] && rm ${TARGET_FILE} ${TARGET_FILE}.map
 
-    emcc -shared -Os -g0 -fpic -o ${TARGET_FILE} $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a $SDL2
+    COPTS="-Os -g0" emcc -shared -fpic -o ${TARGET_FILE} $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a $SDL2
 
     # github CI does not build wheel for now.
     echo ${WHEEL_DIR}
