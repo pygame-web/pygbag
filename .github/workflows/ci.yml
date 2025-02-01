@@ -93,10 +93,10 @@ jobs:
             touch build/web/archives/.nojekyll
             echo "<html></html>" >  build/web/archives/index.html
 
-    - name: make wheel
-      run: |
-            cd $GITHUB_WORKSPACE
-            /opt/python-wasm-sdk/python3-wasm -m build --no-isolation .
+#    - name: make wheel
+#      run: |
+#            cd $GITHUB_WORKSPACE
+#            /opt/python-wasm-sdk/python3-wasm -m build --no-isolation .
 
     - name : "Upload to GitHub pages"
       uses: JamesIves/github-pages-deploy-action@v4.6.3
