@@ -218,7 +218,7 @@ async def async_repos():
             print("!" * 75)
             print("Sorry, there is no pygbag package repository for your python version")
             print("!" * 75, "\n" * 4)
-            raise SystemExit
+            #raise SystemExit
 
     if not aio.cross.simulator:
         rewritecdn = ""

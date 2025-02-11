@@ -986,17 +986,15 @@ embed_webgl(PyObject *self, PyObject *argv, PyObject *kw)
     EGLConfig config;
 
     char * target = NULL;
-    if (!PyArg_ParseTuple(argv, "|s", &target)) {
-        target = NULL;
-    }
+
     EmscriptenWebGLContextAttributes attr;
     emscripten_webgl_init_context_attributes(&attr);
     attr.alpha = 0;
-    if (target) {
+    if (!PyArg_ParseTuple(argv, "|s", &target)) {
+        ctx = emscripten_webgl_create_context("#canvas", &attr);
+    } else {
         ctx = emscripten_webgl_create_context(target, &attr);
         setenv("WebGL", target, 1);
-    } else {
-        ctx = emscripten_webgl_create_context("#canvas", &attr);
     }
 
     emscripten_webgl_make_context_current(ctx);
@@ -1065,7 +1063,6 @@ main(int argc, char **argv)
     setenv("APPDATA", "/home/web_user", 1);
 
     setenv("PYGLET_HEADLESS", "1", 1);
-    setenv("ELECTRIC_TELEMETRY","disabled", 1);
     setenv("PSYCOPG_WAIT_FUNC", "wait_select", 1);
 
 // rich

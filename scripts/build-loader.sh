@@ -132,7 +132,7 @@ then
     LOPTS="$LOPTS -sASSERTIONS=0"
 #    ALWAYS_FS="--preload-file ${ALWAYS_CODE}@/data/data/org.python/assets"
 else
-    export COPTS="-Os -g0 -fPIC"
+    export COPTS="-O2 -g3 -fPIC"
     echo "       building RELEASE $COPTS"
     LOPTS="$LOPTS -sASSERTIONS=0 -sLZ4"
     ALWAYS_FS=""
@@ -330,9 +330,8 @@ then
     cat > final_link.sh <<END
 #!/bin/bash
 . $SDKROOT/emsdk/emsdk_env.sh
-emcc -D__PYGBAG__ \\
+COPTS="$LOPTS" emcc -D__PYGBAG__ \\
  $FINAL_OPTS \\
- $LOPTS \\
  -DNDEBUG  \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=8MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
     -sEXPORTED_RUNTIME_METHODS=FS,print \\

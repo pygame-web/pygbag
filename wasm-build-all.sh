@@ -9,6 +9,8 @@ export BUILDS=${BUILDS:-3.12 3.11}
 
 export STATIC=${STATIC:-true}
 
+export PYGBAG_PKG=${PYGBAG_VER:-0.9.2}
+
 . scripts/vendoring.sh
 
 chmod +x *sh scripts/*.sh packages.d/*/*sh
