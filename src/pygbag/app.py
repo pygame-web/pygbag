@@ -88,10 +88,8 @@ else:
 DEFAULT_WIDTH = 1280
 DEFAULT_HEIGHT = 720
 
-from colorama import Fore
-
 def warn(msg):
-    print(f"{Fore.RED}WARNING!{Fore.RESET} ${msg}")
+    print(f"WARNING! ${msg}")
 
 
 def set_args(program):
