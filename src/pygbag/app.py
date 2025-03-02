@@ -89,7 +89,7 @@ DEFAULT_WIDTH = 1280
 DEFAULT_HEIGHT = 720
 
 def warn(msg):
-    print(f"WARNING! ${msg}")
+    print(f"WARNING! {msg}")
 
 
 def set_args(program):
