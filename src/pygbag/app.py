@@ -31,7 +31,8 @@ import pygbag
 from . import pack
 from . import web
 from .config_types import Config
-from .support.cross.aio.pep0723 import read_dependency_block_723
+# TODO: use another parser for the check
+#from .support.cross.aio.pep0723 import read_dependency_block_723
 
 
 from .config_to_object import load_config
@@ -199,25 +200,27 @@ def cache_check(app_folder, devmode=False):
 
 async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
     global DEFAULT_PORT, DEFAULT_SCRIPT, APP_CACHE, required
-    
+
     # Checks for existance of PEP 723 header on main.py https://peps.python.org/pep-0723/
     main_file = Path(app_folder, mainscript)
     with open(main_file, "r") as f:
         src_code = f.read()
-        
-    has_pep723 = False
-    deps = {"pygame-ce"}
-    for dep in read_dependency_block_723(src_code):
-        has_pep723 = True
-        if dep == "pygame-ce":
-            pass
-        elif dep == "pygame":
-            warn("Pygbag uses pygame-ce for running on web. If you're using pygame, you should probably upgrade to pygame-ce, it is backwards compatible so your code will still work. If you're using pygame-ce already, specify 'pygame-ce' instead of 'pygame'.")
-        else:
-            deps.add(dep)
-    if not has_pep723:
-        warn("Couldn't find PEP 723 Header. See this: https://pygame-web.github.io/wiki/pygbag/#complex-packages")
-    
+
+    # TODO: match import list and pep block content
+    if 0:
+        has_pep723 = False
+        deps = {"pygame-ce"}
+        for dep in read_dependency_block_723(src_code):
+            has_pep723 = True
+            if dep == "pygame-ce":
+                pass
+            elif dep == "pygame":
+                warnings.warn("Pygbag uses pygame-ce for running on web. If you're using pygame, you should probably upgrade to pygame-ce, it is backwards compatible so your code will still work. If you're using pygame-ce already, specify 'pygame-ce' instead of 'pygame'.")
+            else:
+                deps.add(dep)
+        if not has_pep723:
+            warnings.warn("Couldn't find PEP 723 Header. See this: https://pygame-web.github.io/wiki/pygbag/#complex-packages")
+
     DEFAULT_SCRIPT = mainscript or DEFAULT_SCRIPT
 
     build_dir, cache_dir = cache_check(app_folder, devmode)

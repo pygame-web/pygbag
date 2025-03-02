@@ -1,8 +1,9 @@
+// #define SDL3 1
+
 /*
 // from python-main.c
 static PyStatus pymain_init(const _PyArgv *args);
 static void pymain_free(void);
-
 
     http://troubles.md/why-do-we-need-the-relooper-algorithm-again/
 
@@ -15,7 +16,6 @@ static void pymain_free(void);
 tty ?
 https://github.com/emscripten-core/emscripten/blob/6dc4ac5f9e4d8484e273e4dcc554f809738cedd6/src/library_syscall.js#L311
     finish ncurses : https://github.com/jamesbiv/ncurses-emscripten
-
 
 headless tests ?
 
@@ -39,7 +39,7 @@ self hosting:
     https://github.com/jprendes/emception
 
 debug:
-    https://developer.chrome.com/blog/wasm-debugging-2020/
+   https://developer.chrome.com/blog/wasm-debugging-2020/
 
 
 */
@@ -566,6 +566,15 @@ puts("481");
     Py_RETURN_NONE;
 }
 #endif // TEST_ASYNCSLEEP
+
+#if SDL3
+#include <SDL3/SDL.h>
+static void sdlError(const char* str) {
+  fprintf(stderr, "Error at %s: %s\n", str, SDL_GetError());
+  exit(1);
+}
+
+#endif
 
 #if SDL2
 static PyObject *
@@ -1214,6 +1223,8 @@ EM_ASM({
     }
 #endif
 
+
+
 #if SDL2
     // SDL2 basic init
     {
@@ -1225,6 +1236,18 @@ EM_ASM({
     }
 #endif
 
+#if SDL3
+    puts("================== SDL3 ====================");
+    for (int i=0;i < SDL_GetNumVideoDrivers(); i++) {
+        puts( SDL_GetVideoDriver(i) );
+    }
+  if (!SDL_Init(SDL_INIT_VIDEO)) {
+    sdlError("SDL_Init");
+  } else {
+    puts(" \n\n\n========== SDL3 init ok ====================\n\n\n");
+
+  }
+#endif
 
 #if ASYNCIFIED
     clock_t start = clock()+100;

@@ -79,6 +79,7 @@ class Config:
         "pillow": "PIL",
         "pyglm": "glm",
         "opencv_python": "cv2",
+        "pysdl3": "sdl3",
     }
 
 

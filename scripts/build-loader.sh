@@ -18,6 +18,8 @@ then
     fi
 fi
 
+
+
 # [ -L $(pwd)/pygbag ] || -sf $(pwd)/src/pygbag $(pwd)/pygbag
 
 pushd src/pygbag/support
@@ -42,6 +44,18 @@ export DYNLOAD=${SDKROOT}/prebuilt/emsdk/${PYBUILD}/lib-dynload
 . $SDKROOT/emsdk/emsdk_env.sh
 
 
+EMPIC=${EMSDK}/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic
+
+
+CF_SDL="${PREFIX}/lib/libSDL3.a \
+ ${PREFIX}/lib/libSDL3_image.a ${PREFIX}/lib/libSDL3_ttf.a \
+ $EMPIC/libfreetype.a \
+ $EMPIC/libharfbuzz.a"
+# CF_SDL="-sUSE_SDL=3"
+CF_SDL=""
+
+#  $EMPIC/libal.a"
+
 echo "
     *   building loader $(pwd) for ${VENDOR} / ${PACKAGES}
             PYBUILD=$PYBUILD python${PYMAJOR}${PYMINOR}
@@ -51,19 +65,13 @@ echo "
             PYTHONPYCACHEPREFIX=$PYTHONPYCACHEPREFIX
             HPY=$HPY
             LD_VENDOR=$LD_VENDOR
+
+CF_SDL=$CF_SDL
+
 " 1>&2
 
 
-EMPIC=/opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic
 
-if echo -n $PYBUILD|grep -q 13$
-then
-    MIMALLOC="-I/opt/python-wasm-sdk/emsdk/upstream/emscripten/system/lib/mimalloc/include"
-else
-    MIMALLOC=""
-fi
-
-SUPPORT_FS=""
 
 
 mkdir -p $DIST_DIR/${DISTRO}${PYMAJOR}${PYMINOR}
@@ -86,6 +94,8 @@ done
 
 
 # crosstools, aio and simulator most likely from pygbag
+SUPPORT_FS=""
+
 if [ -d src/pygbag/support/cross ]
 then
     CROSS=$(realpath src/pygbag/support/cross)
@@ -119,7 +129,7 @@ fi
 export PATCH_FS="--preload-file $(realpath platform_wasm/platform_wasm)@/data/data/org.python/assets/site-packages/platform_wasm"
 
 # =2 will break pyodide module reuses
-LOPTS="-sENVIRONMENT=web -sMAIN_MODULE=1"
+LOPTS="-sENVIRONMENT=node,web -sMAIN_MODULE=1"
 
 # O0/g3 is much faster to build and easier to debug
 
@@ -246,7 +256,7 @@ touch ${INT_TEST} ${INC_TEST} ${LNK_TEST} ${MAIN_TEST}
 
 # -L${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic only !
 
-if emcc -D__PYGBAG__ -fPIC -std=gnu99 -DNDEBUG $MIMALLOC $CPY_CFLAGS $CF_SDL $CPOPTS \
+if emcc -D__PYGBAG__ -fPIC -std=gnu99 -DNDEBUG $CPY_CFLAGS $CF_SDL $CPOPTS \
  -DINC_TEST=$INC_TEST -DMAIN_TEST=$MAIN_TEST \
  -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden \
  -I${PYDIR}/internal -I${PYDIR} -I./support -I./external/hpy/hpy/devel/include -DPy_BUILD_CORE \
@@ -330,7 +340,7 @@ then
     cat > final_link.sh <<END
 #!/bin/bash
 . $SDKROOT/emsdk/emsdk_env.sh
-COPTS="$LOPTS" emcc -D__PYGBAG__ \\
+COPTS="-O0 -g3 $LOPTS" emcc -D__PYGBAG__ \\
  $FINAL_OPTS \\
  -DNDEBUG  \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=8MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\

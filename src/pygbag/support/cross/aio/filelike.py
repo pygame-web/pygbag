@@ -83,7 +83,8 @@ class fopen:
                 os.unlink(self.tmpfile)
             except FileNotFoundError as e:
                 print("78: Async I/O error : file not found", self.url)
-        del self.filelike, self.url, self.mode, self.tmpfile
+            del self.filelike
+        del self.url, self.mode, self.tmpfile
 
     if __WASM__:
 
