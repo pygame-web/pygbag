@@ -46,14 +46,14 @@ export DYNLOAD=${SDKROOT}/prebuilt/emsdk/${PYBUILD}/lib-dynload
 
 EMPIC=${EMSDK}/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic
 
-
+# CF_SDL="-sUSE_SDL=3"
 CF_SDL="${PREFIX}/lib/libSDL3.a \
  ${PREFIX}/lib/libSDL3_image.a ${PREFIX}/lib/libSDL3_ttf.a \
  $EMPIC/libfreetype.a \
  $EMPIC/libharfbuzz.a"
-# CF_SDL="-sUSE_SDL=3"
 CF_SDL=""
 
+# this one seems always in.
 #  $EMPIC/libal.a"
 
 echo "
@@ -69,8 +69,6 @@ echo "
 CF_SDL=$CF_SDL
 
 " 1>&2
-
-
 
 
 
@@ -340,7 +338,7 @@ then
     cat > final_link.sh <<END
 #!/bin/bash
 . $SDKROOT/emsdk/emsdk_env.sh
-COPTS="-O0 -g3 $LOPTS" emcc -D__PYGBAG__ \\
+COPTS="-Os -g0 $LOPTS" emcc -D__PYGBAG__ \\
  $FINAL_OPTS \\
  -DNDEBUG  \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=8MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
