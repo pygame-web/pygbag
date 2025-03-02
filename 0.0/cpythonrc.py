@@ -477,6 +477,20 @@ class shell:
         print("[ ", os.getcwd(), " ]")
 
     @classmethod
+    def md5sum(cls, *argv):
+        import hashlib
+
+        for arg in map(str, argv):
+            md5_hash = hashlib.md5()
+            with open(arg, "rb") as f:
+                # Read and update hash string value in blocks of 4K
+                for byte_block in iter(lambda: f.read(4096), b""):
+                    md5_hash.update(byte_block)
+                hx = md5_hash.hexdigest()
+                yield f"{hx}  {arg}"
+
+
+    @classmethod
     def sha256sum(cls, *argv):
         import hashlib
 

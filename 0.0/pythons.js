@@ -406,11 +406,11 @@ function prerun(VM) {
 }
 
 
-async function postrun(VM) {
+async function postrun(vm) {
     console.warn("VM.postrun Begin")
-    window.VM = VM
-    window.python = VM
-    window.py = new bridge(VM)
+    window.python = vm
+    window.py = new bridge(vm)
+    window.VM = vm
 
     var pyrc_url = vm.config.cdn + VM.script.interpreter + "rc.py"
 
