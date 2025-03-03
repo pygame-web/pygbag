@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.74.6bi
+        SDK_VERSION: 3.1.61.2bi
         SYS_PYTHON: /usr/bin/python3
         SDKROOT: /opt/python-wasm-sdk
         PACKAGES: emsdk pygame

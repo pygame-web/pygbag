@@ -126,7 +126,7 @@ fi
 
 export PATCH_FS="--preload-file $(realpath platform_wasm/platform_wasm)@/data/data/org.python/assets/site-packages/platform_wasm"
 
-# =2 will break pyodide module reuses
+# =2 would break pyodide module reuses
 LOPTS="-sENVIRONMENT=node,web -sMAIN_MODULE=1"
 
 # O0/g3 is much faster to build and easier to debug
@@ -137,12 +137,12 @@ if [ -f dev ]
 then
     export COPTS="-O0 -g3 -fPIC --source-map-base http://localhost:8000/maps/"
     echo "       building DEBUG $COPTS"
-    LOPTS="$LOPTS -sASSERTIONS=0"
+    LOPTS="$COPTS $LOPTS -sASSERTIONS=0"
 #    ALWAYS_FS="--preload-file ${ALWAYS_CODE}@/data/data/org.python/assets"
 else
-    export COPTS="-O2 -g3 -fPIC"
+    export COPTS="-Os -g0 -fPIC"
     echo "       building RELEASE $COPTS"
-    LOPTS="$LOPTS -sASSERTIONS=0 -sLZ4"
+    LOPTS="$COPTS $LOPTS -sASSERTIONS=0 -sLZ4"
     ALWAYS_FS=""
 fi
 
@@ -338,7 +338,7 @@ then
     cat > final_link.sh <<END
 #!/bin/bash
 . $SDKROOT/emsdk/emsdk_env.sh
-COPTS="-Os -g0 $LOPTS" emcc -D__PYGBAG__ \\
+COPTS=$LOPTS emcc -D__PYGBAG__ \\
  $FINAL_OPTS \\
  -DNDEBUG  \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=8MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
