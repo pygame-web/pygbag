@@ -338,7 +338,7 @@ then
     cat > final_link.sh <<END
 #!/bin/bash
 . $SDKROOT/emsdk/emsdk_env.sh
-COPTS=$LOPTS emcc -D__PYGBAG__ \\
+COPTS="$LOPTS" emcc -D__PYGBAG__ \\
  $FINAL_OPTS \\
  -DNDEBUG  \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=8MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
