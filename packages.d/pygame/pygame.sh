@@ -311,7 +311,14 @@ echo "FIXME: build wheel"
 
 SDL2="-sUSE_ZLIB=1 -sUSE_BZIP2=1 -sUSE_LIBPNG"
 SDL2="$SDL2 -sUSE_FREETYPE -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -lSDL2 -L/opt/python-wasm-sdk/devices/emsdk/usr/lib"
-SDL2="$SDL2 -lSDL2_image -lSDL2_gfx -lSDL2_mixer -lSDL2_mixer_ogg -lSDL2_ttf"
+
+if echo $EMFLAVOUR|grep -q ^4
+then
+    SDL2="$SDL2 -lSDL2_image -lSDL2_gfx -lSDL2_mixer -lSDL2_mixer-ogg -lSDL2_ttf"
+else
+    SDL2="$SDL2 -lSDL2_image -lSDL2_gfx -lSDL2_mixer -lSDL2_mixer_ogg -lSDL2_ttf"
+fi
+
 SDL2="$SDL2 -lvorbis -logg -lwebp -lwebpdemux -ljpeg -lpng -lharfbuzz -lfreetype"
 SDL2="$SDL2 -lssl -lcrypto -lffi -lbz2 -lz -ldl -lm"
 
