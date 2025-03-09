@@ -650,8 +650,6 @@ function feat_gui(debug_hidden) {
         return new_canvas
     }
 
-
-
     if (!canvas2d) {
         canvas2d =  add_canvas("canvas")
         canvas2d.style.position = "absolute"
@@ -675,10 +673,8 @@ console.warn("TODO: user defined canvas")
         canvas3d.style.position = "absolute"
         canvas3d.style.bottom = "0px"
         canvas3d.style.left = "0px"
-
     }
     vm.canvas3d = canvas3d
-
 
     canvas.addEventListener("click", MM.focus_handler)
 /*
@@ -787,17 +783,10 @@ console.warn("TODO: user defined canvas")
         const canvas = vm.canvas3d
         divider = divider || 1
         if ( (canvas.width==1) && (canvas.height==1) ){
-            console.log("canvas context not set yet")
+            console.log("Canvas3D: context not set yet")
             setTimeout(window_canvas_adjust_3d, 100, divider);
             return;
         }
-
-        if (!vm.config.fb_ar) {
-            vm.config.fb_width = canvas.width
-            vm.config.fb_height = canvas.height
-            vm.config.fb_ar  =  canvas.width / canvas.height
-        }
-
 
         var want_w
         var want_h
@@ -806,7 +795,7 @@ console.warn("TODO: user defined canvas")
 
         const dpr = window.devicePixelRatio
         if (dpr != 1 )
-            console.warn("Unsupported device pixel ratio", dpr)
+            console.warn("Canvas3D: Unsupported device pixel ratio", dpr)
 
         // default is maximize
         // default is maximize
@@ -817,7 +806,7 @@ console.warn("TODO: user defined canvas")
 
 
         if (vm.config.debug)
-            console.log("window3D[DEBUG:CORRECTED]:", want_w, want_h, ar, divider)
+            console.log("Canvas3D:", want_w, want_h, ar, divider)
 
         // keep fb ratio
         want_w = Math.trunc(want_w / divider )
@@ -863,43 +852,28 @@ console.warn("TODO: user defined canvas")
 
     }
 
-    function window_resize_3d(gui_divider) {
-        setTimeout(window_canvas_adjust_3d, 200, gui_divider);
-        setTimeout(window.focus, 300);
-    }
-
-    function window_resize_2d(gui_divider) {
-        // don't interfere if program want to handle canvas placing/resizing
-        if (vm.config.user_canvas_managed)
-            return vm.config.user_canvas_managed
-
-        if (!window.canvas) {
-            console.warn("777: No canvas defined")
-            return
-        }
-
-        setTimeout(window_canvas_adjust, 200, gui_divider);
-        setTimeout(window.focus, 300);
-    }
-
-
-
-    function window_resize_event() {
-        // special management for 3D ctx
+    function window_resize() {
+        // TODO: need special management for 3D ctx
         if (vm.config.user_canvas_managed==3) {
-            window_resize(vm.config.gui_divider)
-            return
-        }
-        window_resize(vm.config.gui_divider)
-    }
+            setTimeout(window_canvas_adjust_3d, 100, vm.config.gui_divider);
+        } else {
+            // don't interfere if program want to handle canvas placing/resizing
+            if (vm.config.user_canvas_managed)
+                return vm.config.user_canvas_managed
 
-    window.addEventListener('resize', window_resize_event);
-    if (vm.config.user_canvas_managed==3)
-        window.window_resize = window_resize_3d
-    else
-        window.window_resize = window_resize_2d
+            if (!window.canvas) {
+                console.warn("777: No canvas defined")
+                return
+            }
+            setTimeout(window_canvas_adjust, 100, vm.config.gui_divider);
+
+        }
+        setTimeout(window.focus, 100);
+    }
+    globalThis.window_resize = window_resize
 
     vm.canvas = canvas2d || canvas3d
+    window.addEventListener('resize', window_resize);
     return vm.canvas
 }
 
