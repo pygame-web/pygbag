@@ -71,15 +71,15 @@ jobs:
             cd $GITHUB_WORKSPACE
             PYBUILD=3.13 bash ./scripts/build-loader.sh
 
-    - name: build 3.14 packages
-      run: |
-            cd $GITHUB_WORKSPACE
-            PYBUILD=3.14 bash ./scripts/build-pkg.sh
+#    - name: build 3.14 packages
+#      run: |
+#            cd $GITHUB_WORKSPACE
+#            PYBUILD=3.14 bash ./scripts/build-pkg.sh
 
-    - name: build 3.14 loader
-      run: |
-            cd $GITHUB_WORKSPACE
-            PYBUILD=3.14 bash ./scripts/build-loader.sh
+#    - name: build 3.14 loader
+#      run: |
+#            cd $GITHUB_WORKSPACE
+#            PYBUILD=3.14 bash ./scripts/build-loader.sh
 
 
     - name: build PkPy loader
