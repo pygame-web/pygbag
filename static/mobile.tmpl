@@ -194,8 +194,15 @@ async def custom_site():
 
 
     """)
-        while not platform.window.MM.UME:
-            await asyncio.sleep(.1)
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
+                    waiting = False
+            await asyncio.sleep(0.1)
 
 
     # unlock async for main.py loop ( 2nd asyncio.run call )
