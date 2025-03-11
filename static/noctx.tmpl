@@ -374,6 +374,10 @@ frameborder="1"
     </div>
 
     <script type="application/javascript">
+    globalThis.__canvas_resized = (self, ecw, ech) => {
+        console.warn("TODO: panda3d canvas monitor", self, ecw, ech)
+    }
+
 
     async function custom_onload(debug_hidden) {
         // this is called before anythinh python is loaded
