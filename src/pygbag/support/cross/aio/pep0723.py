@@ -50,7 +50,7 @@ if sconf["platlib"] not in sys.path:
 PATCHLIST = []
 
 # fast skip list
-HISTORY = ["pyodide", "pytest", "pytest-ruff", "ruff"]
+HISTORY = ["pyodide", "pytest", "pytest-ruff", "ruff", "tarfile"]
 
 hint_failed = []
 

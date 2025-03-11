@@ -1,4 +1,4 @@
-<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js" type=module id="site" data-python="python{{cookiecutter.PYBUILD}}" data-LINES=42 data-COLUMNS=132 data-os="vtx,fs,snd,gui" async defer>#<!--
+<html lang="en-us"><script src="{{cookiecutter.cdn}}pythons.js" type=module id="site" data-python="python{{cookiecutter.PYBUILD}}" data-LINES=42 data-COLUMNS=132 data-os="vtx,snd,gui" async defer>#<!--
 
 print("""
 Loading {{cookiecutter.title}} from {{cookiecutter.archive}}.apk
@@ -54,13 +54,11 @@ def uy(*argv):
 # do not rename
 async def custom_site():
     import embed
-
     platform.document.body.style.background = "#7f7f7f"
 
     platform.window.transfer.hidden = true
     platform.window.canvas.style.visibility = "visible"
 
-    apk = "{{cookiecutter.archive}}.apk"
 
     bundle = "{{cookiecutter.archive}}"
 
@@ -69,27 +67,15 @@ async def custom_site():
     appdir.mkdir()
 
 
-    # mount apk
-
-    cfg = {
-        "io": "url",
-        "type":"mount",
-        "mount" : {
-            "point" : appdir.as_posix(),
-            "path" : "/",
-        }
-
-    }
-
-    track = platform.window.MM.prepare(apk, json.dumps(cfg))
+    # unpack filesystem from compressed archive
+    import tarfile
+    async with platform.fopen("{{cookiecutter.archive}}.tar.gz", "rb") as archive:
+        tar = tarfile.open(fileobj=archive, mode="r:gz")
+        tar.extractall(path=appdir.as_posix(), filter='tar')
+        tar.close()
 
     marginx = ux(.020) # 20%
     marginy = uy(.045) # 45%
-
-    print(" /////////////////////////////////////////////////////////: ")
-    # wait until zip mount + overlayfs is complete
-    while not track.ready:
-        await asyncio.sleep(.1)
 
 
     # preloader will change dir and prepend it to sys.path
@@ -186,13 +172,17 @@ config = {
     _sdl2 : "canvas",
     user_canvas : 0,
     user_canvas_managed : 0,
+    gui_divider : 2,
     ume_block : {{cookiecutter.ume_block}},
     can_close : {{cookiecutter.can_close}},
     archive : "{{cookiecutter.archive}}",
-    gui_debug : 3,
+    gui_debug : 2,
     cdn : "{{cookiecutter.cdn}}",
     autorun : {{cookiecutter.autorun}},
-    PYBUILD : "{{cookiecutter.PYBUILD}}"
+    PYBUILD : "{{cookiecutter.PYBUILD}}",
+    fb_ar   :  1.77,
+    fb_width : "{{cookiecutter.width}}",
+    fb_height : "{{cookiecutter.height}}"
 }
 
 </script>
@@ -316,6 +306,12 @@ height="1px"
     oncontextmenu="event.preventDefault()" tabindex=1>
     </canvas>
 
+    <canvas class="emscripten" id="canvas3d"
+width="{{cookiecutter.width}}px"
+height="{{cookiecutter.height}}px"
+    oncontextmenu="event.preventDefault()" tabindex=1 hidden>
+    </canvas>
+
     <div id=html></div>
 
     <div id=crt  class=bottomright >
@@ -374,6 +370,10 @@ frameborder="1"
     </div>
 
     <script type="application/javascript">
+
+    globalThis.__canvas_resized = (self, ecw, ech) => {
+        console.warn("TODO: panda3d canvas monitor", self, ecw, ech)
+    }
 
     async function custom_onload(debug_hidden) {
         // this is called before anythinh python is loaded
