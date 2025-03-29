@@ -303,7 +303,10 @@ window.Fetch.GET = function * GET (url)
         if self.is_emscripten:
             query_string = urlencode(params, doseq=doseq)
             await asyncio.sleep(0)
-            content = await platform.jsiter(platform.window.Fetch.GET(url + "?" + query_string))
+            if query_string == "":
+                content = await platform.jsiter(platform.window.Fetch.GET(url))
+            else:
+                content = await platform.jsiter(platform.window.Fetch.GET(url + "?" + query_string))
             if self.debug:
                 self.print(content)
             self.result = content
