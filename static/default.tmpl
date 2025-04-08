@@ -176,8 +176,15 @@ async def custom_site():
         print("""
         * Waiting for media user engagement : please click/touch page *
     """)
-        while not platform.window.MM.UME:
-            await asyncio.sleep(.1)
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
+                    waiting = False
+            await asyncio.sleep(0.1)
 
     # cleanup
     screen.fill( (0,0,0,0) )
