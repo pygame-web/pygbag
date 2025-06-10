@@ -719,7 +719,8 @@ ________________________
 
             # auto import plumbing to avoid rely too much on import error
             maybe_wanted = list(TopLevel_async_handler.list_imports(code, file=None, hint=hint))
-            DBG(f"635: {maybe_wanted=} known failed {aio.pep0723.hint_failed=}")
+
+            DBG(f"723: {maybe_wanted=} known failed {aio.pep0723.hint_failed=} {aio.pep0723.HISTORY=}")
 
             # FIXME use an hybrid wheel
             if "pyodide" in aio.pep0723.hint_failed:
@@ -1197,6 +1198,8 @@ if not aio.cross.simulator:
                         mod = n.name.split(".")[0]
 
                     mod = aio.pep0723.Config.mapping.get(mod, mod)
+                    if mod in aio.pep0723.HISTORY:
+                        continue
 
                     if mod in cls.ignore:
                         continue
@@ -1249,7 +1252,7 @@ if not aio.cross.simulator:
             file = file or "<stdin>"
 
             for want in cls.scan_imports(code, file, hint=hint):
-                # DBG(f"1114: requesting module {want=} for {file=} ")
+                DBG(f"1265: requesting module {want=} for {file=} ")
                 repo = None
                 for repo in aio.pep0723.Config.pkg_repolist:
                     if want in cls.may_need:
@@ -1291,9 +1294,13 @@ if not aio.cross.simulator:
 
             if mod in cls.missing_fence:
                 return []
-            from aio.pep0723 import Config
+
+            from aio.pep0723 import Config, HISTORY
 
             for dep in Config.repos[0]["packages"].get(mod, {}).get("depends", []):
+                if dep in HISTORY:
+                    continue
+
                 if dep in cls.ignore:
                     continue
 
