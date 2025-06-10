@@ -666,8 +666,28 @@ def add_history(line: str):
     readline.history.append(line)
 
 
-def get_history_item(index: int): ...
+def get_history_item(index: int):
+    pass
+
 
 
 def get_current_history_length():
     return len(readline.history)
+
+# == TODO ==
+
+def set_completer(todo):
+    pass
+
+def parse_and_bind(todo):
+    #'tab: complete'
+    pass
+
+def read_init_file(*todo):
+    pass
+
+def read_history_file(*todo):
+    pass
+
+def write_history_file(*todo):
+    pass

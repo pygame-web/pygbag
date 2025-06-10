@@ -105,10 +105,8 @@ then
     # new cython (git)
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/8.diff | patch -p1
 
-    # added Vector2.from_polar and Vector3.from_spherical classmethods
-    # breaks, left a review !
-    # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2141.diff | patch -p1
-
+    # fix 3.13 build
+    wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/9.diff | patch -p1
 
     # cython3 / merged
     # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2395.diff | patch -p1
@@ -227,6 +225,7 @@ fi
     rm -rf build Setup
 # ===================
 
+
 if ${CI:-false}
 then
     touch $(find | grep pxd$)
@@ -239,6 +238,9 @@ then
     fi
 else
     echo "skipping cython regen"
+touch $(find | grep pxd$)
+$HPY setup.py cython_only
+
 fi
 
 #$HPY ${WORKSPACE}/src/replacer.py --go "Py_GIL_DISABLED'\): raise ImportError" "Py_GIL_DISABLED'): print(__name__)"
@@ -247,7 +249,7 @@ fi
 #SDL_IMAGE="-s USE_SDL=2 -lfreetype -lwebp"
 SDL_IMAGE="-lSDL2 -lfreetype -lwebp"
 
-export CFLAGS="-DSDL_NO_COMPAT $SDL_IMAGE"
+export CFLAGS="-DBUILD_STATIC -DSDL_NO_COMPAT $SDL_IMAGE"
 EMCC_CFLAGS="-I${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/include/freetype2"
 EMCC_CFLAGS="$EMCC_CFLAGS -I$PREFIX/include/SDL2"
 EMCC_CFLAGS="$EMCC_CFLAGS -Wno-unused-command-line-argument"
@@ -262,8 +264,8 @@ EMCC_CFLAGS="$EMCC_CFLAGS -Wno-deprecated-declarations"
 
 
 
-export EMCC_CFLAGS="$EMCC_CFLAGS -DHAVE_STDARG_PROTOTYPES -DBUILD_STATIC -ferror-limit=1 -fpic"
-
+export EMCC_CFLAGS="$EMCC_CFLAGS -DHAVE_STDARG_PROTOTYPES -ferror-limit=1 -fpic -DBUILD_STATIC"
+export COPTS="-O2 -g3 -DBUILD_STATIC"
 export CC=emcc
 
 # remove SDL1 for good
@@ -334,7 +336,7 @@ then
 
     [ -f ${TARGET_FILE} ] && rm ${TARGET_FILE} ${TARGET_FILE}.map
 
-    COPTS="-Os -g0" emcc -shared -fpic -o ${TARGET_FILE} $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a $SDL2
+    COPTS="-O2 -g3" emcc -shared -fpic -o ${TARGET_FILE} $SDKROOT/prebuilt/emsdk/libpygame${PYMAJOR}.${PYMINOR}.a $SDL2
 
     # github CI does not build wheel for now.
     echo ${WHEEL_DIR}

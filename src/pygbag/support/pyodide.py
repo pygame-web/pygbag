@@ -10,10 +10,26 @@ sys.modules["js"] = platform
 import js
 
 
+def jsa(*argv):
+    return platform.window.JSON.parse(json.dumps(argv))
+
+def jso(**kw):
+    return platform.window.JSON.parse(json.dumps(kw))
+
 class ffi:
     def create_proxy(self, fn):
         print(fn)
         return fn
+
+    def JsArray(self, *it):
+        return jsa(*it)
+    def JsException(self, *argv, **kw):
+        pass
+    def JsProxy(self, *argv, **kw):
+        pass
+
+    def to_js(self, *argv, **kw):
+        pass
 
 
 ffi = ffi()

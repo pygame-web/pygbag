@@ -1071,7 +1071,7 @@ main(int argc, char **argv)
     setenv("HOME", "/home/web_user", 1);
     setenv("APPDATA", "/home/web_user", 1);
 
-    setenv("PYGLET_HEADLESS", "1", 1);
+    // setenv("PYGLET_HEADLESS", "1", 1);
     setenv("PSYCOPG_WAIT_FUNC", "wait_select", 1);
 
 // rich

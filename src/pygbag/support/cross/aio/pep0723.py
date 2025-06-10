@@ -56,9 +56,7 @@ hint_failed = []
 
 
 class Config:
-    #    READ_722 = False
     READ_723 = True
-    #    BLOCK_RE_722 = r"(?i)^#\s+script\s+dependencies:\s*$"
     BLOCK_RE_723 = r"(?m)^# /// (?P<type>[a-zA-Z0-9-]+)$\s(?P<content>(^#(| .*)$\s)+)^# ///$"
     PKG_BASE_DEFAULT = "https://pygame-web.github.io/archives/repo/"
     PKG_INDEXES = []
@@ -75,6 +73,7 @@ class Config:
     mapping = {
         "pygame": "pygame.base",
         "pygame_ce": "pygame.base",
+        "pygame_static": "pygame.base",
         "python_i18n": "i18n",
         "pillow": "PIL",
         "pyglm": "glm",
@@ -82,34 +81,8 @@ class Config:
         "pysdl3": "sdl3",
     }
 
-
-def read_dependency_block_722(code):
-    # Skip lines until we reach a dependency block (OR EOF).
-    has_block = False
-    # Read dependency lines until we hit a line that doesn't
-    # start with #, or we are at EOF.
-    for line in code.split("\n"):
-        if not has_block:
-            if re.match(Config.BLOCK_RE_722, line):
-                has_block = True
-            continue
-
-        if not line.startswith("#"):
-            break
-        # Remove comments. An inline comment is introduced by
-        # a hash, which must be preceded and followed by a
-        # space.
-        line = line[1:].split(" # ", maxsplit=1)[0]
-        line = line.strip()
-        # Ignore empty lines
-        if not line:
-            continue
-        # Try to convert to a requirement. This will raise
-        # an error if the line is not a PEP 508 requirement
-        yield Requirement(line)
-
-
 def read_dependency_block_723(code):
+    global HISTORY, hint_failed
     # Skip lines until we reach a dependency block (OR EOF).
     has_block = False
 
@@ -143,7 +116,7 @@ def install(pkg_file, sconf=None):
     from installer.destinations import SchemeDictionaryDestination
     from installer.sources import WheelFile
     if pkg_file in HISTORY:
-        print(f"# 144: install: {pkg_file} already installed")
+        print(f"# 144: install: {pkg_file} already installed or skipped")
         return
 
     # Handler for installation directories and writing into them.
@@ -374,19 +347,11 @@ PYGAME = 0
 
 
 async def parse_code(code, env):
-    global PATCHLIST, PYGAME
+    global PATCHLIST, PYGAME, HISTORY, hint_failed
 
     maybe_missing = []
 
-    #    if Config.READ_722:
-    #        for req in read_dependency_block_722(code):
-    #            pkg = str(req)
-    #            if (env / pkg).is_dir():
-    #                print("found in env :", pkg)
-    #                continue
-    #            elif pkg not in maybe_missing:
-    #                # do not change case ( eg PIL )
-    #                maybe_missing.append(pkg.lower().replace("-", "_"))
+    import platform
 
     if Config.READ_723:
         for req in read_dependency_block_723(code):
@@ -394,13 +359,21 @@ async def parse_code(code, env):
             if (env / pkg).is_dir():
                 print("found in env :", pkg)
                 continue
+            elif pkg and pkg[0]=='!':
+                skip = pkg[1:]
+                if not skip in HISTORY:
+                    HISTORY.append(skip)
+                if not skip in hint_failed:
+                    hint_failed.append(skip)
+                if skip in platform.patches:
+                    if not skip in PATCHLIST:
+                        PATCHLIST.append(skip)
+                continue
             elif pkg not in maybe_missing:
                 # do not change case ( eg PIL )
                 maybe_missing.append(pkg.lower().replace("-", "_"))
 
     still_missing = []
-
-    import platform
 
     for dep in maybe_missing:
         if dep in platform.patches:

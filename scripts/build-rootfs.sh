@@ -68,6 +68,11 @@ import platform
 # for pyodide runPython emulation
 from textwrap import dedent
 
+# requests/urllib3 pyodide workaround
+import http.cookiejar
+from http.cookies import Morsel
+import encodings.idna
+
 # FIXME: because _sqlite3 is builtins anyway ?
 import sqlite3
 
