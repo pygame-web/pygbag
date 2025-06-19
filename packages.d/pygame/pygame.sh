@@ -96,7 +96,8 @@ then
 
 
     # unsure : wasm pygame.freetype hack
-    #wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
+    # wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/3.diff | patch -p1
+
     wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/1967.diff  | patch -p1
 
     # 313t controller fix merged
@@ -105,8 +106,8 @@ then
     # new cython (git)
     wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/8.diff | patch -p1
 
-    # fix 3.13 build
-    wget -O- https://patch-diff.githubusercontent.com/raw/pmp-p/pygame-ce-wasm/pull/9.diff | patch -p1
+    # fix 3.13 build , merged
+    # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/3496.diff | patch -p1
 
     # cython3 / merged
     # wget -O- https://patch-diff.githubusercontent.com/raw/pygame-community/pygame-ce/pull/2395.diff | patch -p1
