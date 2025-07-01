@@ -2637,7 +2637,11 @@ function auto_start(cfg) {
 }
 
 
-window.set_raw_mode = function (param) {
+globalThis.__canvas_resized = (self, ecw, ech) => {
+    console.warn("TODO: panda3d canvas monitor", self, ecw, ech)
+}
+
+globalThis.set_raw_mode = function (param) {
     window.RAW_MODE = param || 0
 }
 
