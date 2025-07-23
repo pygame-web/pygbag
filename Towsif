@@ -1,0 +1,262 @@
+import pygame
+import sys
+import math
+import random
+
+# Initialize pygame
+pygame.init()
+
+# Constants
+WIDTH, HEIGHT = 800, 600
+BOARD_SIZE = 500
+BOARD_MARGIN = 50
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+BROWN = (139, 69, 19)
+CREAM = (255, 253, 208)
+
+# Set up the display
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("ক্রাম বোর্ড গেম")
+
+# Game variables
+striker_pos = [WIDTH // 2, HEIGHT - BOARD_MARGIN - 20]
+striker_radius = 15
+striker_speed = [0, 0]
+striker_power = 0
+angle = 0
+coins = []
+pocketed_coins = {"white": 0, "black": 0, "red": 0}
+current_player = 1
+game_state = "aiming"  # aiming, shooting, moving
+turn_time = 0
+foul_count = 0
+
+# Initialize coins
+def init_coins():
+    global coins
+    coins = []
+    
+    # Queen (red coin)
+    coins.append({"pos": [WIDTH // 2, HEIGHT // 2], "radius": 12, "color": RED, "velocity": [0, 0], "pocketed": False})
+    
+    # White coins
+    for i in range(9):
+        angle = i * (2 * math.pi / 9)
+        radius = 30
+        x = WIDTH // 2 + radius * math.cos(angle)
+        y = HEIGHT // 2 + radius * math.sin(angle)
+        coins.append({"pos": [x, y], "radius": 12, "color": WHITE, "velocity": [0, 0], "pocketed": False})
+    
+    # Black coins
+    for i in range(9):
+        angle = i * (2 * math.pi / 9) + 0.2
+        radius = 60
+        x = WIDTH // 2 + radius * math.cos(angle)
+        y = HEIGHT // 2 + radius * math.sin(angle)
+        coins.append({"pos": [x, y], "radius": 12, "color": BLACK, "velocity": [0, 0], "pocketed": False})
+
+# Pocket positions (simplified)
+pockets = [
+    {"pos": [BOARD_MARGIN, BOARD_MARGIN], "radius": 20},
+    {"pos": [WIDTH - BOARD_MARGIN, BOARD_MARGIN], "radius": 20},
+    {"pos": [BOARD_MARGIN, HEIGHT - BOARD_MARGIN], "radius": 20},
+    {"pos": [WIDTH - BOARD_MARGIN, HEIGHT - BOARD_MARGIN], "radius": 20},
+    {"pos": [WIDTH // 2, BOARD_MARGIN], "radius": 20},
+    {"pos": [WIDTH // 2, HEIGHT - BOARD_MARGIN], "radius": 20}
+]
+
+# Initialize game
+init_coins()
+
+# Game loop
+clock = pygame.time.Clock()
+running = True
+
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        
+        if game_state == "aiming":
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    angle = (angle + 5) % 360
+                elif event.key == pygame.K_RIGHT:
+                    angle = (angle - 5) % 360
+                elif event.key == pygame.K_UP:
+                    striker_power = min(striker_power + 1, 20)
+                elif event.key == pygame.K_DOWN:
+                    striker_power = max(striker_power - 1, 1)
+                elif event.key == pygame.K_SPACE:
+                    striker_speed = [
+                        striker_power * math.cos(math.radians(angle)),
+                        striker_power * math.sin(math.radians(angle))
+                    ]
+                    game_state = "shooting"
+                    turn_time = pygame.time.get_ticks()
+    
+    # Update game state
+    if game_state == "shooting" or game_state == "moving":
+        all_stopped = True
+        
+        # Update striker
+        striker_pos[0] += striker_speed[0]
+        striker_pos[1] += striker_speed[1]
+        
+        # Apply friction
+        striker_speed[0] *= 0.98
+        striker_speed[1] *= 0.98
+        
+        # Check if striker stopped
+        if abs(striker_speed[0]) < 0.1 and abs(striker_speed[1]) < 0.1:
+            striker_speed = [0, 0]
+        else:
+            all_stopped = False
+        
+        # Check striker collision with board boundaries
+        if striker_pos[0] - striker_radius < BOARD_MARGIN:
+            striker_pos[0] = BOARD_MARGIN + striker_radius
+            striker_speed[0] *= -0.8
+        elif striker_pos[0] + striker_radius > WIDTH - BOARD_MARGIN:
+            striker_pos[0] = WIDTH - BOARD_MARGIN - striker_radius
+            striker_speed[0] *= -0.8
+        
+        if striker_pos[1] - striker_radius < BOARD_MARGIN:
+            striker_pos[1] = BOARD_MARGIN + striker_radius
+            striker_speed[1] *= -0.8
+        elif striker_pos[1] + striker_radius > HEIGHT - BOARD_MARGIN:
+            striker_pos[1] = HEIGHT - BOARD_MARGIN - striker_radius
+            striker_speed[1] *= -0.8
+        
+        # Update coins
+        for coin in coins:
+            if not coin["pocketed"]:
+                coin["pos"][0] += coin["velocity"][0]
+                coin["pos"][1] += coin["velocity"][1]
+                
+                # Apply friction
+                coin["velocity"][0] *= 0.98
+                coin["velocity"][1] *= 0.98
+                
+                # Check if coin stopped
+                if abs(coin["velocity"][0]) > 0.1 or abs(coin["velocity"][1]) > 0.1:
+                    all_stopped = False
+                else:
+                    coin["velocity"] = [0, 0]
+                
+                # Check coin collision with board boundaries
+                if coin["pos"][0] - coin["radius"] < BOARD_MARGIN:
+                    coin["pos"][0] = BOARD_MARGIN + coin["radius"]
+                    coin["velocity"][0] *= -0.8
+                elif coin["pos"][0] + coin["radius"] > WIDTH - BOARD_MARGIN:
+                    coin["pos"][0] = WIDTH - BOARD_MARGIN - coin["radius"]
+                    coin["velocity"][0] *= -0.8
+                
+                if coin["pos"][1] - coin["radius"] < BOARD_MARGIN:
+                    coin["pos"][1] = BOARD_MARGIN + coin["radius"]
+                    coin["velocity"][1] *= -0.8
+                elif coin["pos"][1] + coin["radius"] > HEIGHT - BOARD_MARGIN:
+                    coin["pos"][1] = HEIGHT - BOARD_MARGIN - coin["radius"]
+                    coin["velocity"][1] *= -0.8
+                
+                # Check coin collision with pockets
+                for pocket in pockets:
+                    distance = math.sqrt((coin["pos"][0] - pocket["pos"][0])**2 + (coin["pos"][1] - pocket["pos"][1])**2)
+                    if distance < pocket["radius"]:
+                        coin["pocketed"] = True
+                        if coin["color"] == WHITE:
+                            pocketed_coins["white"] += 1
+                        elif coin["color"] == BLACK:
+                            pocketed_coins["black"] += 1
+                        elif coin["color"] == RED:
+                            pocketed_coins["red"] += 1
+                
+                # Check coin collision with striker
+                if game_state == "shooting":
+                    distance = math.sqrt((coin["pos"][0] - striker_pos[0])**2 + (coin["pos"][1] - striker_pos[1])**2)
+                    if distance < coin["radius"] + striker_radius:
+                        # Simple collision response
+                        angle_collision = math.atan2(coin["pos"][1] - striker_pos[1], coin["pos"][0] - striker_pos[0])
+                        power = math.sqrt(striker_speed[0]**2 + striker_speed[1]**2) * 0.8
+                        
+                        coin["velocity"][0] = power * math.cos(angle_collision)
+                        coin["velocity"][1] = power * math.sin(angle_collision)
+                        
+                        striker_speed[0] *= -0.5
+                        striker_speed[1] *= -0.5
+                        game_state = "moving"
+                
+                # Check coin-to-coin collisions
+                for other_coin in coins:
+                    if other_coin != coin and not other_coin["pocketed"]:
+                        distance = math.sqrt((coin["pos"][0] - other_coin["pos"][0])**2 + 
+                                           (coin["pos"][1] - other_coin["pos"][1])**2)
+                        if distance < coin["radius"] + other_coin["radius"]:
+                            # Simple collision response
+                            angle_collision = math.atan2(coin["pos"][1] - other_coin["pos"][1], 
+                                                        coin["pos"][0] - other_coin["pos"][0])
+                            
+                            # Transfer some velocity
+                            power1 = math.sqrt(coin["velocity"][0]**2 + coin["velocity"][1]**2)
+                            power2 = math.sqrt(other_coin["velocity"][0]**2 + other_coin["velocity"][1]**2)
+                            
+                            coin["velocity"][0] = power2 * 0.7 * math.cos(angle_collision + math.pi)
+                            coin["velocity"][1] = power2 * 0.7 * math.sin(angle_collision + math.pi)
+                            
+                            other_coin["velocity"][0] = power1 * 0.7 * math.cos(angle_collision)
+                            other_coin["velocity"][1] = power1 * 0.7 * math.sin(angle_collision)
+        
+        # Check if all coins stopped moving
+        if all_stopped and game_state == "moving":
+            game_state = "aiming"
+            striker_pos = [WIDTH // 2, HEIGHT - BOARD_MARGIN - 20]
+            striker_power = 10
+            current_player = 3 - current_player  # Switch player (1->2, 2->1)
+    
+    # Draw everything
+    screen.fill(BROWN)
+    
+    # Draw board
+    pygame.draw.rect(screen, CREAM, (BOARD_MARGIN, BOARD_MARGIN, WIDTH - 2*BOARD_MARGIN, HEIGHT - 2*BOARD_MARGIN))
+    
+    # Draw pockets
+    for pocket in pockets:
+        pygame.draw.circle(screen, BLAC, pocket["pos"], pocket["radius"])
+    
+    # Draw coins
+    for coin in coins:
+        if not coin["pocketed"]:
+            pygame.draw.circle(screen, coin["color"], (int(coin["pos"][0]), int(coin["pos"][1])), coin["radius"])
+    
+    # Draw striker
+    pygame.draw.circle(screen, WHITE, (int(striker_pos[0]), int(striker_pos[1])), striker_radius)
+    
+    # Draw aiming line
+    if game_state == "aiming":
+        end_x = striker_pos[0] + 50 * math.cos(math.radians(angle))
+        end_y = striker_pos[1] + 50 * math.sin(math.radians(angle))
+        pygame.draw.line(screen, RED, striker_pos, (end_x, end_y), 2)
+        
+        # Draw power meter
+        pygame.draw.rect(screen, BLACK, (20, 20, 20, 100), 1)
+        pygame.draw.rect(screen, RED, (20, 20 + (100 - 5*striker_power), 20, 5*striker_power))
+    
+    # Draw score
+    font = pygame.font.SysFont(None, 36)
+    player1_text = font.render(f"Player 1: {pocketed_coins['white']}", True, WHITE)
+    player2_text = font.render(f"Player 2: {pocketed_coins['black']}", True, WHITE)
+    queen_text = font.render(f"Queen: {'Pocketed' if pocketed_coins['red'] > 0 else 'Not pocketed'}", True, RED)
+    turn_text = font.render(f"Turn: Player {current_player}", True, WHITE)
+    
+    screen.blit(player1_text, (WIDTH - 200, 20))
+    screen.blit(player2_text, (WIDTH - 200, 60))
+    screen.blit(queen_text, (WIDTH - 200, 100))
+    screen.blit(turn_text, (WIDTH - 200, 140))
+    
+    pygame.display.flip()
+    clock.tick(60)
+
+pygame.quit()
+sys.exit()
