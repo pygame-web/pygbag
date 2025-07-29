@@ -42,7 +42,7 @@ then
  ================= forcing Cython git instead of release ${CYTHON}  =================
 
 "
-            # /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force --no-build-isolation git+${CYTHON_URL}
+            # ${SDKROOT}/python3-wasm -m pip install --upgrade --force --no-build-isolation git+${CYTHON_URL}
             NO_CYTHON_COMPILE=true $HPY -m pip install --upgrade --force --no-build-isolation ${CYTHON_URL}
         else
             echo "
@@ -52,7 +52,7 @@ then
 "
             pushd build
                 wget -q -c https://github.com/cython/cython/releases/download/3.0.11-1/${CYTHON}
-                /opt/python-wasm-sdk/python3-wasm -m pip install --upgrade --force $CYTHON
+                ${SDKROOT}/python3-wasm -m pip install --upgrade --force $CYTHON
                 $HPY -m pip install --upgrade --force $CYTHON
             popd
         fi
@@ -270,7 +270,7 @@ export COPTS="-O2 -g3 -DBUILD_STATIC"
 export CC=emcc
 
 # remove SDL1 for good
-rm -rf /opt/python-wasm-sdk/emsdk/upstream/emscripten/cache/sysroot/include/SDL
+rm -rf ${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/include/SDL
 
 [ -d build ] && rm -r build
 [ -f Setup ] && rm Setup
@@ -313,7 +313,7 @@ TAG=${PYMAJOR}${PYMINOR}
 echo "FIXME: build wheel"
 
 SDL2="-sUSE_ZLIB=1 -sUSE_BZIP2=1 -sUSE_LIBPNG"
-SDL2="$SDL2 -sUSE_FREETYPE -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -lSDL2 -L/opt/python-wasm-sdk/devices/emsdk/usr/lib"
+SDL2="$SDL2 -sUSE_FREETYPE -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -lSDL2 -L${SDKROOT}/devices/emsdk/usr/lib"
 
 if echo $EMFLAVOUR|grep -q ^4
 then

@@ -1136,6 +1136,9 @@ main(int argc, char **argv)
     #include MAIN_TEST_FILE
 
 
+    // https://stackoverflow.com/questions/7931182/reliably-detect-if-the-script-is-executing-in-a-web-worker
+    // self.document === undefined ?
+
 EM_ASM({
     globalThis.FD_BUFFER_MAX = $0;
     globalThis.shm_stdin = $1;
@@ -1268,7 +1271,7 @@ EM_ASM({
 
 #if defined(WAPY)
 int main(int argc, char **argv) {
-     #if MICROPY_PY_THREAD
+    #if MICROPY_PY_THREAD
     mp_thread_init();
     #endif
     // We should capture stack top ASAP after start, and it should be

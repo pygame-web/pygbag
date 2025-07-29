@@ -43,6 +43,7 @@ try:
     # bokeh
     sys.stdout.reconfigure(encoding='unicode-escape')
     sys.stdout.reconfigure(encoding='utf-16')
+    sys.stdout.reconfigure(encoding='utf_16-be')
     sys.stdout.reconfigure(encoding='utf-8')
 except:
     pass

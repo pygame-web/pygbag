@@ -74,7 +74,8 @@ if hasattr(sys, "_emscripten_info"):
         from embed_browser import fetch, console, prompt, alert, confirm
 
         # broad pyodide compat
-        sys.modules["js"] = this  # instead of just sys.modules["embed_browser"]
+        # sys.modules["js"] = this  # instead of just sys.modules["embed_browser"]
+        sys.modules["js"] = window.globalThis
 
         Object_type = type(Object())
     except Exception as e:
@@ -167,9 +168,11 @@ frametime = 1.0 / 60
 if is_browser:
     # implement "js.new"
 
-    def new(oclass, *argv):
-        from embed_browser import Reflect, Array
-
+    def new(oclass, *argv, **kw):
+        from embed_browser import Reflect, Array, window
+        if kw:
+            argv = list(argv)
+            argv.append(window.JSON.parse(json.dumps(kw)))
         return Reflect.construct(oclass, Array(*argv))
 
     # dom events

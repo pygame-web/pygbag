@@ -331,8 +331,7 @@ Object_str(Object *self) {
 /**
  * Implements len().
  */
-static Py_ssize_t
-Object_length(Object *self) {
+static int get_len(Object *self) {
   int len = EM_ASM_INT({
     var val = Emval.toValue($0);
     if (val[Symbol.iterator] && val.length !== undefined) {
@@ -342,7 +341,12 @@ Object_length(Object *self) {
       return -1;
     }
   }, self->handle);
+  return len;
+}
 
+static Py_ssize_t
+Object_length(Object *self) {
+  int len = get_len(self);
   if (len >= 0) {
     return len;
   }
@@ -517,6 +521,18 @@ Object_dir(Object *self, PyObject *noarg) {
   }, self->handle));
 }
 
+/**
+ * Implements truth test.
+ */
+static int
+Object_as_bool(PyObject *self) {
+  return (int)(get_len((Object*)self) != 0 );
+}
+
+static PyNumberMethods Object_as_number = {
+    .nb_bool = Object_as_bool,
+};
+
 static PyAsyncMethods Object_async = {
   .am_await = (unaryfunc)Object_await,
 };
@@ -551,6 +567,7 @@ static PyTypeObject Object_Type = {
   .tp_iter = (getiterfunc)Object_iter,
   .tp_iternext = (iternextfunc)Object_next,
   .tp_methods = Object_methods,
+  .tp_as_number = &Object_as_number,
   .tp_new = PyType_GenericNew,
 };
 
@@ -920,6 +937,9 @@ static PyObject *emval_to_py(EM_VAL handle) {
     switch (type) {
     case 1:
       exc_type = PyExc_TypeError;
+puts("==== please use new() not .new() ======");
+    puts(message);
+puts("=======================================");
       break;
 
     case 2:
@@ -1182,16 +1202,25 @@ PyObject *PyInit_browser() {
   PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
 #endif
 
-  Object *window = PyObject_New(Object, &Object_Type);
-  if (PyModule_AddObject(module, "window", (PyObject *)window) < 0) {
-    Py_DECREF(&window);
+  Object *globalThis = PyObject_New(Object, &Object_Type);
+  if (PyModule_AddObject(module, "globalThis", (PyObject *)globalThis) < 0) {
+    Py_DECREF(&globalThis);
     Py_DECREF(module);
     return NULL;
   }
 
+
   Object *console = PyObject_New(Object, &Object_Type);
   if (PyModule_AddObject(module, "console", (PyObject *)console) < 0) {
     Py_DECREF(&console);
+    Py_DECREF(module);
+    return NULL;
+  }
+
+// worker ?
+  Object *window = PyObject_New(Object, &Object_Type);
+  if (PyModule_AddObject(module, "window", (PyObject *)window) < 0) {
+    Py_DECREF(&window);
     Py_DECREF(module);
     return NULL;
   }
@@ -1204,12 +1233,12 @@ PyObject *PyInit_browser() {
   }
 
   EM_ASM({
-    setValue($0, Emval.toHandle(window), '*');
+    setValue($0, Emval.toHandle(globalThis), '*');
     setValue($1, Emval.toHandle(console), '*');
-    setValue($2, Emval.toHandle(document), '*');
-
-    window.__py_alive = new Set();
-  }, &window->handle, &console->handle, &document->handle);
+    setValue($2, Emval.toHandle(window), '*');
+    setValue($3, Emval.toHandle(document), '*');
+    globalThis.__py_alive = new Set();
+  }, &globalThis->handle, &console->handle, &window->handle, &document->handle);
 
   return module;
 }

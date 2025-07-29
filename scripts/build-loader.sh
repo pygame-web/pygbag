@@ -285,9 +285,16 @@ then
 
     LINKPYTHON="python mpdec expat"
 
-    if [ ${PYMINOR} -ge 11 ]
+
+    if [ ${PYMINOR} -ge 14 ]
     then
-        LINKPYTHON="Hacl_Hash_SHA2 Hacl_Hash_Blake2 $LINKPYTHON"
+        LDFLAGS="$LDFLAGS -lzstd"
+        LINKPYTHON="_hacl $LINKPYTHON"
+    else
+        if [ ${PYMINOR} -ge 11 ]
+        then
+            LINKPYTHON="Hacl_Hash_SHA2 Hacl_Hash_Blake2 $LINKPYTHON"
+        fi
     fi
 
 
