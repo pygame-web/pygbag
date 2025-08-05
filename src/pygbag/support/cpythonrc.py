@@ -699,28 +699,15 @@ ________________________
             sconf = __import__("sysconfig").get_paths()
             env = Path(sconf["purelib"])
 
-            if not len(Config.repos):
-                await aio.pep0723.async_repos()
-
-                # TODO switch to METADATA:Requires-Dist
-                #   see https://github.com/pygame-web/pygbag/issues/156
-
-                for cdn in Config.PKG_INDEXES:
-                    async with platform.fopen(Path(cdn) / Config.REPO_DATA) as source:
-                        Config.repos.append(json.loads(source.read()))
-
-                DBG("650: FIXME (this is pyodide maintened stuff, use (auto)PEP723 asap)")
-                print("651: referenced packages :", len(Config.repos[0]["packages"]))
-
-            DBG(f"654: aio.pep0723.check_list {aio.pep0723.env=}")
+            DBG(f"702: aio.pep0723.check_list {aio.pep0723.env=}")
             deps = await aio.pep0723.check_list(code)
 
-            DBG(f"656: aio.pep0723.pip_install {deps=}")
+            DBG(f"705: aio.pep0723.pip_install {deps=}")
 
             # auto import plumbing to avoid rely too much on import error
             maybe_wanted = list(TopLevel_async_handler.list_imports(code, file=None, hint=hint))
 
-            DBG(f"723: {maybe_wanted=} known failed {aio.pep0723.hint_failed=} {aio.pep0723.HISTORY=}")
+            DBG(f"710: {maybe_wanted=} known failed {aio.pep0723.hint_failed=} {aio.pep0723.HISTORY=}")
 
             # FIXME use an hybrid wheel
             if "pyodide" in aio.pep0723.hint_failed:
@@ -1534,19 +1521,17 @@ async def import_site(__file__, run=True):
         # or the user script (script mode).
 
         if Path(__file__).is_file():
-            DBG(f"1755: shell.source({__file__=})")
             await shell.source(__file__)
 
             # allow to set user site customization network, or embedded js to be processed
             await asyncio.sleep(0)
 
             if PyConfig.user_site_directory:
-                DBG(f"1768: {__file__=} done, giving hand to user_site")
                 return __file__
             else:
-                DBG(f"1764: {__file__=} done : now trying user sources")
+                DBG(f"1545: {__file__=} done : now trying user sources")
         else:
-            DBG(f"1767: {__file__=} NOT FOUND : now trying user sources")
+            DBG(f"1547: {__file__=} NOT FOUND : now trying user sources")
 
         # NOW CHECK OTHER SOURCES
 
@@ -1607,8 +1592,6 @@ async def import_site(__file__, run=True):
             else:
                 source = sys.argv[0]
 
-        DBG(f"1830: {local=} {source=} {is_py=} {hint=}")
-
         if local is None:
 
             ext = str(source).rsplit(".")[-1].lower()
@@ -1646,9 +1629,7 @@ async def import_site(__file__, run=True):
                 await shell.exec(shell.wget(f"-O{local}", source))
             else:
                 # maybe base64 or frozen code in html.
-                ...
-
-        DBG(f"1867: {local=} {source=} {is_py=} {hint=}")
+                pass
 
         if local and local.is_file():
             pdir = str(local.parent)

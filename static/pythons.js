@@ -1,5 +1,7 @@
 "use strict";
 
+WebAssembly.promising = null
+
 /*  BF2 is still broken see  https://github.com/jvilk/BrowserFS/issues/325
 import { configure, BFSRequire, EmscriptenFS } from './browserfs.mjs';
 //import { Buffer } from 'buffer';
@@ -87,7 +89,7 @@ window.addEventListener("error", function (e) {
 })
 
 window.addEventListener('unhandledrejection', function (e) {
-  alert("Error occurred: " + e.reason.message);
+  alert("Rejection occurred: " + e.reason.message);
 })
 
 function reverse(s){
@@ -413,7 +415,7 @@ async function postrun(vm) {
     window.VM = vm
 
     var pyrc_url = vm.config.cdn + VM.script.interpreter + "rc.py"
-
+    console.log("Maybe RC", pyrc_url)
     await fetch(pyrc_url, {})
         .then( response => checkStatus(response) && response.arrayBuffer() )
         .then( buffer => run_pyrc(new Uint8Array(buffer)) )
@@ -2306,12 +2308,7 @@ async function onload() {
     if (window.custom_onload)
         window.custom_onload(debug_hidden)
 
-
     window.busy--;
-    if (!config.quiet)
-        vm.vt.xterm.write('OK\r\nPlease \x1B[1;3;31mwait\x1B[0m ...\r\n')
-
-
 
     if (window.window_resize)
         window_resize(vm.config.gui_divider)

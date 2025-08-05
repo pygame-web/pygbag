@@ -134,7 +134,7 @@ ____
 NOTES:
  - pygbag only provides support for pygame-ce ( pygame community edition )
 
- - safari/chrome mobile will not run until version ios 15.x
+ - safari/chrome mobile will not run until version ios 15.x. Regarding iOS: This project is tested with BrowserStack when possible.
 
  - first load will be slower, because setting up local cache from cdn to avoid
 useless network transfer for getting pygame and cpython prebuilts.

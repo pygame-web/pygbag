@@ -61,7 +61,6 @@ class Config:
     PKG_BASE_DEFAULT = "https://pygame-web.github.io/archives/repo/"
     PKG_INDEXES = []
     REPO_INDEX = "index.json"
-    REPO_DATA = "repodata.json"
     repos = []
     pkg_repolist = []
     dev_mode = ".-X.dev." in ".".join([""] + sys.orig_argv + [""])
@@ -71,9 +70,8 @@ class Config:
     Requires_Failures = []
 
     mapping = {
-        "pygame": "pygame.base",
-        "pygame_ce": "pygame.base",
-        "pygame_static": "pygame.base",
+        "pygame": "pygame_ce",
+        "pygame.base": "pygame_ce",
         "python_i18n": "i18n",
         "pillow": "PIL",
         "pyglm": "glm",
@@ -89,7 +87,8 @@ def read_dependency_block_723(code):
     content = []
     for line in code.split("\n"):
         if not has_block:
-            if line.strip() in ["# /// pyproject", "# /// script"]:
+            # compat with draft PEP for pyproject
+            if line.rstrip() in ["# /// pyproject", "# /// script"]:
                 has_block = True
             continue
 
@@ -103,6 +102,7 @@ def read_dependency_block_723(code):
     struct = tomllib.loads("\n".join(content))
 
     print(json.dumps(struct, sort_keys=True, indent=4))
+    # compat with draft PEP
     if struct.get("project", None):
         struct = struct.get("project", {"dependencies": []})
     deps = struct.get("dependencies", [])
@@ -147,15 +147,6 @@ def install(pkg_file, sconf=None):
         sys.print_exception(ex)
 
 
-#    see cpythonrc
-#            if not len(Config.repos):
-#                for cdn in (Config.PKG_INDEXES or PyConfig.pkg_indexes):
-#                    async with platform.fopen(Path(cdn) / Config.REPO_DATA) as source:
-#                        Config.repos.append(json.loads(source.read()))
-#
-#                DBG("1203: FIXME (this is pyodide maintened stuff, use PEP723 asap) referenced packages :", len(cls.repos[0]["packages"]))
-
-
 async def async_repos():
     abitag = f"cp{sys.version_info.major}{sys.version_info.minor}"
     apitag = __import__("sysconfig").get_config_var("HOST_GNU_TYPE")
@@ -171,28 +162,31 @@ async def async_repos():
 
     print("200: async_repos", Config.PKG_INDEXES)
 
+
     for repo in Config.PKG_INDEXES:
-        idx = f"{repo}index-0.9.2-{abitag}.json"
-        try:
-            async with fopen(idx, "r", encoding="UTF-8") as index:
-                try:
-                    data = index.read()
-                    if isinstance(data, bytes):
-                        data = data.decode()
-                    data = data.replace("<abi>", abitag)
-                    data = data.replace("<api>", apitag)
-                    repo = json.loads(data)
-                except:
-                    pdb(f"213: {idx=}: malformed json index {data}")
-                    continue
-                if repo not in Config.pkg_repolist:
-                    Config.pkg_repolist.append(repo)
-        except FileNotFoundError:
-            print("\n" * 4)
-            print("!" * 75)
-            print("Sorry, there is no pygbag package repository for your python version")
-            print("!" * 75, "\n" * 4)
-            #raise SystemExit
+        merged = {}
+        for pygver in ('0.9.2', '0.9.3'):
+            idx = f"{repo}index-{pygver}-{abitag}.json"
+            try:
+                async with fopen(idx, "r", encoding="UTF-8") as index:
+                    try:
+                        data = index.read()
+                        if isinstance(data, bytes):
+                            data = data.decode()
+                        data = data.replace("<abi>", abitag)
+                        data = data.replace("<api>", apitag)
+                        merged.update( json.loads(data) )
+                    except Exception as e:
+                        pdb(f"213: {idx=}: malformed json index {data}", e)
+                        continue
+            except FileNotFoundError:
+                print("\n" * 4)
+                print("!" * 75)
+                print("Sorry, there is no pygbag package repository for your python version")
+                print("!" * 75, "\n" * 4)
+                #raise SystemExit
+        if merged:
+            Config.pkg_repolist.append(merged)
 
     if not aio.cross.simulator:
         rewritecdn = ""
@@ -462,7 +456,7 @@ async def check_list(code=None, filename=None):
         import platform
         import asyncio
 
-        print(f'# 439: Scanning {sconf["platlib"]} for WebAssembly library')
+        print(f'# 455: Scanning {sconf["platlib"]} for WebAssembly libraries')
         platform.explore(sconf["platlib"], verbose=True)
         for compilation in range(1 + embed.preloading()):
 
@@ -470,12 +464,12 @@ async def check_list(code=None, filename=None):
             if embed.preloading() <= 0:
                 break
         else:
-            print("# 442: ERROR: remaining wasm {embed.preloading()}")
+            print("# 463: ERROR: remaining wasm {embed.preloading()}")
         await asyncio.sleep(0)
 
     do_patches()
 
-    print("-" * 40)
+    print("-" * 79)
     print()
 
     return still_missing
