@@ -93,142 +93,30 @@ def warn(msg):
     print(f"WARNING! {msg}")
 
 
-def set_args(program):
-    global DEFAULT_SCRIPT
-    import sys
-    from pathlib import Path
+def get_parser(
+    build_dir: str | None, 
+    app_folder: str | None, 
+    cache_dir: str | None, 
+    cdn: str | None
+) -> argparse.ArgumentParser:
+    """
+    Returns the parser used for the pygbag command line.
 
-    required = []
+    Requires arguments be all strings, representing successfully formed
+    arguments, or all None, representing missing arguments for the purposes of 
+    calling simply `pygbag --help` from the command line.
 
-    patharg = Path(program).resolve()
-    if patharg.is_file():
-        mainscript = patharg.name
-        app_folder = patharg.parent
-    else:
-        app_folder = patharg.resolve()
-        mainscript = DEFAULT_SCRIPT
-
-    # print("84: prepending to sys.path", str(app_folder) )
-    # sys.path.insert(0, str(app_folder))
-
-    if patharg.suffix == "pyw":
-        required.append("79: Error, no .pyw allowed use .py for python script")
-
-    script_path = app_folder / mainscript
-
-    if not script_path.is_file():
-        required.append(f"83: Error, no main.py {script_path} found in folder")
-
-    if not app_folder.is_dir() or patharg.as_posix().endswith("/pygbag/__main__.py"):
-        required.append("89: Error, Last argument must be a valid app top level directory, or the main.py python script")
-
-    if sys.version_info < (3, 8):
-        # zip deflate compression level 3.7
-        # https://docs.python.org/3.11/library/shutil.html#shutil.copytree dirs_exist_ok = 3.8
-        required.append("84: Error, pygbag requires CPython version >= 3.8")
-
-    if len(required):
-        while len(required):
-            print(required.pop())
-        print("89: missing requirement(s)")
-        sys.exit(89)
-
-    return app_folder, mainscript
-
-
-def cache_check(app_folder, devmode=False):
-    global CACHE_PATH, CACHE_APP, VERSION
-
-    version_file = app_folder / CACHE_VERSION
-
-    clear_cache = False
-
-    # always clear the cache in devmode, because cache source is local and changes a lot
-    if devmode:
-        print("103: DEVMODE: clearing cache")
-        clear_cache = True
-    elif version_file.is_file():
-        try:
-            with open(version_file, "r") as file:
-                cache_ver = file.read()
-                if cache_ver != VERSION:
-                    print(f"115: cache {cache_ver} mismatch, want {VERSION}, cleaning ...")
-                    clear_cache = True
-        except:
-            # something's wrong in cache structure, try clean it up
-            clear_cache = True
-    else:
-        clear_cache = True
-
-    cache_root = app_folder.joinpath(CACHE_ROOT)
-    cache_dir = app_folder / CACHE_PATH
-    build_dir = app_folder / CACHE_APP
-
-    def make_cache_dirs():
-        nonlocal cache_root, cache_dir
-
-        cache_root.mkdir(exist_ok=True)
-        build_dir.mkdir(exist_ok=True)
-        cache_dir.mkdir(exist_ok=True)
-
-    if clear_cache:
-        win32 = sys.platform == "win32"
-        if cache_dir.is_dir():
-            if shutil.rmtree.avoids_symlink_attacks or win32:
-                if win32:
-                    warnings.warn("clear cache : rmtree is not safe on that system (win32)")
-                shutil.rmtree(cache_dir.as_posix())
-            else:
-                print(
-                    "171: cannot clear cache : rmtree is not safe on that system",
-                    file=sys.stderr,
-                )
-                print(
-                    "175: Please remove build folder manually",
-                    file=sys.stderr,
-                )
-                raise SystemExit(115)
-
-        # rebuild
-        make_cache_dirs()
-
-        with open(version_file, "w") as file:
-            file.write(VERSION)
-
-    return build_dir, cache_dir
-
-
-async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
-    global DEFAULT_PORT, DEFAULT_SCRIPT, APP_CACHE, required
-
-    # Checks for existance of PEP 723 header on main.py https://peps.python.org/pep-0723/
-    main_file = Path(app_folder, mainscript)
-    with open(main_file, "r") as f:
-        src_code = f.read()
-
-    # TODO: match import list and pep block content
-    if 0:
-        has_pep723 = False
-        deps = {"pygame-ce"}
-        for dep in read_dependency_block_723(src_code):
-            has_pep723 = True
-            if dep == "pygame-ce":
-                pass
-            elif dep == "pygame":
-                warnings.warn("Pygbag uses pygame-ce for running on web. If you're using pygame, you should probably upgrade to pygame-ce, it is backwards compatible so your code will still work. If you're using pygame-ce already, specify 'pygame-ce' instead of 'pygame'.")
-            else:
-                deps.add(dep)
-        if not has_pep723:
-            warnings.warn("Couldn't find PEP 723 Header. See this: https://pygame-web.github.io/wiki/pygbag/#complex-packages")
-
-    DEFAULT_SCRIPT = mainscript or DEFAULT_SCRIPT
-
-    build_dir, cache_dir = cache_check(app_folder, devmode)
-
-    sys.argv.pop()
-
-    if "--git" in sys.argv:
-        sys.argv.remove("--git")
+    pygbag first processes args with `set_args`, failing if the app folder or 
+    other metadata could not be found. Then, it calls `main_run`. This means if
+    we create our parser in `main_run`, we will fail even if we just run
+    `pygbag --help`. Thus, we should call `get_parser(None, None, None, None)`
+    in `set_args` when `--help` is in the command line arguments, and parse it
+    to print out help data and then exit.
+    """
+    assert (
+        all(param is None for param in [build_dir, app_folder, cache_dir, cdn]) 
+        or all(type(param) is str for param in [build_dir, app_folder, cache_dir, cdn])
+    )
 
     parser = argparse.ArgumentParser()
 
@@ -369,6 +257,153 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         default=False,
         help="audio files with a common unsupported format found in the assets won't raise an exception",
     )
+
+
+def set_args(program):
+    global DEFAULT_SCRIPT
+    import sys
+    from pathlib import Path
+
+    required = []
+
+    patharg = Path(program).resolve()
+    if patharg.is_file():
+        mainscript = patharg.name
+        app_folder = patharg.parent
+    else:
+        app_folder = patharg.resolve()
+        mainscript = DEFAULT_SCRIPT
+
+    # print("84: prepending to sys.path", str(app_folder) )
+    # sys.path.insert(0, str(app_folder))
+
+    if patharg.suffix == "pyw":
+        required.append("79: Error, no .pyw allowed use .py for python script")
+
+    script_path = app_folder / mainscript
+
+    if not script_path.is_file():
+        required.append(f"83: Error, no main.py {script_path} found in folder")
+
+    if not app_folder.is_dir() or patharg.as_posix().endswith("/pygbag/__main__.py"):
+        required.append("89: Error, Last argument must be a valid app top level directory, or the main.py python script")
+
+    if sys.version_info < (3, 8):
+        # zip deflate compression level 3.7
+        # https://docs.python.org/3.11/library/shutil.html#shutil.copytree dirs_exist_ok = 3.8
+        required.append("84: Error, pygbag requires CPython version >= 3.8")
+
+    if len(required) != 0 and ("-h" in sys.argv or "--help" in sys.argv):
+        # if we have outstanding requirements, but we only requested help 
+        # documentation, forward what we have to parser.parse_args(), which
+        # should print help documentation and exit
+        get_parser(None, None, None, None).parse_args()
+        assert False # the above line should exit after printing help
+
+    if len(required):
+        while len(required):
+            print(required.pop())
+        print("89: missing requirement(s)")
+        sys.exit(89)
+
+    return app_folder, mainscript
+
+
+def cache_check(app_folder, devmode=False):
+    global CACHE_PATH, CACHE_APP, VERSION
+
+    version_file = app_folder / CACHE_VERSION
+
+    clear_cache = False
+
+    # always clear the cache in devmode, because cache source is local and changes a lot
+    if devmode:
+        print("103: DEVMODE: clearing cache")
+        clear_cache = True
+    elif version_file.is_file():
+        try:
+            with open(version_file, "r") as file:
+                cache_ver = file.read()
+                if cache_ver != VERSION:
+                    print(f"115: cache {cache_ver} mismatch, want {VERSION}, cleaning ...")
+                    clear_cache = True
+        except:
+            # something's wrong in cache structure, try clean it up
+            clear_cache = True
+    else:
+        clear_cache = True
+
+    cache_root = app_folder.joinpath(CACHE_ROOT)
+    cache_dir = app_folder / CACHE_PATH
+    build_dir = app_folder / CACHE_APP
+
+    def make_cache_dirs():
+        nonlocal cache_root, cache_dir
+
+        cache_root.mkdir(exist_ok=True)
+        build_dir.mkdir(exist_ok=True)
+        cache_dir.mkdir(exist_ok=True)
+
+    if clear_cache:
+        win32 = sys.platform == "win32"
+        if cache_dir.is_dir():
+            if shutil.rmtree.avoids_symlink_attacks or win32:
+                if win32:
+                    warnings.warn("clear cache : rmtree is not safe on that system (win32)")
+                shutil.rmtree(cache_dir.as_posix())
+            else:
+                print(
+                    "171: cannot clear cache : rmtree is not safe on that system",
+                    file=sys.stderr,
+                )
+                print(
+                    "175: Please remove build folder manually",
+                    file=sys.stderr,
+                )
+                raise SystemExit(115)
+
+        # rebuild
+        make_cache_dirs()
+
+        with open(version_file, "w") as file:
+            file.write(VERSION)
+
+    return build_dir, cache_dir
+
+
+async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
+    global DEFAULT_PORT, DEFAULT_SCRIPT, APP_CACHE, required
+
+    # Checks for existance of PEP 723 header on main.py https://peps.python.org/pep-0723/
+    main_file = Path(app_folder, mainscript)
+    with open(main_file, "r") as f:
+        src_code = f.read()
+
+    # TODO: match import list and pep block content
+    if 0:
+        has_pep723 = False
+        deps = {"pygame-ce"}
+        for dep in read_dependency_block_723(src_code):
+            has_pep723 = True
+            if dep == "pygame-ce":
+                pass
+            elif dep == "pygame":
+                warnings.warn("Pygbag uses pygame-ce for running on web. If you're using pygame, you should probably upgrade to pygame-ce, it is backwards compatible so your code will still work. If you're using pygame-ce already, specify 'pygame-ce' instead of 'pygame'.")
+            else:
+                deps.add(dep)
+        if not has_pep723:
+            warnings.warn("Couldn't find PEP 723 Header. See this: https://pygame-web.github.io/wiki/pygbag/#complex-packages")
+
+    DEFAULT_SCRIPT = mainscript or DEFAULT_SCRIPT
+
+    build_dir, cache_dir = cache_check(app_folder, devmode)
+
+    sys.argv.pop()
+
+    if "--git" in sys.argv:
+        sys.argv.remove("--git")
+
+    parser = get_parser(build_dir, app_folder, cache_dir, cdn)
 
     args = parser.parse_args()
 
