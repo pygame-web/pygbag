@@ -40,7 +40,7 @@ if not __UPY__:
                     is_interactive = None
 
                     @classmethod
-                    def parse_sync(shell, line, **env):
+                    def eval(shell, line, **env):
                         print("NoOp shell", line)
 
                 self.shell = shell
@@ -65,7 +65,7 @@ if not __UPY__:
                 code = self.compile(source, filename, symbol)
             except SyntaxError:
                 if self.one_liner:
-                    if self.shell.parse_sync(self.line):
+                    if self.shell.eval(self.line):
                         return
                 self.showsyntaxerror(filename)
                 return False
@@ -114,8 +114,8 @@ if not __UPY__:
                 if self.one_liner:
                     shell = self.opts.get("shell", None)
                     if shell:
-                        # coro maybe be filled by shell exec
-                        if shell.parse_sync(self.line):
+                        # coro maybe be filled by shell evaluation
+                        if shell.eval(self.line):
                             return
                 sys.print_exception(ex, limit=-1)
 
