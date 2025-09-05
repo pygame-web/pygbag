@@ -1223,13 +1223,7 @@ __EMSCRIPTEN__.EventTarget.build('${ev.name}', '''${ev.data}''')
 
 // js.MM
 // =============================  media manager ===========================
-
-// js.MM.download
-function download(diskfile, filename) {
-    if (!filename)
-        filename = diskfile.rsplit("/").pop()
-
-    const blob = new Blob([FS.readFile(diskfile)])
+function dl_blob(blob) {
     const elem = window.document.createElement('a');
     elem.href = window.URL.createObjectURL(blob, { oneTimeOnly: true });
     elem.download = filename;
@@ -1238,6 +1232,18 @@ function download(diskfile, filename) {
     document.body.removeChild(elem);
 }
 
+// js.MM.download
+function download(diskfile, filename) {
+    if (!filename)
+        filename = diskfile.rsplit("/").pop()
+    const blob = new Blob([FS.readFile(diskfile)])
+    dl_blob(blob, filename)
+}
+
+window.core = function () {
+    const blob = new Blob([wasmMemory.buffer], { type: 'application/octet-binary;charset=utf-8' })
+    dl_blob(blob, "dump.wasm")
+}
 
 
 window.MM = {
@@ -2298,7 +2304,7 @@ async function onload() {
 
     }
 
-    // FIXME: forced minimal output until until remote debugger is a thing.
+    // FIXME: forced minimal output until remote debugger is a thing.
     if ( debug_mobile && !has_vt) {
         console.warn("764: debug forced stdout")
         feat_stdout()
@@ -2440,7 +2446,7 @@ function auto_conf(cfg) {
     // TODO: built script override when debug mode (-X dev).
     // actual: no pygbag override.
 
-    const default_version = "3.11"
+    const default_version = "3.12"
     var pystr = "python" + default_version
 
     if (vm.cpy_argv.length && (vm.cpy_argv[0].search('py')>=0)) {

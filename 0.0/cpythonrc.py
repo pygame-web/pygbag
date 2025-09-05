@@ -638,7 +638,7 @@ ________________________
                 return True
         except SyntaxError as e:
             # try run a file or cmd
-            return cls.parse_sync(argv, env)
+            return cls.eval(argv, env)
         return False
 
     time = run
@@ -856,7 +856,7 @@ ________________________
             aio.toplevel.handler.muted = aio.toplevel.handler.mute_state
 
     @classmethod
-    def parse_sync(shell, line, **env):
+    def eval(shell, line, **env):
         catch = True
         for cmd in line.strip().split(";"):
             cmd = cmd.strip()
@@ -918,7 +918,7 @@ ________________________
             ),
         ):
             # subprocess
-            return cls.parse_sync(sub, **env)
+            return cls.eval(sub, **env)
         else:
             await sub
 
