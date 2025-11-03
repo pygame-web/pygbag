@@ -344,6 +344,11 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
         help="web site to cache locally [default:%s]" % cdn,
     )
 
+    parser.add_argument(
+        "--proxy",
+        help="override default cdn cache proxy address"
+    )
+
     parser.add_argument("--ini", default=False, action="store_true", help="Initialize an example pygbag.ini config file")
 
     parser.add_argument(
@@ -379,6 +384,9 @@ async def main_run(app_folder, mainscript, cdn=DEFAULT_CDN):
 
     # force cache directory to be inside build folder
     args.cache = cache_dir.as_posix()
+
+    if args.proxy is None:
+        args.proxy = f"http://{args.bind}:{args.port}/"
 
     app_name = app_folder.name.lower().replace(" ", ".")
 
@@ -421,7 +429,7 @@ now packing application ....
 
     CC = {
         "cdn": args.cdn,
-        "proxy": f"http://{args.bind}:{args.port}/",
+        "proxy": args.proxy,
         "xtermjs": "1",
         "width": args.width,
         "height": args.height,
