@@ -116,8 +116,15 @@ async def custom_site():
         print("""
         * Waiting for media user engagement : please click/touch page *
     """)
-        while not platform.window.MM.UME:
-            await asyncio.sleep(.1)
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
+                    waiting = False
+            await asyncio.sleep(0.1)
 
     # start async top level machinery if not started and add a console in any case if requested.
     await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
