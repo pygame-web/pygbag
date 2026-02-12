@@ -2,29 +2,6 @@
 
 WebAssembly.promising = null
 
-/*  BF2 is still broken see  https://github.com/jvilk/BrowserFS/issues/325
-import { configure, BFSRequire, EmscriptenFS } from './browserfs.mjs';
-//import { Buffer } from 'buffer';
-
-window.BrowserFS = {}
-window.BrowserFS.configure = configure
-window.BrowserFS.BFSRequire = BFSRequire
-window.BrowserFS.EmscriptenFS = EmscriptenFS
-window.BrowserFS.Buffer = BFSRequire('buffer')
-*/
-var bfs2 = false
-
-async function import_browserfs() {
-    if (window.BrowserFS)
-        return
-    console.warn("late import", config.cdn+"browserfs.min.js" )
-    var script = document.createElement("script")
-    script.src = vm.config.cdn + "browserfs.min.js"
-    document.head.appendChild(script)
-    await _until(defined)("BrowserFS")
-}
-
-
 /*  Facilities implemented in js
 
     js.SVG     : convert svg to png
@@ -38,7 +15,6 @@ async function import_browserfs() {
 */
 
 const module_name = "pythons.js"
-
 
 var config
 
@@ -942,11 +918,6 @@ window.uploaded_file_count = 0
 
 async function feat_fs(debug_hidden) {
 
-    if (!window.BrowserFS) {
-        await import_browserfs()
-    }
-
-
     var dlg_multifile = document.getElementById("dlg_multifile")
     if (!dlg_multifile) {
         dlg_multifile = document.createElement('input')
@@ -981,7 +952,7 @@ dlhandler.style = "position: absolute;bottom: 12px;right: 12px;border: 1px solid
         dlhandler.frameborder = "1"
         dlhandler.sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
         dlhandler.allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
-        dlhandler.src=config.cdn+"../../archives/lib/index.html"
+        dlhandler.src=config.cdn+"../../cdn/lib/index.html"
         document.body.appendChild(dlhandler)
     }
 }
@@ -1004,7 +975,7 @@ async function feat_vt(debug_hidden) {
         document.body.appendChild(stdio)
     }
 
-    const { Terminal, helper, handlevt } = await import("./vt.js")
+    const { Terminal, helper, handlevt } = await import("../vt.js")
 
     vm.vt.xterm = new Terminal("stdio", get_terminal_cols(), get_terminal_lines())
     vm.vt.xterm.set_vm_handler(vm, null, null)
@@ -1038,7 +1009,7 @@ async function feat_vtx(debug_hidden) {
         cons = 0
     }
 
-    const { WasmTerminal } = await import("./vtx.js")
+    const { WasmTerminal } = await import("../vtx.js")
     const lines = get_terminal_lines() + cons  // including virtual get_terminal_console()
     const py = window.document.body.clientHeight
     var fntsize = Math.floor(py/lines) - 3
@@ -1048,9 +1019,9 @@ async function feat_vtx(debug_hidden) {
         console.log("vtx font: less than 33 lines : forced font to", fntsize)
     }
 
-    if (navigator.userAgent.indexOf("Chrome") != -1 ) {
-        fntsize = Math.floor( fntsize  * 1.12 )
-        console.log("vtx font: 125%")
+    if (navigator.vendor.indexOf("Goo") != -1 ) {
+        fntsize = Math.floor( fntsize  * 0.95 )
+        console.log("vtx font: -5%")
     } else {
         console.log("vtx font: 100%")
     }
@@ -1277,87 +1248,8 @@ async function media_prepare(trackid) {
         return
     }
 
-
     if (track.type === "mount") {
-
-        if (!vm.BFS) {
-            await import_browserfs()
-
-            // how is passed the FS object ???
-            vm.BFS = new BrowserFS.EmscriptenFS()  // {FS:vm.FS}
-
-            vm.BFS.Buffer = BrowserFS.BFSRequire('buffer').Buffer
-        }
-
-        // async
-        MM[trackid].media = await vm.BFS.Buffer.from( MM[trackid].data )
-
-        track.mount.path = track.mount.path || '/' //??=
-
-        const hint = `${track.mount.path}@${track.mount.point}:${trackid}`
-
-        if (!vm.BFS) {
-            // how is passed the FS object ???
-            vm.BFS = new BrowserFS.EmscriptenFS()  // {FS:vm.FS}
-            vm.BFS.Buffer = BrowserFS.BFSRequire('buffer').Buffer
-        }
-
-        const track_media = MM[trackid].media
-
-        if (!bfs2) {
-            console.warn(" ==================== BFS1 ===============")
-            BrowserFS.InMemory = BrowserFS.FileSystem.InMemory
-            BrowserFS.OverlayFS = BrowserFS.FileSystem.OverlayFS
-            BrowserFS.MountableFileSystem = BrowserFS.FileSystem.MountableFileSystem
-            BrowserFS.ZipFS = BrowserFS.FileSystem.ZipFS
-
-            function apk_cb(e, apkfs){
-                console.log(__FILE__, "1225: mounting", hint, "onto", track.mount.point)
-
-                BrowserFS.InMemory.Create(
-                    function(e, memfs) {
-                        BrowserFS.OverlayFS.Create({"writable" :  memfs, "readable" : apkfs },
-                            function(e, ovfs) {
-                                BrowserFS.MountableFileSystem.Create({
-                                    '/' : ovfs
-                                    }, async function(e, mfs) {
-                                        await BrowserFS.initialize(mfs)
-                                        await vm.FS.mount(vm.BFS, {root: track.mount.path}, track.mount.point)
-                                        console.log("1236: mount complete")
-                                        setTimeout(()=>{track.ready=true}, 0)
-                                    })
-                            }
-                        );
-                    }
-                );
-            }
-
-            await BrowserFS.ZipFS.Create(
-                {"zipData" : track_media, "name": hint},
-                apk_cb
-            )
-
-        } else { // bfs1
-            console.warn(" ==================== BFS2 ===============")
-
-            // assuming FS is from Emscripten
-            await BrowserFS.configure({
-                fs: 'MountableFileSystem',
-                options: {
-                    '/': {
-                        fs: 'OverlayFS',
-                        options: {
-                            readable: { fs: 'ZipFS', options: { zipData: track_media, name: 'hint'  } },
-                            writable: { fs: 'InMemory' }
-                        }
-                    }
-                }
-            });
-
-            vm.FS.mount(vm.BFS, { root: track.mount.path, }, track.mount.point);
-            setTimeout(()=>{track.ready=true}, 0)
-        } // bfs2
-
+        // was browserfs , removed must be fully provided from template.
     } // track type mount
 }
 
@@ -1382,8 +1274,6 @@ function MM_play(track, loops) {
         });
     }
 }
-
-
 
 
 window.cross_track = async function cross_track(trackid, url, flags) {

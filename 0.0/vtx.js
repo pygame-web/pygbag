@@ -15,10 +15,10 @@ readline.complete = function (line) {
 if (!window.Terminal) {
     var xterm_cdn
     if (window.Module.config && window.Module.config.cdn) {
-        xterm_cdn = window.Module.config.cdn+"vt/"
+        xterm_cdn = window.Module.config.cdn+"../vt/"
         console.log("Terminal+ImageAddon importing from CDN :", xterm_cdn)
     } else {
-        xterm_cdn = xterm_cdn || "https://pygame-web.github.io/archives/vt/"
+        xterm_cdn = xterm_cdn || "https://pygame-web.github.io/cdn/vt/"
         console.warn("Terminal+ImageAddon importing from fallback ", xterm_cdn)
     }
 

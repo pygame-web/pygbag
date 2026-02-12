@@ -1,6 +1,9 @@
 #!pythonrc.py
 
-import os, sys, json, builtins
+import os
+import sys
+import json
+import builtins
 
 
 # to be able to access aio.cross.simulator
@@ -13,10 +16,8 @@ sys.modules["pygbag"] = aio
 import time
 import inspect
 from pathlib import Path
-import json
 
-
-PYCONFIG_PKG_INDEXES_DEV = ["http://localhost:<port>/archives/repo/"]
+PYCONFIG_PKG_INDEXES_DEV = ["http://localhost:<port>/cdn/"]
 # normal index or PYGPY env is handled after env conversion around line 255
 
 # the sim does not ospreload assets and cannot access currentline
@@ -252,20 +253,16 @@ else:
     os.environ["APPDATA"] = home
     del home
 
-# now in pep0723
-# PYCONFIG_PKG_INDEXES = [
-#    os.environ.get('PYGPY', "https://pygame-web.github.io/archives/repo/"),
-# ]
-
 PyConfig["imports_ready"] = False
 PyConfig["pygbag"] = 0
 
 PyConfig.setdefault("user_site_directory", 0)
 
-
 class shell:
     # pending async tasks
     coro = []
+    # for runlevel
+    _stage = -1
 
     # async top level instance compiler/runner
     runner = None
@@ -618,7 +615,7 @@ ________________________
 
         builtins._ = undefined
         cmd = " ".join(argv)
-
+        print("# 616: run")
         try:
             time_start = time.time()
             code = compile("builtins._ =" + cmd, "<stdin>", "exec")
@@ -682,11 +679,12 @@ ________________________
     @classmethod
     async def preload_code(cls, code, callback=None, loaderhome=".", hint=""):
         # get a relevant list of modules likely to be imported
-        PyConfig.dev_mode = 1
-        DBG(f"655: preload_code({len(code)=} {hint=} {loaderhome=})")
+
+        print(f"655: preload_code({len(code)=} {hint=} {loaderhome=})")
 
         if loaderhome != ".":
             os.chdir(loaderhome)
+
         if not loaderhome in sys.path:
             sys.path.append(loaderhome)
 
@@ -694,20 +692,24 @@ ________________________
         import aio.pep0723
         from aio.pep0723 import Config
 
+        if code.find('/// script')<0:
+            print("# 696: no pep 723 block found")
+
         if not aio.cross.simulator:
             # env path is set by pep0723
             sconf = __import__("sysconfig").get_paths()
             env = Path(sconf["purelib"])
 
-            DBG(f"702: aio.pep0723.check_list {aio.pep0723.env=}")
+            # DBG(f"# 698: aio.pep0723.check_list({len(code)=}) {aio.pep0723.env=}")
             deps = await aio.pep0723.check_list(code)
 
-            DBG(f"705: aio.pep0723.pip_install {deps=}")
+            if deps:
+                DBG(f"# 705: aio.pep0723.pip_install {deps=}")
 
             # auto import plumbing to avoid rely too much on import error
             maybe_wanted = list(TopLevel_async_handler.list_imports(code, file=None, hint=hint))
 
-            DBG(f"710: {maybe_wanted=} known failed {aio.pep0723.hint_failed=} {aio.pep0723.HISTORY=}")
+            # DBG(f"# 706: {maybe_wanted=} known failed {aio.pep0723.hint_failed=} {aio.pep0723.HISTORY=}")
 
             # FIXME use an hybrid wheel
             if "pyodide" in aio.pep0723.hint_failed:
@@ -725,8 +727,6 @@ ________________________
             for dep in deps:
                 await aio.pep0723.pip_install(dep)
 
-            aio.pep0723.do_patches()
-
         PyConfig.imports_ready = True
         return True
 
@@ -740,7 +740,7 @@ ________________________
             return
         # if you don't reach that step
         # your main.py has an infinite sync loop somewhere !
-        DBG("651: starting EventTarget in a few seconds")
+        DBG("# 738: starting EventTarget in a few seconds")
 
         print()
         aio.toplevel.handler.instance.banner()
@@ -760,7 +760,7 @@ ________________________
     @classmethod
     async def runpy(cls, main, *args, **kw):
         def check_code(file_name):
-            nonlocal code
+            code = ""
             maybe_sync = False
             has_pygame = False
             with open(file_name, "r") as code_file:
@@ -770,32 +770,27 @@ ________________________
                 # do not check site/final/packed code
                 # preload code must be fully async and no pgzero based
                 if aio.toplevel.handler.muted:
-                    return True
+                    return code
 
                 if code[0:320].find("#!pgzrun") >= 0:
                     shell.pgzrunning = True
 
                 if code.find("asyncio.run") < 0:
-                    DBG("606: possibly synchronous code found")
+                    print("# 776: possibly synchronous code found")
                     maybe_sync = True
 
                 has_pygame = code.find("display.flip(") > 0 or code.find("display.update(") > 0
 
                 if maybe_sync and has_pygame:
-                    DBG("694: possibly synchronous+pygame code found")
-                    return False
-            return True
+                    print("# 782: possibly synchronous+pygame code found")
+                    return ""
 
-        code = ""
+            return code
+
+        # keep count of runpy calls ( they can recurse )
+        cls._stage += 1
+
         shell.pgzrunning = None
-
-        DBG(f"690: : runpy({main=})")
-        # REMOVE THAT IT SHOULD BE DONE IN SIM ANALYSER AND HANDLED PROPERLY
-        if not check_code(main):
-            for base in ("pygame", "pg"):
-                for func in ("flip", "update"):
-                    block = f"{base}.display.{func}()"
-                    code = code.replace(block, f"{block};await asyncio.sleep(0)")
 
         # fix cwd to match a run of main.py from its folder
         realpath = str(main)
@@ -807,49 +802,77 @@ ________________________
 
         # TODO: should be $0 / sys.argv[0] from there and while running
         kw.setdefault("hint", main)
-        # get requirements
+
+        code = check_code(realpath)
+
+        print("\n"*3 + f"# 805: runpy({realpath} id={cls._stage}) workdir = {cls.HOME} {len(code)=}")
+
+        # TODO: get requirements only if in script mode or user code. ie not loader without pep block
         await cls.preload_code(code, **kw)
 
         # get an async executor to catch import errors
         if aio.toplevel.handler.instance:
-            DBG("715: starting shell")
-            aio.toplevel.handler.instance.start_console(shell)
+            if aio.toplevel.handler.instance.console is None:
+                print("# 806: starting console for shell")
+                aio.toplevel.handler.instance.start_console(shell)
         else:
-            pdb("718: no async handler loader, starting a default async console")
+            print("# 816: no async handler loader, starting a default async console")
             shell.debug()
             await aio.toplevel.handler.start_toplevel(platform.shell, console=True)
 
-        # TODO: check if that thing really works
-        if shell.pgzrunning:
-            DBG("728 : pygame zero detected")
-            __main__ = __import__("__main__")
-            sys._pgzrun = True
-            sys.modules["pgzrun"] = type(__main__)("pgzrun")
-            import pgzrun
-
-            pgzrun.go = lambda: None
-            cb = kw.pop("callback", None)
-            await aio.toplevel.handler.async_imports(cb, "pygame.base", "pgzero", "pyfxr", **kw)
-            import pgzero
-            import pgzero.runner
-
-            pgzero.runner.prepare_mod(__main__)
+#        # TODO: check if that thing really works
+#        if shell.pgzrunning:
+#            DBG("728 : pygame zero detected")
+#            __main__ = __import__("__main__")
+#            sys._pgzrun = True
+#            sys.modules["pgzrun"] = type(__main__)("pgzrun")
+#            import pgzrun
+#
+#            pgzrun.go = lambda: None
+#            cb = kw.pop("callback", None)
+#            await aio.toplevel.handler.async_imports(cb, "pygame.base", "pgzero", "pyfxr", **kw)
+#            import pgzero
+#            import pgzero.runner
+#
+#            pgzero.runner.prepare_mod(__main__)
 
         # finally eval async
+        if cls._stage:
+            print("# 835: if your __main__ code is not async or valid for pygbag it may block now")
+
         aio.toplevel.handler.instance.eval(code)
+
+        if cls._stage:
+            print("__main__ async: ok")
 
         # go back to prompt
         if not aio.toplevel.handler.muted:
-            print("going interactive")
-            DBG("746: TODO detect input/print to select repl debug")
+            print("# 840: TODO detect input/print to enable terminal output", file=sys.stderr)
             cls.interactive()
+        elif cls._stage>0 and ('-i' in PyConfig.orig_argv):
+            async def xdebug():
+                # give the eval async above time to start
+                await asyncio.sleep(3)
+                if aio.started:
+                    print(f"# 846: interactive mode requested, -X dev ? {aio.pep0723.Config.dev_mode}", file=sys.stderr)
 
+                else:
+                    print("# 850: error, asyncio.run was not called in __main__")
+                cls.interactive(prompt=True)
+            aio.create_task(xdebug(), name="REPL")
         return code
 
     @classmethod
     async def source(cls, main, *args, **kw):
         # this is not interactive turn off prompting
         aio.toplevel.handler.muted = True
+        if not os.path.isfile(main):
+            newmain = main.rsplit('/',1)[-1]
+            print(f'local file not found, trying online relative saved as "{newmain}"')
+            async with platform.fopen(main,"r") as remote:
+                with open(newmain,'w') as local:
+                    local.write(remote.read())
+            main = newmain
         try:
             return await cls.runpy(main, *args, **kw)
         finally:
@@ -857,6 +880,7 @@ ________________________
 
     @classmethod
     def eval(shell, line, **env):
+        print("# 862: eval")
         catch = True
         for cmd in line.strip().split(";"):
             cmd = cmd.strip()
@@ -1140,6 +1164,8 @@ if not aio.cross.simulator:
         from pathlib import Path
 
         def eval(self, source):
+#            if source.find('import lvgl')>0:
+#                raise SystemExit
             for count, line in enumerate(source.split("\n")):
                 if not count:
                     if line.startswith("<"):
@@ -1151,7 +1177,8 @@ if not aio.cross.simulator:
                 self.line = None
                 self.buffer.insert(0, "#")
 
-            DBG(f"1039: {count} lines queued for async eval")
+            DBG(f"1156: {count} lines queued for async eval")
+            return count
 
         @classmethod
         def scan_imports(cls, code, filename, load_try=False, hint=""):
