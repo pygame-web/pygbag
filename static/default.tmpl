@@ -70,11 +70,10 @@ async def custom_site():
         __import__(__name__).__file__ = main
 
         # now make a prompt
-        print("Ready to start !")
+        msg  = "Ready to start ! Please click/touch page"
+        platform.window.infobox.innerText = msg
+        print("\n"*4, f"    * Waiting for media user engagement. {msg} *" , "\n"*4)
 
-        print("""
-        * Waiting for media user engagement : please click/touch page *
-    """)
         while not platform.window.MM.UME:
             await asyncio.sleep(.1)
 
@@ -87,13 +86,17 @@ async def custom_site():
 
 
     def ui_callback(pkg):
-        print(f"installing {pkg}")
+        platform.window.infobox.innerText = f"installing {pkg}"
 
     await shell.source(main, callback=ui_callback)
 
     # if you don't reach that step
     # your main.py has an infinite sync loop somewhere !
-    print("noctxl.html: ready")
+
+    platform.window.infobox.style.display = "none"
+    platform.window.config.gui_divider = 1
+    platform.window.window_resize()
+    print("default.tmpl: done")
 
     shell.interactive()
 
@@ -158,6 +161,21 @@ config = {
     fb_height : "{{cookiecutter.height}}"
 }
 
+function show_infobox() {
+    infobox.style.display = "block";
+
+    // Measure box
+    const w = infobox.offsetWidth;
+    const h = infobox.offsetHeight;
+
+    // Center in viewport
+    const left = (window.innerWidth - w) / 2;
+    const top = (window.innerHeight - h) / 2;
+
+    infobox.style.left = left + "px";
+    infobox.style.top = top + "px";
+}
+
 </script>
 
     <title>{{cookiecutter.title}}</title>
@@ -186,6 +204,15 @@ config = {
             width: 300px;
         }
 
+        #infobox {
+            position: fixed; /* center relative to viewport */
+            background: green;
+            color: blue;
+            font-weight: bold;
+            padding: 12px 24px;
+ /*           display: none; */
+            z-index: 999999;
+        }
         div.emscripten { text-align: center; }
         div.emscripten_border { border: 1px solid black; }
         div.thick_border { border: 4px solid black; }
@@ -285,6 +312,8 @@ height="{{cookiecutter.height}}px"
     oncontextmenu="event.preventDefault()" tabindex=1 hidden>
     </canvas>
 
+    <div id="infobox">Loading, please wait ...</div>
+
     <div id=html></div>
 
     <div id=crt  class=bottomright >
@@ -349,7 +378,7 @@ frameborder="1"
     }
 
     async function custom_onload(debug_hidden) {
-        // this is called before anythinh python is loaded
+        // this is called before anything python is loaded
         // make your js customization here
         console.log(__FILE__, "custom_onload")
 
@@ -358,6 +387,8 @@ frameborder="1"
         transfer.hidden = debug_hidden
         info.hidden = debug_hidden
         box.hidden =  debug_hidden
+
+        show_infobox()
     }
 
     function custom_prerun(){

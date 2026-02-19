@@ -81,8 +81,10 @@ class Config:
         "pillow": "PIL",
         "pyglm": "glm",
         "opencv_python": "cv2",
+#        "pysdl2": "sdl2",
         "pysdl3": "sdl3",
     }
+
     NOCOMPILATION = False
 
 def read_dependency_block_723(code):
@@ -220,14 +222,18 @@ def processing(dep):
     return False
 
 async def compile(verbose=False):
-    print(f'# 222: Scanning {sconf["platlib"]} for WebAssembly libraries')
+    if aio.cross.simulator:
+        print(f'# 226 : Scanning {sconf["platlib"]} for WebAssembly libraries [no compilation]')
+        return
+
+    print(f'# 229: Scanning {sconf["platlib"]} for WebAssembly libraries [compiling]')
     platform.explore(sconf["platlib"], verbose=verbose)
     for compilation in range(1 + embed.preloading()):
         await asyncio.sleep(0)
         if embed.preloading() <= 0:
             break
     else:
-        print("# 230: ERROR: remaining wasm {embed.preloading()}")
+        print("# 236: ERROR: remaining wasm {embed.preloading()}")
 
 async def install_pkg(sysconf, wheel_url, wheel_pkg):
     target_filename = f"/tmp/{wheel_pkg}"

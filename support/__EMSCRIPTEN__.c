@@ -1,4 +1,10 @@
 // #define SDL3 1
+// #define SDL2 1
+
+
+#if SDL2
+#include <SDL2/SDL.h>
+#endif
 
 /*
 // from python-main.c
@@ -864,9 +870,6 @@ static void reprint(const char *fmt, PyObject *obj) {
 #if defined(EGLTEST)
     #include <GLES2/gl2.h>
     #include <EGL/egl.h>
-
-    // #include <SDL2/SDL_egl.h>
-
 // for GL
     #include <SDL2/SDL.h>
 
@@ -1231,8 +1234,8 @@ EM_ASM({
 #if SDL2
     // SDL2 basic init
     {
-        if (TTF_Init())
-            fprintf(stderr, "ERROR: TTF_Init error");
+        //if (TTF_Init())
+          //  fprintf(stderr, "ERROR: TTF_Init error");
 
         const char *target = "1";
         SDL_SetHint(SDL_HINT_EMSCRIPTEN_KEYBOARD_ELEMENT, target);

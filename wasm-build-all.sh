@@ -93,7 +93,7 @@ _____________________________________________________________________
 
     cp -v ./src/pygbag/support/cpythonrc.py static/pythons.js static/favicon.png ../cdn/${PYGBAG_PKG}/
 
-    mv -v build/web/archives/0.0/cpython${PYMAJOR}${PYMINOR}/main.* ../cdn/${PYGBAG_PKG}/cpython${PYMAJOR}${PYMINOR}/
+    cp -fv build/web/archives/0.0/cpython${PYMAJOR}${PYMINOR}/main.* ../cdn/${PYGBAG_PKG}/cpython${PYMAJOR}${PYMINOR}/
 
     #mv -v external/pygame-wasm/dist/*whl
 

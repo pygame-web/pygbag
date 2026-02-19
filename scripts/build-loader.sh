@@ -19,13 +19,9 @@ then
 fi
 
 
-
-# [ -L $(pwd)/pygbag ] || -sf $(pwd)/src/pygbag $(pwd)/pygbag
-
 pushd src/pygbag/support
-cp -r _xterm_parser ${SDKROOT}/prebuilt/emsdk/common/site-packages/
-#cp pygbag_*.py readline.py typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
-cp typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
+    cp -r _xterm_parser ${SDKROOT}/prebuilt/emsdk/common/site-packages/
+    cp typing_extensions.py ${SDKROOT}/prebuilt/emsdk/common/site-packages/
 popd
 
 
@@ -81,8 +77,6 @@ mkdir -p tests/assets tests/code
 
 
 ALWAYS_CODE=$(realpath tests/code)
-
-#ALWAYS_ASSETS=$(realpath tests/assets)
 ALWAYS_ASSETS=$(realpath assets/cpython)
 
 for asset in readline pyodide pygbag_app pygbag_fsm pygbag_host pygbag_ui pygbag_ux
@@ -274,9 +268,8 @@ then
     # --preload-file ${ROOT}/support/xterm@/etc/termcap \
 
 # TODO: test -sWEBGL2_BACKWARDS_COMPATIBILITY_EMULATION
-
 # --use-port=contrib.glfw3
-    #LDFLAGS="-sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
+# -sLEGACY_GL_EMULATION -sGL_UNSAFE_OPTS -sGL_FFP_ONLY
 
     LDFLAGS="-sUSE_GLFW=3 -sUSE_WEBGL2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sOFFSCREENCANVAS_SUPPORT=1 -sFULL_ES2 -sFULL_ES3"
 
@@ -284,7 +277,6 @@ then
     LDFLAGS="-L${SDKROOT}/devices/emsdk/usr/lib $LDFLAGS -lssl -lcrypto -lsqlite3 -lffi -lbz2 -lz -ldl -lm"
 
     LINKPYTHON="python mpdec expat"
-
 
     if [ ${PYMINOR} -ge 14 ]
     then
@@ -387,6 +379,7 @@ END
 
         if $USECP
         then
+            cp -R static-vt/* ${DIST_DIR}/../
             cp -R static/* ${DIST_DIR}/
             cp src/pygbag/support/cpythonrc.py ${DIST_DIR}/cpythonrc.py
             # for simulator

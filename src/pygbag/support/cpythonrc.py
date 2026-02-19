@@ -852,7 +852,7 @@ ________________________
         elif cls._stage>0 and ('-i' in PyConfig.orig_argv):
             async def xdebug():
                 # give the eval async above time to start
-                await asyncio.sleep(3)
+                await asyncio.sleep(2)
                 if aio.started:
                     print(f"# 846: interactive mode requested, -X dev ? {aio.pep0723.Config.dev_mode}", file=sys.stderr)
 
