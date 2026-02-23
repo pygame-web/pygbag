@@ -50,6 +50,43 @@ debug:
 
 */
 
+#if 1
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <string.h>
+
+void find(const char *path) {
+    DIR *dir = opendir(path);
+    if (!dir) {
+        perror("opendir");
+        return;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+
+        char full_path[1024];
+        snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
+
+        struct stat statbuf;
+        if (stat(full_path, &statbuf) != 0) continue;
+
+        if (S_ISDIR(statbuf.st_mode)) {
+            printf("Directory: %s/\n", full_path);
+            find(full_path);
+        } else {
+            printf("File: %s\n", full_path);
+        }
+    }
+    closedir(dir);
+}
+
+#endif
 
 #include <unistd.h>
 
@@ -611,6 +648,79 @@ _Py_MergeZeroLocalRefcount(PyObject *op) {
 #   endif
 #endif
 
+static PyObject *
+embed_os_read_file(PyObject *self, PyObject *args)
+{
+    PyObject *path_obj;      /* Python str */
+    PyObject *path_bytes;    /* Python bytes (filesystem encoding) */
+    const char *path;
+    Py_ssize_t path_len;
+
+    /* Parse a Python str object */
+    if (!PyArg_ParseTuple(args, "U", &path_obj)) {
+        return NULL;
+    }
+
+    /* Convert str to bytes using filesystem encoding */
+    path_bytes = PyUnicode_EncodeFSDefault(path_obj);
+    if (!path_bytes) {
+        return NULL;  /* Encoding error */
+    }
+
+    path = PyBytes_AS_STRING(path_bytes);
+    path_len = PyBytes_GET_SIZE(path_bytes);
+
+    /* Open file */
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path_obj);
+        Py_DECREF(path_bytes);
+        return NULL;
+    }
+
+    /* Determine file size */
+    if (fseek(f, 0, SEEK_END) != 0) {
+        fclose(f);
+        Py_DECREF(path_bytes);
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    long size = ftell(f);
+    if (size < 0) {
+        fclose(f);
+        Py_DECREF(path_bytes);
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    rewind(f);
+
+    /* Allocate buffer */
+    char *buffer = (char *)malloc(size);
+    if (!buffer) {
+        fclose(f);
+        Py_DECREF(path_bytes);
+        return PyErr_NoMemory();
+    }
+
+    /* Read file */
+    size_t read_bytes = fread(buffer, 1, size, f);
+    fclose(f);
+    Py_DECREF(path_bytes);
+
+    if (read_bytes != (size_t)size) {
+        free(buffer);
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+
+    /* Return bytes using "y#" */
+    PyObject *result = Py_BuildValue("y#", buffer, size);
+
+    free(buffer);
+    return result;
+}
+
+
+
 static PyMethodDef mod_embed_methods[] = {
     {"run", (PyCFunction)embed_run, METH_VARARGS | METH_KEYWORDS, "start aio stepping"},
 #if TEST_ASYNCSLEEP
@@ -634,6 +744,7 @@ static PyMethodDef mod_embed_methods[] = {
 
     {"readline", (PyCFunction)embed_readline,  METH_NOARGS, "get current line"},
     {"os_read",  (PyCFunction)embed_os_read,  METH_NOARGS, "get current raw stdin"},
+    {"os_read_file", (PyCFunction)embed_os_read_file, METH_VARARGS, "Read file from bytes path,return contents as bytes."},
     {"stdin_select", (PyCFunction)embed_stdin_select,  METH_NOARGS, "get current raw stdin bytes length"},
 
     {"flush", (PyCFunction)embed_flush,  METH_NOARGS, "flush stdio+stderr"},
@@ -765,6 +876,7 @@ embed_os_read(PyObject *self, PyObject *_null) {
     return Py_BuildValue("y", buf );
 #undef file
 }
+
 
 static PyObject *
 embed_stdin_select(PyObject *self, PyObject *_null) {
@@ -1068,6 +1180,7 @@ main(int argc, char **argv)
 
 // force
     setenv("PYTHONHOME", "/usr", 1);
+    setenv("PYTHONPATH", "/usr/lib/python3.14", 1);
     setenv("PYTHONUNBUFFERED", "1", 1);
     setenv("PYTHONINSPECT", "1",1);
     setenv("PYTHONDONTWRITEBYTECODE","1",1);
@@ -1083,9 +1196,17 @@ main(int argc, char **argv)
 // termtk
     setenv("TERMTK_FORCESERIAL", "1", 1);
 
+#if PY_VERSION_HEX >= 0x030F0000
+    puts(" ---------- FS ------------");
+
+    find(getenv("PYTHONPATH"));
+    setenv("PYTHONVERBOSE", "1", 1);
+
+    puts(" ---------- pymain_init ------------");
+#endif
 
 /*
-    puts(" ---------- pymain_init ------------");
+
     _PyArgv args = {
         .argc = argc,
         .use_bytes_argv = 0,
@@ -1097,13 +1218,9 @@ main(int argc, char **argv)
 */
     status = pymain_init(NULL);
 
-    if (PyErr_Occurred()) {
-        puts(" ---------- pymain_exit_error ----------");
-        Py_ExitStatusException(status);
-        pymain_free();
-        return 1;
-    }
-
+#if PY_VERSION_HEX >= 0x030F0000
+    puts(" ---------- pymain_init done ------------");
+#endif
     umask(18); // 0022
 
     chdir("/");

@@ -90,6 +90,7 @@ _____________________________________________________________________
 
 "
     mkdir -p ../cdn/${PYGBAG_PKG}/cpython${PYMAJOR}${PYMINOR}
+    rm -f ../cdn/${PYGBAG_PKG}/cpython${PYMAJOR}${PYMINOR}/main.*
 
     cp -v ./src/pygbag/support/cpythonrc.py static/pythons.js static/favicon.png ../cdn/${PYGBAG_PKG}/
 

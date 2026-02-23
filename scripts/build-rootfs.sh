@@ -194,6 +194,35 @@ except:
     # python 3.12 !
     pass
 
+try:
+    import contextlib
+    import traceback
+
+    # 3.14 _pyrepl
+    sys.stdout.reconfigure(encoding='latin1')
+    sys.stdout.reconfigure(encoding='utf-8')
+
+    import _suggestions
+    import _pyrepl.main
+    import _pyrepl.trace
+    import _pyrepl._threading_handler
+
+    # ?
+    import _pyrepl.simple_interact
+
+    # and native modules :
+
+# fcntl
+# math
+# _posixsubprocess
+# select
+# _struct
+# termios
+# unicodedata
+
+except:
+    pass
+
 if 0:
     import cffi
     from cffi import FFI

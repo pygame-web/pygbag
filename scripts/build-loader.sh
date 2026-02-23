@@ -42,13 +42,6 @@ export DYNLOAD=${SDKROOT}/prebuilt/emsdk/${PYBUILD}/lib-dynload
 
 EMPIC=${EMSDK}/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic
 
-# CF_SDL="-sUSE_SDL=3"
-CF_SDL="${PREFIX}/lib/libSDL3.a \
- ${PREFIX}/lib/libSDL3_image.a ${PREFIX}/lib/libSDL3_ttf.a \
- $EMPIC/libfreetype.a \
- $EMPIC/libharfbuzz.a"
-CF_SDL=""
-
 # this one seems always in.
 #  $EMPIC/libal.a"
 
@@ -61,8 +54,6 @@ echo "
             PYTHONPYCACHEPREFIX=$PYTHONPYCACHEPREFIX
             HPY=$HPY
             LD_VENDOR=$LD_VENDOR
-
-CF_SDL=$CF_SDL
 
 " 1>&2
 
@@ -248,7 +239,7 @@ touch ${INT_TEST} ${INC_TEST} ${LNK_TEST} ${MAIN_TEST}
 
 # -L${SDKROOT}/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/pic only !
 
-if emcc -D__PYGBAG__ -fPIC -std=gnu99 -DNDEBUG $CPY_CFLAGS $CF_SDL $CPOPTS \
+if emcc -D__PYGBAG__ -fPIC -std=gnu99 -DNDEBUG $CPY_CFLAGS $CPOPTS \
  -DINC_TEST=$INC_TEST -DMAIN_TEST=$MAIN_TEST \
  -c -fwrapv -Wall -Werror=implicit-function-declaration -fvisibility=hidden \
  -I${PYDIR}/internal -I${PYDIR} -I./support -I./external/hpy/hpy/devel/include -DPy_BUILD_CORE \
@@ -344,7 +335,6 @@ COPTS="$LOPTS" emcc -D__PYGBAG__ \\
  -DNDEBUG  \\
      -sTOTAL_MEMORY=256MB -sSTACK_SIZE=8MB -sALLOW_TABLE_GROWTH -sALLOW_MEMORY_GROWTH \\
     -sEXPORTED_RUNTIME_METHODS=FS,print,createContext \\
-     $CF_SDL \\
      --use-preload-plugins \\
      $STDLIBFS \\
      $ALWAYS_FS \\
