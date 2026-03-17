@@ -1,5 +1,5 @@
 import sys
-import os
+import builtins
 import aio
 
 # https://bugs.python.org/issue34616
@@ -86,7 +86,7 @@ if not __UPY__:
         def runcode(self, code):
             if repl:
                 repl.set_ps1()
-            self.rv = undefined
+            self.rv = builtins.undefined
 
             bc = types.FunctionType(code, self.locals)
             try:
@@ -131,8 +131,6 @@ if not __UPY__:
 
         def prompt(self, prompt=None):
             if not self.__class__.muted and self.shell.is_interactive:
-                import platform
-
                 # that is the browser one
                 # platform.prompt(prompt or sys.ps1)
                 if repl:
@@ -202,11 +200,11 @@ if not __UPY__:
                 # if self.rv not in [undefined, None, False, True]:
                 if inspect.isawaitable(self.rv):
                     await self.rv
-            except RuntimeError as re:
-                if str(re).endswith("awaited coroutine"):
+            except RuntimeError as rtex:
+                if str(rtex).endswith("awaited coroutine"):
                     ...
                 else:
-                    sys.print_exception(ex)
+                    sys.print_exception(rtex)
 
             except Exception as ex:
                 print(type(self.rv), self.rv)
@@ -257,6 +255,8 @@ if not __UPY__:
 
             if console:
                 cls.start_console(shell, ns=ns)
+            import platform
+            platform.shell = shell
 
 else:
     # TODO upy event driven async repl

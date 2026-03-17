@@ -1,6 +1,8 @@
 # pygbag
 
-Python WebAssembly for everyone ( packager + test server )
+It's ...
+
+Python WebAssembly for everyone ( packager + test server ) episode 2
 
 Intro : [https://github.com/pygame-web](https://github.com/pygame-web)
 
@@ -115,8 +117,20 @@ unlisted developper options:
 
 Now navigate to http://localhost:8000 with a modern internet browser.
 
-Use http://localhost:8000?-i for getting a terminal with repl
- and a sized down canvas ( http://localhost:8000#debug also does the same )
+Use http://localhost:8000?-i# for getting a terminal with repl
+ and a downsized canvas ( -i replaces http://localhost:8000#debug that did the same in earlier versions )
+
+
+Url as a command line:
+
+after ? and before the # are Python arguments or KEY=VALUE env vars separated by &
+
+after the # the program name or program arguments all space " " separated ( coded as %20 in HTML urls )
+
+
+eg to Python 3.14 to run src/test_raylib.py on showroom server with only 1 rabbit and os.environ['KEY']==value call
+ https://pygame-web.github.io/showroom/0.9.3.html?cpython3.14&-i&KEY=VALUE#src/test_raylib.py%201
+
 
 For pygame-script go to http://localhost:8000/test.html
 ( for a game folder named "test" with option --html )
@@ -126,6 +140,8 @@ V8 based browsers are preferred ( chromium/brave/chrome ... )
 starting with 81.0.4044 ( android 4.4 ).
 Because they set baseline restrictions on WebAssembly loading.
 Using them while testing ensure proper operation on all browsers
+
+if targeting mobile safari, always best not to play any sound on start of your program and add --ume_block 0 to pygbag command line
 
 
 ____
@@ -151,7 +167,7 @@ your.app.folder
 
 HISTORY:
 
- - pygbag's concepts took roots in a 2016 Panda3D community experiment.
+ - pygbag's concepts took roots in a 2016 Panda3D community experiment based on custom python2.7 and asm.js (episode 1).
 
 
 BUILDING:
@@ -174,10 +190,11 @@ Default prebuilts CPython + pygame-ce used by pygbag are stored via github pages
 from the repo https://github.com/pygame-web/archives under versioned folders.
 
 
-[TEST INTERACTIVE REPL 3.11 (default)](http://pygame-web.github.io/showroom/pygbag.html?cpython311&-i&noapp#src/hello.py%20arg1%20arg2)
+[TEST INTERACTIVE REPL 3.12 (default)](http://pygame-web.github.io/showroom/0.9.3.html?cpython312&-i&noapp#src/hello.py%20arg1%20arg2)
 
+[TEST INTERACTIVE REPL 3.13 (transition)](http://pygame-web.github.io/showroom/0.9.3.html?cpython313&-i&noapp#src/hello.py%20arg1%20arg2)
 
-[TEST INTERACTIVE REPL 3.12 (next)](http://pygame-web.github.io/showroom/pygbag.html?cpython312&-i&noapp#src/hello.py%20arg1%20arg2)
+[TEST INTERACTIVE REPL 3.14 (next)](http://pygame-web.github.io/showroom/0.9.3.html?cpython314&-i&noapp#src/hello.py%20arg1%20arg2)
 
 
 ADDING STATIC/DYNAMIC MODULES:

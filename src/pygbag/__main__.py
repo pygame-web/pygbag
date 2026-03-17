@@ -1,4 +1,3 @@
-import sys
 import asyncio
 
 asyncrun = asyncio.run
@@ -7,13 +6,10 @@ from .__init__ import VERSION
 
 print(f" *pygbag {VERSION}*")
 
-from pathlib import Path
-
 
 async def import_site(sourcefile=None, simulator=False, async_input=None, async_pkg=None):
     import sys
     import os
-    from pathlib import Path
 
     if ("--sim" not in sys.argv) and ("--piny" not in sys.argv) and not simulator:
         from .app import main_run, set_args
@@ -24,6 +20,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
         return True
 
     # or run as a native simulator
+    from pathlib import Path
 
     mod_dir = Path(__file__).parent
     support = mod_dir / "support"
@@ -54,7 +51,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
     def print_exception(e, out=sys.stderr, **kw):
         kw["file"] = out
-        traceback.print_exc(**kw)
+        traceback.print_exc(**kw) # NOQA
 
     # abstract placeholder for missing host objects
     class NoOp(object):
@@ -205,9 +202,7 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
 
     print(" =============== /pythonrc =================")
 
-    import zipfile
     import aio.toplevel
-    import ast
     from pathlib import Path
 
     class TopLevel_async_handler(aio.toplevel.AsyncInteractiveConsole):
@@ -243,7 +238,8 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
             )
 
     # start async top level machinery and add a console.
-    await TopLevel_async_handler.start_toplevel(platform.shell, console=True)
+
+    await TopLevel_async_handler.start_toplevel(platform.shell, console=True) # NOQA
 
     # ns = vars(__import__(__name__))
 
@@ -273,12 +269,12 @@ async def import_site(sourcefile=None, simulator=False, async_input=None, async_
         if sys.path[0] != cur_dir:
             sys.path.insert(0, cur_dir)
 
-        await shell.runpy(sourcefile)
-        shell.interactive()
+        await platform.shell.runpy(sourcefile) # NOQA
+        platform.shell.interactive() # NOQA
 
         # if you don't reach that step
         # your main.py has an infinite sync loop somewhere !
-        print(f"{platform.is_browser=}, sim is running")
+        print(f"{platform.is_browser=}, sim is running") # NOQA
 
         while not aio.exit:
             await aio.sleep(0.016)

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export WORKSPACE=${GITHUB_WORKSPACE:-$(pwd)}
+
 . scripts/vendoring.sh
 
 if [ -f vendor/vendor.sh ]

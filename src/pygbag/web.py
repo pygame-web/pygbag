@@ -50,7 +50,7 @@ def fixcert():
             ]
         )
 
-    import certifi
+    import certifi # NOQA
 
     # change working directory to the default SSL directory
     os.chdir(openssl_dir)
@@ -98,13 +98,12 @@ def get(url, path):
             print("retrying in 5 seconds")
 
     finally:
-        if data_file is not None:
-            return Path(data_file), header
-        # this is normal in dev mode for favicon and templates because
-        # proxy is not yet started.
-        print(f"NO DATA RECEIVED FOR {url}")
-        raise Exception(f"cannot cache {url} to {path}")
-
-
+        if data_file is None:
+            # this is normal in dev mode for favicon and templates because
+            # proxy is not yet started.
+            print(f"NO DATA RECEIVED FOR {url}")
+            raise Exception(f"cannot cache {url} to {path}")
+    return Path(data_file), header
+    
 if __name__ == "__main__":
     fixcert()

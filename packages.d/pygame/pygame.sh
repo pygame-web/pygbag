@@ -77,16 +77,27 @@ echo "
 PG_BRANCH="main"
 PG_GIT="https://github.com/pygame-community/pygame-ce.git"
 
+
+
 if ${CI:-true}
 then
-    if [ -d pygame-wasm ]
+    if [ -f pygame_ce-2.5.7.tar.gz ]
     then
-        pushd $(pwd)/pygame-wasm
-        git restore .
-        git pull
+        rm -rf pygame-wasm
+        echo Release Mode : https://github.com/pygame-community/pygame-ce/releases/download/2.5.7/pygame_ce-2.5.7.tar.gz
+        tar xfz pygame_ce-2.5.7.tar.gz
+        mv pygame_ce-2.5.7 pygame-wasm
+        pushd pygame-wasm
     else
-        git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
-        pushd $(pwd)/pygame-wasm
+        if [ -d pygame-wasm ]
+        then
+            pushd pygame-wasm
+            git restore .
+            git pull
+        else
+            git clone --no-tags --depth 1 --single-branch --branch $PG_BRANCH $PG_GIT pygame-wasm
+            pushd pygame-wasm
+        fi
     fi
 
     # to upstream after tests

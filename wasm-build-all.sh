@@ -11,7 +11,7 @@ export BUILDS=${BUILDS:-3.12 3.13 3.14}
 
 export STATIC=${STATIC:-true}
 
-export PYGBAG_PKG=${PYGBAG_VER:-0.9.3}
+export PYGBAG_PKG=${PYGBAG_VER:-0.9.4}
 
 . scripts/vendoring.sh
 
@@ -99,7 +99,7 @@ _____________________________________________________________________
     #mv -v external/pygame-wasm/dist/*whl
 
     mv -v external/*/dist/*-abi3-wasm32_bi_emscripten.whl ../cdn/abi3/
-    mv -v external/*/dist/*cp3*-wasm32_bi_emscripten.whl ../cdn/cp${PYMAJOR}${PYMINOR}/
+    mv -v external/*/dist/*cp3*-wasm32_bi_emscripten.whl ../cdn/cp${PYMAJOR}${PYMINOR}-${PYGBAG_PKG}/
 
     # use pygbag module from source, not any already installed.
     export PYTHONPATH=$(pwd)/src

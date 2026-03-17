@@ -39,7 +39,7 @@ except:
 # cascade debug by default
 from . import cross
 
-if not __UPY__:
+if not __UPY__: #NOQA
     from time import time as time_time
 
     # file+socket support  fopen/sopen
@@ -77,8 +77,7 @@ else:
 define("sys_trace", sys_trace)
 
 try:
-    import embed
-
+    import embed #NOQA
     flush = embed.flush
 except:
 
@@ -162,7 +161,7 @@ spent = 0.00001
 leave = enter + spent
 
 from asyncio import *
-from asyncio import exceptions
+from asyncio import exceptions #NOQA
 
 __run__ = run
 
@@ -185,9 +184,11 @@ try:
     loop = get_running_loop()
 except RuntimeError:
     # depending on context, you might debug or warning log that a running event loop wasn't found
-    loop = get_event_loop()
-
-
+    # loop = get_event_loop()
+    # asyncio.get_event_loop() is deprecated since Python 3.10
+    loop = new_event_loop()
+    set_event_loop(loop)
+    
 # import asyncio.events
 # asyncio.events._set_running_loop(loop)
 _set_running_loop(loop)
@@ -251,7 +252,7 @@ def step(*argv):
             if not exit:
                 pdb(f" - aio is {'paused' if paused else 'resuming'} -")
             else:
-                print(f" - aio is exiting -")
+                print(" - aio is exiting -")
             last_state = paused
 
         ticks += 1
@@ -497,7 +498,7 @@ if not __UPY__:
     sys.exit = aio_exit
 
 
-# check if we have a Time handler.
+# check if we have a custom Time handler. or default to std module
 try:
     Time
 except:
@@ -507,7 +508,7 @@ except:
 def rtclock():
     return int(Time.time() * 1_000)
 
-
+# TODO: chain values returned by prom
 class after:
     def __init__(self, oprom):
         self.oprom = oprom
@@ -516,22 +517,17 @@ class after:
         create_task(self.executor(fn, argv, kw))
 
     async def executor(self, fn, argv, kw):
-        import embed
 
         mark = None
-        value = undefined
+        #value = undefined
         wit = cross.platform.window.iterator(self.oprom)
         while mark != undefined:
-            value = mark
+            #value = mark
             await aio.sleep(0)
             mark = next(wit, undefined)
         del self.oprom
         if fn:
             fn(*argv, **kw)
-
-
-#
-import time as Time
 
 
 class aioctx:
@@ -556,7 +552,7 @@ class _(list):
             except KeyboardInterrupt:
                 aio.paused = None
                 aio.loop.call_soon(aio.loop.stop)
-                pdb("326: aio exit on KeyboardInterrupt")
+                pdb("# 555: aio exit on KeyboardInterrupt")
                 return await aio.sleep(0)
         else:
             print("__aenter__ no coro")

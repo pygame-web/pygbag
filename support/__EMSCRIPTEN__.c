@@ -50,7 +50,9 @@ debug:
 
 */
 
-#if 1
+
+#if PY_VERSION_HEX >= 0x030F0000
+#define DEBUG_STARTUP 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1180,7 +1182,7 @@ main(int argc, char **argv)
 
 // force
     setenv("PYTHONHOME", "/usr", 1);
-    setenv("PYTHONPATH", "/usr/lib/python3.14", 1);
+    //setenv("PYTHONPATH", "/usr/lib/python3.14", 1);
     setenv("PYTHONUNBUFFERED", "1", 1);
     setenv("PYTHONINSPECT", "1",1);
     setenv("PYTHONDONTWRITEBYTECODE","1",1);
@@ -1196,10 +1198,10 @@ main(int argc, char **argv)
 // termtk
     setenv("TERMTK_FORCESERIAL", "1", 1);
 
-#if PY_VERSION_HEX >= 0x030F0000
+#if DEBUG_STARTUP
     puts(" ---------- FS ------------");
 
-    find(getenv("PYTHONPATH"));
+    find("/usr/lib/python3.15");
     setenv("PYTHONVERBOSE", "1", 1);
 
     puts(" ---------- pymain_init ------------");
@@ -1218,7 +1220,7 @@ main(int argc, char **argv)
 */
     status = pymain_init(NULL);
 
-#if PY_VERSION_HEX >= 0x030F0000
+#if DEBUG_STARTUP
     puts(" ---------- pymain_init done ------------");
 #endif
     umask(18); // 0022
@@ -1315,17 +1317,8 @@ EM_ASM({
                 console.warn("PyMain: Running in Node ?");
             else
                 console.error("PyMain: not Node");
-        } else {
-            if (window.BrowserFS) {
-                console.log("PyMain: found BrowserFS");
-                //if (is_worker)
-                //    jswasm_load("fshandler.js");
-            } else {
-                console.error("PyMain: BrowserFS not found");
-            }
-        }
+        } 
     }
-
 
 }, FD_BUFFER_MAX, io_shm[0], io_shm[IO_RAW], io_shm[IO_RCON]);
 
@@ -1409,16 +1402,6 @@ int main(int argc, char **argv) {
     pkpy_init()    return main_(argc, argv);
 }
 #endif
-
-
-
-
-
-
-
-
-
-
 
 
 

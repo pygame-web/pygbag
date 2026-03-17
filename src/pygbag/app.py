@@ -44,7 +44,7 @@ DEFAULT_SCRIPT = "main.py"
 DEFAULT_CONSOLE = 25
 DEFAULT_LINES = 50
 DEFAULT_COLUMNS = 132
-DEFAULT_PYBUILD = "3.12"
+DEFAULT_PYBUILD = "3.13"
 
 CACHE_ROOT = Path("build")
 CACHE_PATH = CACHE_ROOT / "web-cache"
@@ -87,8 +87,8 @@ else:
     DEFAULT_PORT = 8000
     DEFAULT_TMPL = "default.tmpl"
 
-DEFAULT_WIDTH = 1280
-DEFAULT_HEIGHT = 720
+DEFAULT_WIDTH = 990
+DEFAULT_HEIGHT = 540
 
 def warn(msg):
     print(f"WARNING! {msg}")
@@ -121,18 +121,18 @@ def set_args(program):
         required.append(f"83: Error, no main.py {script_path} found in folder")
 
     if not app_folder.is_dir() or patharg.as_posix().endswith("/pygbag/__main__.py"):
-        required.append("89: Error, Last argument must be a valid app top level directory, or the main.py python script")
+        required.append("124: Error, Last argument must be a valid app top level directory, or the main.py python script")
 
     if sys.version_info < (3, 8):
         # zip deflate compression level 3.7
         # https://docs.python.org/3.11/library/shutil.html#shutil.copytree dirs_exist_ok = 3.8
-        required.append("84: Error, pygbag requires CPython version >= 3.8")
+        required.append("129: Error, pygbag requires CPython version >= 3.8")
 
     if len(required):
         while len(required):
             print(required.pop())
-        print("89: missing requirement(s)")
-        sys.exit(89)
+        print("134: missing requirement(s)")
+        sys.exit(135)
 
     return app_folder, mainscript
 
@@ -153,7 +153,7 @@ def cache_check(app_folder, devmode=False):
             with open(version_file, "r") as file:
                 cache_ver = file.read()
                 if cache_ver != VERSION:
-                    print(f"115: cache {cache_ver} mismatch, want {VERSION}, cleaning ...")
+                    print(f"156: cache {cache_ver} mismatch, want {VERSION}, cleaning ...")
                     clear_cache = True
         except:
             # something's wrong in cache structure, try clean it up
@@ -181,11 +181,11 @@ def cache_check(app_folder, devmode=False):
                 shutil.rmtree(cache_dir.as_posix())
             else:
                 print(
-                    "171: cannot clear cache : rmtree is not safe on that system",
+                    "184: cannot clear cache : rmtree is not safe on that system",
                     file=sys.stderr,
                 )
                 print(
-                    "175: Please remove build folder manually",
+                    "188: Please remove build folder manually",
                     file=sys.stderr,
                 )
                 raise SystemExit(115)

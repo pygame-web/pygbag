@@ -9,16 +9,11 @@ import sys
 import os
 from pathlib import Path
 import glob
-
-import re
-
 import tomllib
 
 import json
 
 import importlib
-import installer
-import pyparsing
 from packaging.requirements import Requirement
 
 from zipfile import ZipFile
@@ -28,9 +23,19 @@ from zipfile import ZipFile
 import platform
 import platform_wasm.todo
 
+# install deps 
+import installer # NOQA
+import pyparsing # NOQA
 
+   
 import asyncio
 from aio.filelike import fopen
+
+# QA
+if 0:
+    import aio
+    import embed
+    pdb = print
 
 
 # TODO: maybe control wheel cache with $XDG_CACHE_HOME/pip
@@ -55,7 +60,8 @@ if sconf["platlib"] not in sys.path:
 PATCHLIST = []
 
 # fast skip list
-HISTORY = ["pyodide", "pytest", "pytest-ruff", "ruff", "tarfile"]
+HISTORY = ["pyodide", "pytest", "pytest-ruff", "ruff", "tarfile", ]
+NOPYPI = ["PIL", ]
 
 hint_failed = []
 
@@ -131,7 +137,7 @@ def install(pkg_file, sconf=None):
 
     # Handler for installation directories and writing into them.
     destination = SchemeDictionaryDestination(
-        sconf or __import_("sysconfig").get_paths(),
+        sconf or __import__("sysconfig").get_paths(),
         interpreter=sys.executable,
         script_kind="posix",
     )
@@ -175,7 +181,7 @@ async def async_repos():
 
     for repo in Config.PKG_INDEXES:
         merged = {}
-        for pygver in ('0.9.3', ):
+        for pygver in ('0.9.3', '0.9.4', ):
             idx = f"{repo}index-{pygver}-{abitag}.json"
             try:
                 async with fopen(idx, "r", encoding="UTF-8") as index:
@@ -208,7 +214,7 @@ async def async_repos():
             rewritecdn = "http://localhost:8000/cdn/"
 
         if rewritecdn:
-            print(f"# 231: {rewritecdn=}")
+            print(f"# 217: {rewritecdn=}")
             for idx, repo in enumerate(Config.pkg_repolist):
                 repo["-CDN-"] = rewritecdn
 
@@ -223,17 +229,17 @@ def processing(dep):
 
 async def compile(verbose=False):
     if aio.cross.simulator:
-        print(f'# 226 : Scanning {sconf["platlib"]} for WebAssembly libraries [no compilation]')
+        print(f'# 232: Scanning {sconf["platlib"]} for WebAssembly libraries [no compilation]')
         return
 
-    print(f'# 229: Scanning {sconf["platlib"]} for WebAssembly libraries [compiling]')
+    print(f'# 235: Scanning {sconf["platlib"]} for WebAssembly libraries [compiling]')
     platform.explore(sconf["platlib"], verbose=verbose)
     for compilation in range(1 + embed.preloading()):
         await asyncio.sleep(0)
         if embed.preloading() <= 0:
             break
     else:
-        print("# 236: ERROR: remaining wasm {embed.preloading()}")
+        print("# 242: ERROR: remaining wasm {embed.preloading()}")
 
 async def install_pkg(sysconf, wheel_url, wheel_pkg):
     target_filename = f"/tmp/{wheel_pkg}"
@@ -263,7 +269,7 @@ async def install_pkg(sysconf, wheel_url, wheel_pkg):
         else:
             break
         Config.Requires_Processing.append(elem)
-        print(f"# 247: {elem=}")
+        print(f"# 272: {elem=}")
         if not await pip_install(elem, sysconf):
             print(f"install: {wheel_pkg} is missing {elem}")
         else:
@@ -313,16 +319,20 @@ async def pip_install(pkg, sysconf={}):
     wheel_url = ""
 
     # hack for WASM wheel repo
-    remap = pkg.lower().replace('-','_')
+    if '-' in pkg:
+        remap = pkg.lower().replace('-','_')
+    else:
+        remap = pkg
+
     if remap in Config.mapping:
         pkg = Config.mapping[remap]
         print(f"294: {remap} package renamed to {pkg}")
     else:
-        # just lower and _
+        # just lower if no -  ( eg PIL )
         pkg = remap
 
     if pkg in HISTORY:
-        print(f"# 322: pip_install: {pkg} already installed")
+        print(f"# 335: pip_install: {pkg} already installed")
         return
 
     if pkg in platform.patches:
@@ -335,22 +345,22 @@ async def pip_install(pkg, sysconf={}):
             break
     else:
         # try to get a pure python wheel from pypi
-        try:
-            async with fopen(f"https://pypi.org/simple/{pkg}/") as html:
-                if html:
-                    for line in html.readlines():
-                        if line.find("href=") > 0:
-                            if line.find("py3-none-any.whl") > 0:
-                                wheel_url = line.split('"', 2)[1]
-                else:
-                    print("308: ERROR: cannot find package :", pkg)
-        except FileNotFoundError:
-            print("285: ERROR: cannot find package :", pkg)
-            return
-
-        except:
-            print("320: ERROR: cannot find package :", pkg)
-            return
+        if pkg in NOPYPI:
+            print(f"# 349: pip_install: will not get {pkg} from PYPI")
+        else:
+            try:
+                async with fopen(f"https://pypi.org/simple/{pkg}/") as html:
+                    if html:
+                        for line in html.readlines():
+                            if line.find("href=") > 0:
+                                if line.find("py3-none-any.whl") > 0:
+                                    wheel_url = line.split('"', 2)[1]
+                    else:
+                        print("# 350: ERROR: cannot find package :", pkg)
+            except FileNotFoundError:
+                print("# 361: ERROR: cannot find package :", pkg)
+            except:
+                print("# 362: ERROR: cannot find package :", pkg)
 
     if wheel_url:
         try:
@@ -360,10 +370,10 @@ async def pip_install(pkg, sysconf={}):
             await install_pkg(sysconf, wheel_url, wheel_pkg)
             return True
         except Exception as e:
-            print("324: INVALID", pkg, "from", wheel_url, e)
+            print("# 373: INVALID", pkg, "from", wheel_url, e)
             #sys.print_exception(e)
     else:
-        print(f"351: no provider found for {pkg}")
+        print(f"# 376: no provider found for {pkg}")
 
     if not pkg in Config.Requires_Failures:
         Config.Requires_Failures.append(pkg)
@@ -396,8 +406,11 @@ async def parse_code(code, env):
                         PATCHLIST.append(skip)
                 continue
             elif pkg not in maybe_missing:
-                # do not change case ( eg PIL )
-                maybe_missing.append(pkg.lower().replace("-", "_"))
+                # do not change case for single word ( eg PIL )
+                if '-' in pkg:
+                    maybe_missing.append(pkg.lower().replace("-", "_"))
+                else:
+                    maybe_missing.append(pkg)
 
     still_missing = []
 
@@ -425,7 +438,7 @@ async def check_list(code=None, filename=None):
     global PATCHLIST, env, sconf, patchlevel
 
 
-    print("\n" + ("-" * 11), "computing required packages", "-" * 10)
+    print("#\n" + ("-" * 11), "computing required packages", "-" * 10)
 
     # turn off incremental compilation until env is populated
     last_state = Config.NOCOMPILATION
@@ -434,7 +447,7 @@ async def check_list(code=None, filename=None):
     # only do that once and for all.
     if "patch" in vars(platform_wasm.todo):
         patchlevel = vars(platform_wasm.todo).pop("patch")()
-        print("# 425: parse_code() patches loaded :", list(patchlevel.keys()))
+        print("# 450: parse_code() patches loaded :", list(patchlevel.keys()))
         #platform_wasm.todo.patch = lambda: None
         await vars(sys.modules[__name__]).pop("async_repos")()
 
