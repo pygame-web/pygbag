@@ -1234,7 +1234,6 @@ window.MM = {
 async function media_prepare(trackid) {
     const track = MM[trackid]
 
-
     await _until(defined)("avail", track)
 
     if (track.type === "audio") {
@@ -1248,7 +1247,7 @@ async function media_prepare(trackid) {
     }
 
     if (track.type === "mount") {
-        // was browserfs , removed must be fully provided from template.
+        // was browserfs , now removed must be fully provided from template.
     } // track type mount
 }
 
