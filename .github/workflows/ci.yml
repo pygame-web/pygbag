@@ -6,13 +6,13 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     env:
-        SDK_VERSION: 3.1.61.14bi
+        SDK_VERSION: 3.1.61.15bi
         SYS_PYTHON: /usr/bin/python3
         SDKROOT: /opt/python-wasm-sdk
         PACKAGES: emsdk pygame
         BUILD_STATIC: emsdk
         STATIC: false
-        BUILDS: 3.12 3.13 3.14
+        BUILDS: 3.13 3.14
         CYTHON: Cython-3.0.11-py2.py3-none-any.whl
         LD_VENDOR: -sUSE_GLFW=3
         LOPTS: -Os -g0
@@ -50,16 +50,16 @@ jobs:
 #            PYBUILD=3.11 PACKAGES="emsdk hpy _ctypes pygame" BUILD_STATIC="emsdk _ctypes hpy" bash ./scripts/build-loader.sh
 #
 #   PACKAGES="emsdk pygame" BUILD_STATIC="emsdk"
-
-    - name: build 3.12 packages
-      run: |
-            cd $GITHUB_WORKSPACE
-            PYBUILD=3.12 bash ./scripts/build-pkg.sh
-
-    - name: build 3.12 loader
-      run: |
-            cd $GITHUB_WORKSPACE
-            PYBUILD=3.12 bash ./scripts/build-loader.sh
+#
+#    - name: build 3.12 packages
+#      run: |
+#            cd $GITHUB_WORKSPACE
+#            PYBUILD=3.12 bash ./scripts/build-pkg.sh
+#
+#    - name: build 3.12 loader
+#      run: |
+#            cd $GITHUB_WORKSPACE
+#            PYBUILD=3.12 bash ./scripts/build-loader.sh
 
     - name: build 3.13 packages
       run: |
